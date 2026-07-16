@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+
+  --bg: #e7ebf1;
+  --bg-deep: #cdd6e2;
+  --ink: #1a2230;
+  --ink-soft: #56617a;
+  --panel: rgba(255, 255, 255, 0.9);
+  --panel-solid: #ffffff;
+  --line: rgba(26, 34, 48, 0.12);
+  --accent: #2f68e0;
+  --accent-soft: #dde7fb;
+  --exclude: #b0483c;
+  --exclude-soft: #f4dcd7;
+  --include: #2f68e0;
+  --include-soft: #dde7fb;
+  --shadow: 0 18px 50px rgba(26, 34, 48, 0.12);
+  --radius: 18px;
+  --page-bg:
+    radial-gradient(1200px 600px at 10% -10%, #eef3fb 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #d5deec 0%, transparent 50%),
+    linear-gradient(165deg, var(--bg), var(--bg-deep));
+  font-family: var(--font-body);
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--page-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --bg: #10151d;
+  --bg-deep: #0a0e14;
+  --ink: #e6ecf5;
+  --ink-soft: #97a4bc;
+  --panel: rgba(24, 30, 41, 0.92);
+  --panel-solid: #181e29;
+  --line: rgba(230, 236, 245, 0.12);
+  --accent: #5b93f5;
+  --accent-soft: #1c2c47;
+  --exclude: #ef9d90;
+  --exclude-soft: #382019;
+  --include: #5b93f5;
+  --include-soft: #1c2c47;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+  --page-bg:
+    radial-gradient(1000px 520px at 8% -8%, #1a2740 0%, transparent 55%),
+    radial-gradient(800px 480px at 100% 0%, #141c2b 0%, transparent 50%),
+    linear-gradient(165deg, var(--bg), var(--bg-deep));
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--page-bg);
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 1280px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 920px) {
+  html,
+  body,
+  #root {
+    height: auto;
+    overflow: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+    padding: 1rem;
+    overflow: visible;
+  }
+
+  .app {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+}

@@ -1,0 +1,54 @@
+# Dependências e builds
+node_modules/
+dist/
+web/dist/
+api/dist/
+*.tsbuildinfo
+
+# Segredos e ambiente local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+**/secrets/
+
+# Dados pessoais / estado da aplicação (cookies LinkedIn, vagas, monitores)
+api/data/
+**/store.json
+**/store.json.bak
+*.backup.json
+data-export*.json
+backup*.json
+
+# Cookies / sessão LinkedIn e scrapers
+.puppeteer-profile/
+.linkedin/
+cookies*.json
+li_at*
+jsessionid*
+
+# Logs e temporários
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+tmp/
+temp/
+.cache/
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker / local overrides
+docker-compose.override.yml

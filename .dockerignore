@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+**/dist
+.git
+.env
+*.log
+.DS_Store
+api/data
+.puppeteer-profile
+README.md
+web/README.md
+**/.tmp
+**/*.tsbuildinfo

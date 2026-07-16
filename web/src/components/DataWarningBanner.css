@@ -1,0 +1,109 @@
+.data-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, #fff7ed 88%, var(--panel-solid));
+  border: 1px solid color-mix(in srgb, #c2410c 28%, var(--line));
+  box-shadow: var(--shadow);
+}
+
+.data-banner__text {
+  min-width: 0;
+  flex: 1;
+}
+
+.data-banner__title {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 650;
+  color: #9a3412;
+}
+
+.data-banner__body {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.data-banner__body code {
+  font-size: 0.74em;
+  padding: 0.05rem 0.3rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.data-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.data-banner__btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 6.5rem;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.data-banner__btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.data-banner__btn--accent {
+  background: #9a3412;
+  border-color: #9a3412;
+  color: #fff7ed;
+}
+
+.data-banner__btn--ok {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #f4fff9 !important;
+}
+
+.data-banner__btn--err {
+  background: var(--exclude) !important;
+  border-color: var(--exclude) !important;
+  color: #fff5f2 !important;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.data-banner__btn:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+@media (max-width: 720px) {
+  .data-banner {
+    flex-direction: column;
+  }
+
+  .data-banner__actions {
+    width: 100%;
+  }
+
+  .data-banner__btn {
+    flex: 1;
+    text-align: center;
+  }
+}

@@ -1,0 +1,64 @@
+services:
+  api:
+    build:
+      context: ./api
+      target: development
+    container_name: busca-vagas-api
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 8787
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost,http://127.0.0.1
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./api/src:/app/src
+      - ./api/tsconfig.json:/app/tsconfig.json:ro
+      - ./api/package.json:/app/package.json:ro
+      - api-data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8787/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  web:
+    build:
+      context: ./web
+      target: development
+      args:
+        VITE_API_URL: http://localhost:8787
+    container_name: busca-vagas-web
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8787
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./web/src:/app/src
+      - ./web/index.html:/app/index.html
+      - ./web/public:/app/public
+      - ./web/vite.config.ts:/app/vite.config.ts:ro
+      - ./web/tsconfig.json:/app/tsconfig.json:ro
+      - ./web/tsconfig.app.json:/app/tsconfig.app.json:ro
+      - ./web/tsconfig.node.json:/app/tsconfig.node.json:ro
+      - ./web/package.json:/app/package.json:ro
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  api-data:

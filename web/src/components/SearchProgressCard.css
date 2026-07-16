@@ -1,0 +1,285 @@
+.search-progress {
+  position: relative;
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem 1.15rem;
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--panel-solid) 92%, #d7efe4) 0%,
+      var(--panel-solid) 55%
+    );
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: search-progress-in 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.search-progress::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent), #1a9a6c);
+}
+
+.search-progress__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.search-progress__title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.search-progress__orb {
+  flex-shrink: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #7fd9b0, var(--accent));
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: search-progress-pulse 1.6s ease-out infinite;
+}
+
+.search-progress__eyebrow {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.search-progress__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 650;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.search-progress__overall {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.search-progress__overall-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 650;
+  transition: transform 0.2s ease;
+}
+
+.search-progress__overall-unit {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.search-progress__track {
+  position: relative;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  overflow: hidden;
+}
+
+.search-progress__track--overall {
+  height: 0.55rem;
+  margin-bottom: 1rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.search-progress__fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1a8f68, var(--accent));
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.search-progress__fill--overall {
+  background: linear-gradient(90deg, #148f66, #0f6b4c 55%, #1fb87a);
+}
+
+.search-progress__fill--desc {
+  background: linear-gradient(90deg, #0d7a58, #145c45);
+}
+
+.search-progress__fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: search-progress-shimmer 1.4s linear infinite;
+}
+
+.search-progress__phases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.search-progress__phase {
+  padding: 0.7rem 0.8rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 35%, transparent);
+  border: 1px solid transparent;
+  opacity: 0.55;
+  transition:
+    opacity 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.search-progress__phase--active {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
+}
+
+.search-progress__phase--done {
+  opacity: 0.92;
+}
+
+.search-progress__phase-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.search-progress__phase-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.search-progress__phase-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.search-progress__phase-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.search-progress__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.1rem;
+  margin: -0.25rem 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.search-progress__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.search-progress__message {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.search-progress__cancel {
+  flex-shrink: 0;
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--exclude) 35%, var(--line));
+  background: color-mix(in srgb, var(--exclude-soft) 70%, transparent);
+  color: var(--exclude);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.search-progress__cancel:hover {
+  background: var(--exclude-soft);
+}
+
+.search-progress__cancel:active {
+  transform: scale(0.98);
+}
+
+@keyframes search-progress-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes search-progress-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes search-progress-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-progress,
+  .search-progress__orb,
+  .search-progress__fill,
+  .search-progress__fill::after {
+    animation: none;
+    transition: none;
+  }
+}

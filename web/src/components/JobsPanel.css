@@ -1,0 +1,76 @@
+.jobs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.jobs-tabs__btn {
+  box-sizing: border-box;
+  height: 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 0.75rem;
+  background: var(--panel-solid);
+  color: var(--ink-soft);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.jobs-tabs__btn--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #f4fff9;
+}
+
+.jobs-tabs__count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.jobs-tabs__btn--active .jobs-tabs__count {
+  background: color-mix(in srgb, #fff 22%, transparent);
+  color: #f4fff9;
+}
+
+.jobs-clear {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.jobs-clear__btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--exclude) 35%, var(--line));
+  background: color-mix(in srgb, var(--exclude-soft) 65%, transparent);
+  color: var(--exclude);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.jobs-clear__btn:hover:not(:disabled) {
+  background: var(--exclude-soft);
+}
+
+.jobs-clear__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

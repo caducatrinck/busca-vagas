@@ -1,0 +1,324 @@
+.job-list {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+  padding: 0 0.35rem;
+}
+
+.job-list > .search-progress {
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+.job-list__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.job-list__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 28%, transparent) transparent;
+}
+
+.job-list__scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.job-list__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.job-list__scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.job-list__scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--ink) 42%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.job-list__scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.job-list__scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.job-list__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.job-list__header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+}
+
+.job-list__count {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.job-list__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.job-list__search {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.job-list__search input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  background: var(--panel-solid);
+  color: var(--ink);
+}
+
+.job-list__search input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.job-list__language select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.job-list__language {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.job-list__language select {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.55rem 0.7rem;
+  background: var(--panel-solid);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.job-list__discard-all {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--exclude) 28%, var(--line));
+  border-radius: 12px;
+  padding: 0.55rem 0.85rem;
+  background: var(--exclude-soft);
+  color: var(--exclude);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.job-list__discard-all:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.job-list__discard-all:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.job-list--state-inline {
+  min-height: 12rem;
+}
+
+.job-list__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(20, 42, 34, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.job-list__modal {
+  width: min(100%, 24rem);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  box-shadow: 0 24px 60px rgba(20, 42, 34, 0.22);
+  padding: 1.25rem 1.35rem;
+}
+
+.job-list__modal h3 {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--ink);
+}
+
+.job-list__modal p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.job-list__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.15rem;
+  flex-wrap: wrap;
+}
+
+.job-list__modal-cancel,
+.job-list__modal-confirm {
+  border-radius: 12px;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.job-list__modal-cancel {
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  color: var(--ink-soft);
+}
+
+.job-list__modal-confirm {
+  border: 1px solid color-mix(in srgb, var(--exclude) 28%, var(--line));
+  background: var(--exclude-soft);
+  color: var(--exclude);
+}
+
+.job-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 1rem;
+  justify-content: center;
+  align-content: start;
+}
+
+.job-list--state {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  min-height: min(50vh, 100%);
+  border: 1px dashed color-mix(in srgb, var(--ink) 20%, transparent);
+  border-radius: var(--radius);
+  padding: 2rem;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+}
+
+.job-list--state h2 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-display);
+}
+
+.job-list--state p {
+  margin: 0;
+  color: var(--ink-soft);
+  max-width: 36ch;
+  justify-self: center;
+}
+
+.job-list--error h2 {
+  color: var(--exclude);
+}
+
+.job-list__pulse {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent);
+  margin: 0 auto 1rem;
+  animation: spin 0.9s linear infinite;
+}
+
+.job-list__pulse--inline {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.job-list__banner {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.job-list--loading .job-list__scroll {
+  opacity: 0.55;
+}
+
+.job-list--loading .job-list__grid {
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 920px) {
+  .job-list {
+    height: auto;
+    overflow: visible;
+  }
+
+  .job-list__scroll {
+    flex: none;
+    overflow: visible;
+  }
+}
