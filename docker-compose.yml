@@ -18,6 +18,7 @@ services:
       WATCHPACK_POLLING: "true"
     volumes:
       - ./api/src:/app/src
+      - ./shared:/app/src/shared:ro
       - ./api/tsconfig.json:/app/tsconfig.json:ro
       - ./api/package.json:/app/package.json:ro
       - api-data:/app/data
@@ -49,6 +50,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     volumes:
       - ./web/src:/app/src
+      - ./shared:/app/src/shared:ro
       - ./web/index.html:/app/index.html
       - ./web/public:/app/public
       - ./web/vite.config.ts:/app/vite.config.ts:ro

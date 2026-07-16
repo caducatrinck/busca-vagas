@@ -15,6 +15,7 @@ import {
 } from './store.js'
 import type { SearchProgressCallback, SearchRunStats } from './types.js'
 import { SearchCancelledError } from './types.js'
+import { resolvePoolingPostedSeconds as resolvePoolingWindow } from './domain/poolingWindow.js'
 
 const timers = new Map<string, NodeJS.Timeout>()
 const running = new Map<string, Promise<{ newCount: number; error?: string; cancelled?: boolean }>>()
@@ -59,17 +60,7 @@ export function resolvePoolingPostedSeconds(
   lastRunAt: string | null,
   now = Date.now(),
 ): number {
-  const intervalSec = Math.max(1, intervalMinutes) * 60
-  const waitedSec = lastRunAt
-    ? Math.max(
-        0,
-        Math.floor((now - new Date(lastRunAt).getTime()) / 1000),
-      )
-    : intervalSec
-  const coverageSec = Math.max(waitedSec, intervalSec)
-  const bufferSec = Math.max(10 * 60, Math.ceil(coverageSec * 0.5))
-  const windowSec = coverageSec + bufferSec
-  return Math.min(Math.max(windowSec, 10 * 60), 24 * 60 * 60)
+  return resolvePoolingWindow(intervalMinutes, lastRunAt, now)
 }
 
 function clearMonitorTimer(id: string) {

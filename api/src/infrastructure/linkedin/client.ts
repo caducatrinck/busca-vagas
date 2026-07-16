@@ -1,0 +1,204 @@
+import { randomDelay } from '../../rateLimit.js'
+import { getAppSettings } from '../../store.js'
+import { SearchCancelledError } from '../../types.js'
+
+export const LINKEDIN_BASE = 'https://www.linkedin.com'
+export const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+
+export const FETCH_TIMEOUT_MS = 25_000
+
+export async function buildCookieHeader(): Promise<string | undefined> {
+  const settings = await getAppSettings()
+  const liAt = settings.linkedinLiAt.trim()
+  const jsessionid = settings.linkedinJsessionId.trim()
+
+  const parts: string[] = []
+  if (liAt) parts.push(`li_at=${liAt}`)
+  if (jsessionid) {
+    const value = jsessionid.replace(/^"|"$/g, '')
+    parts.push(`JSESSIONID="${value}"`)
+  }
+
+  return parts.length > 0 ? parts.join('; ') : undefined
+}
+
+function formatNetworkError(err: unknown): string {
+  if (!(err instanceof Error)) return 'Falha de rede ao contatar o LinkedIn'
+  const cause = (err as Error & { cause?: unknown }).cause
+  const causeObj =
+    cause && typeof cause === 'object'
+      ? (cause as { code?: string; message?: string })
+      : null
+  const detail =
+    causeObj?.code ||
+    causeObj?.message ||
+    (typeof cause === 'string' ? cause : null)
+  if (err.message === 'fetch failed' || err.name === 'TypeError') {
+    return detail
+      ? `Falha de rede ao contatar o LinkedIn (${detail}). Tente de novo em alguns segundos.`
+      : 'Falha de rede ao contatar o LinkedIn. Tente de novo em alguns segundos.'
+  }
+  return detail ? `${err.message} (${detail})` : err.message
+}
+
+function isRetryableNetworkError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  if (err.name === 'AbortError') return false
+  if (err.message === 'fetch failed' || err.name === 'TypeError') return true
+  const code = (err as Error & { cause?: { code?: string } }).cause?.code
+  return (
+    code === 'ECONNRESET' ||
+    code === 'ETIMEDOUT' ||
+    code === 'ECONNREFUSED' ||
+    code === 'ENOTFOUND' ||
+    code === 'UND_ERR_CONNECT_TIMEOUT' ||
+    code === 'UND_ERR_SOCKET'
+  )
+}
+
+function mergeAbortSignals(
+  ...signals: Array<AbortSignal | undefined>
+): AbortSignal | undefined {
+  const list = signals.filter((s): s is AbortSignal => Boolean(s))
+  if (list.length === 0) return undefined
+  if (list.length === 1) return list[0]
+  if (typeof AbortSignal.any === 'function') return AbortSignal.any(list)
+  const ac = new AbortController()
+  for (const s of list) {
+    if (s.aborted) {
+      ac.abort()
+      return ac.signal
+    }
+    s.addEventListener('abort', () => ac.abort(), { once: true })
+  }
+  return ac.signal
+}
+
+export function parseRetryAfterMs(res: Response): number | undefined {
+  const raw = res.headers.get('retry-after')
+  if (!raw) return undefined
+  const asInt = Number(raw)
+  if (Number.isFinite(asInt) && asInt >= 0) return Math.ceil(asInt * 1000)
+  const asDate = Date.parse(raw)
+  if (Number.isFinite(asDate)) return Math.max(0, asDate - Date.now())
+  return undefined
+}
+
+export function linkedInRateHeaders(res: Response): string {
+  const interesting = [
+    'retry-after',
+    'x-li-uuid',
+    'x-restli-protocol-version',
+    'x-li-fabric',
+    'cf-ray',
+  ]
+  const parts: string[] = []
+  for (const name of interesting) {
+    const value = res.headers.get(name)
+    if (value) parts.push(`${name}=${value}`)
+  }
+  return parts.length > 0 ? ` · headers: ${parts.join(', ')}` : ''
+}
+
+export function throwLinkedInHttpError(res: Response): never {
+  const retryAfterMs = parseRetryAfterMs(res)
+  const headersHint = linkedInRateHeaders(res)
+  let message: string
+  if (res.status === 429) {
+    const wait = retryAfterMs
+      ? ` Retry-After ~${Math.ceil(retryAfterMs / 1000)}s.`
+      : ''
+    message = `LinkedIn rate limit (HTTP 429).${wait}${headersHint}`
+  } else if (res.status === 401 || res.status === 403) {
+    message = `LinkedIn bloqueou a requisição (HTTP ${res.status}). Atualize o cookie li_at ou aguarde.${headersHint}`
+  } else if (res.status === 999) {
+    message = `LinkedIn respondeu HTTP 999 (anti-bot / bloqueio).${headersHint}`
+  } else {
+    message = `LinkedIn respondeu HTTP ${res.status}.${headersHint}`
+  }
+  const err = new Error(message)
+  if (retryAfterMs != null) {
+    ;(err as Error & { retryAfterMs?: number }).retryAfterMs = retryAfterMs
+  }
+  ;(err as Error & { linkedInStatus?: number }).linkedInStatus = res.status
+  throw err
+}
+
+export async function linkedInFetch(
+  path: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const cookie = await buildCookieHeader()
+  const url = `${LINKEDIN_BASE}${path}`
+  const maxAttempts = 3
+  let lastErr: unknown
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (signal?.aborted) throw new SearchCancelledError([])
+    const timeout =
+      typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(FETCH_TIMEOUT_MS)
+        : undefined
+    const combined = mergeAbortSignals(signal, timeout)
+    try {
+      const res = await fetch(url, {
+        signal: combined,
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'text/html,application/xhtml+xml',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+      })
+
+      if (!res.ok) {
+        if (res.status === 429 && attempt < maxAttempts) {
+          const wait = parseRetryAfterMs(res) ?? 1500 * attempt
+          console.warn(
+            `[linkedin] HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
+          )
+          await randomDelay(wait, wait + 500)
+          continue
+        }
+        throwLinkedInHttpError(res)
+      }
+
+      return res.text()
+    } catch (err) {
+      if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+
+        if (
+          !signal?.aborted &&
+          err instanceof Error &&
+          (err.name === 'TimeoutError' || err.name === 'AbortError')
+        ) {
+          lastErr = new Error(
+            `LinkedIn não respondeu a tempo (${FETCH_TIMEOUT_MS / 1000}s).`,
+          )
+          if (attempt === maxAttempts) throw lastErr
+          await randomDelay(400 * attempt, 900 * attempt)
+          continue
+        }
+        throw err
+      }
+
+      if (
+        err instanceof Error &&
+        (err.message.startsWith('LinkedIn bloqueou') ||
+          err.message.startsWith('LinkedIn rate limit') ||
+          err.message.startsWith('LinkedIn respondeu') ||
+          err.message.startsWith('LinkedIn não respondeu'))
+      ) {
+        throw err
+      }
+      lastErr = err
+      if (!isRetryableNetworkError(err) || attempt === maxAttempts) {
+        throw new Error(formatNetworkError(err))
+      }
+      await randomDelay(400 * attempt, 900 * attempt)
+    }
+  }
+
+  throw new Error(formatNetworkError(lastErr))
+}

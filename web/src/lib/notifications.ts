@@ -34,7 +34,6 @@ export function notifyNewJobs(input: {
     const n = new Notification(input.title, {
       body: input.body,
       tag: input.tag ?? 'busca-vagas-new',
-      renotify: true,
       silent: false,
     })
     n.onclick = () => {
