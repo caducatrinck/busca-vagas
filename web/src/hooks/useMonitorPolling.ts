@@ -1,5 +1,6 @@
 import {
   type Dispatch,
+  type RefObject,
   type SetStateAction,
   useEffect,
   useRef,
@@ -7,7 +8,6 @@ import {
 } from 'react'
 import { fetchMonitors, fetchRateLimit, type RateLimitInfo } from '../lib/api'
 import { msUntilNextPoolCheck, runKey } from '../lib/monitorHelpers'
-import type { AppNotification } from '../lib/notificationsModel'
 import {
   monitorToSearch,
   type AppTab,
@@ -19,30 +19,41 @@ export function useMonitorPolling(params: {
   monitors: Monitor[]
   setupRequired: boolean
   tab: AppTab
-  activeMonitorId: string | null
+  activeMonitorIdRef: RefObject<string | null>
   setMonitors: Dispatch<SetStateAction<Monitor[]>>
   setActiveMonitorId: Dispatch<SetStateAction<string | null>>
   setMonitorDraft: Dispatch<SetStateAction<SearchForm>>
-  loadMonitorJobs: (id: string) => Promise<void>
+  loadMonitorJobs: (monitorId: string) => Promise<void>
   loadSaved: () => Promise<void>
-  announceNewJobs: (
-    monitor: Monitor,
-    onOpenMonitor: (item: AppNotification) => void,
-  ) => void
-  onOpenMonitor: (item: AppNotification) => void
+  notifiedRunsRef: RefObject<Set<string>>
+  seededNotifyRef: RefObject<boolean>
+  onAnnounceNewJobs: (monitor: Monitor) => void
 }) {
+  const {
+    monitors,
+    setupRequired,
+    tab,
+    activeMonitorIdRef,
+    setMonitors,
+    setActiveMonitorId,
+    setMonitorDraft,
+    loadMonitorJobs,
+    loadSaved,
+    notifiedRunsRef,
+    seededNotifyRef,
+    onAnnounceNewJobs,
+  } = params
+
   const [rateLimit, setRateLimit] = useState<RateLimitInfo | null>(null)
-  const notifiedRunsRef = useRef<Set<string>>(new Set())
-  const seededNotifyRef = useRef(false)
-  const activeMonitorIdRef = useRef<string | null>(null)
-  activeMonitorIdRef.current = params.activeMonitorId
+  const onAnnounceRef = useRef(onAnnounceNewJobs)
+  onAnnounceRef.current = onAnnounceNewJobs
 
   useEffect(() => {
     void fetchRateLimit().then(setRateLimit)
   }, [])
 
   useEffect(() => {
-    if (params.tab !== 'monitor' || params.setupRequired) return
+    if (tab !== 'monitor' || setupRequired) return
     if (rateLimit?.allowed === false) {
       const id = window.setInterval(() => {
         void fetchRateLimit().then(setRateLimit)
@@ -50,24 +61,16 @@ export function useMonitorPolling(params: {
       return () => window.clearInterval(id)
     }
     void fetchRateLimit().then(setRateLimit)
-  }, [params.tab, params.setupRequired, rateLimit?.allowed])
-
-  function seedNotified(monitors = params.monitors) {
-    for (const m of monitors) {
-      const key = runKey(m)
-      if (key) notifiedRunsRef.current.add(key)
-    }
-    seededNotifyRef.current = true
-  }
+  }, [tab, setupRequired, rateLimit?.allowed])
 
   useEffect(() => {
-    if (params.setupRequired) return
-    const anyActive = params.monitors.some((m) => m.pollingEnabled)
+    if (setupRequired) return
+    const anyActive = monitors.some((m) => m.pollingEnabled)
     if (!anyActive) return
 
     let cancelled = false
     let timeoutId = 0
-    const monitorsRef = { current: params.monitors }
+    const monitorsRef = { current: monitors }
 
     function scheduleNext(list: Monitor[]) {
       if (cancelled) return
@@ -98,16 +101,15 @@ export function useMonitorPolling(params: {
             if (!key || notifiedRunsRef.current.has(key)) continue
             notifiedRunsRef.current.add(key)
             completedRun = true
-            if (m.newCountLastRun > 0) {
-              params.announceNewJobs(m, params.onOpenMonitor)
-            }
+            if (m.newCountLastRun > 0) onAnnounceRef.current(m)
           }
         }
 
-        params.setMonitors((prev) => {
+        setMonitors((prev) => {
+          const safePrev = Array.isArray(prev) ? prev : []
           if (
-            prev.length === list.length &&
-            prev.every((m, i) => {
+            safePrev.length === list.length &&
+            safePrev.every((m, i) => {
               const n = list[i]
               return (
                 m.id === n.id &&
@@ -120,7 +122,7 @@ export function useMonitorPolling(params: {
               )
             })
           ) {
-            return prev
+            return safePrev
           }
           return list
         })
@@ -131,15 +133,13 @@ export function useMonitorPolling(params: {
             ? preferred
             : list[0]?.id ?? null
         if (nextId !== preferred) {
-          params.setActiveMonitorId(nextId)
-          params.setMonitorDraft(
-            monitorToSearch(list.find((m) => m.id === nextId)),
-          )
+          setActiveMonitorId(nextId)
+          setMonitorDraft(monitorToSearch(list.find((m) => m.id === nextId)))
         }
 
         if (completedRun) {
-          if (nextId) await params.loadMonitorJobs(nextId)
-          await params.loadSaved()
+          if (nextId) await loadMonitorJobs(nextId)
+          await loadSaved()
           setRateLimit(await fetchRateLimit())
         }
 
@@ -165,7 +165,7 @@ export function useMonitorPolling(params: {
       document.removeEventListener('visibilitychange', onVisible)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.setupRequired, params.monitors.some((m) => m.pollingEnabled)])
+  }, [setupRequired, monitors.some((m) => m.pollingEnabled)])
 
-  return { rateLimit, setRateLimit, seedNotified }
+  return { rateLimit, setRateLimit }
 }

@@ -177,6 +177,9 @@ async function runMonitor(
       return { newCount: 0, error: message, retryAfterMs }
     }
 
+    const countNewAgainstBaseline = (jobs: { id: string }[]) =>
+      jobs.reduce((n, j) => n + (baselineKnown.has(j.id) ? 0 : 1), 0)
+
     const emitJobs = async (batch: Parameters<typeof upsertSearchResults>[0]) => {
       if (batch.length === 0) return
       const { jobs, newJobs } = await upsertSearchResults(batch, id)
@@ -188,15 +191,16 @@ async function runMonitor(
     }
 
     const onListingComplete = async (listed: Parameters<typeof upsertSearchResults>[0]) => {
-      const { jobs, newJobs } = await upsertSearchResults(listed, id)
+      const { jobs } = await upsertSearchResults(listed, id)
+      const newCount = countNewAgainstBaseline(listed)
 
       await updateMonitor(id, {
-        newCountLastRun: newJobs.length,
+        newCountLastRun: newCount,
         lastError: null,
       })
       const flagged = withNewFlag(
         jobs,
-        newJobs.map((j) => j.id),
+        listed.filter((j) => !baselineKnown.has(j.id)).map((j) => j.id),
       )
       callbacks.onJobs?.(flagged)
       callbacks.onProgress?.({
@@ -209,8 +213,8 @@ async function runMonitor(
         elapsedMs: Date.now() - startedAt,
         etaSeconds: Boolean(monitor.search.fetchDescriptions) ? null : 0,
         message:
-          newJobs.length > 0
-            ? `${newJobs.length} nova(s) — buscando descrições…`
+          newCount > 0
+            ? `${newCount} nova(s) — buscando descrições…`
             : 'Nenhuma nova nesta listagem',
       })
     }
@@ -260,10 +264,11 @@ async function runMonitor(
         etaSeconds: 1,
       })
 
-      const { newJobs } = await upsertSearchResults(found, id)
+      await upsertSearchResults(found, id)
+      const newCount = countNewAgainstBaseline(found)
       const stats: SearchRunStats = {
         jobCount: found.length,
-        newCount: newJobs.length,
+        newCount,
         durationMs: Date.now() - startedAt,
         finishedAt: new Date().toISOString(),
         cancelled: false,
@@ -272,7 +277,7 @@ async function runMonitor(
       await updateMonitor(id, {
         lastRunAt: stats.finishedAt,
         lastError: null,
-        newCountLastRun: newJobs.length,
+        newCountLastRun: newCount,
         lastRunStats: stats,
       })
 
@@ -280,8 +285,8 @@ async function runMonitor(
         phase: 'done',
         label: 'Busca concluída',
         message:
-          newJobs.length > 0
-            ? `${newJobs.length} nova(s) vaga(s)`
+          newCount > 0
+            ? `${newCount} nova(s) vaga(s)`
             : (searchTelemetry.emptyReason ?? 'Nenhuma vaga nova nesta rodada'),
         overallPercent: 100,
         listing: { current: found.length, total: found.length },
@@ -294,7 +299,7 @@ async function runMonitor(
         etaSeconds: 0,
       })
 
-      return { newCount: newJobs.length }
+      return { newCount }
     } catch (err) {
       if (err instanceof SearchCancelledError) {
         if (err.jobs.length > 0) {

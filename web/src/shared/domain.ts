@@ -9,7 +9,10 @@ export type Job = {
   location: string
   description: string
   url: string
+  /** Instantâneo absoluto (ISO) quando possível — para ordenar e atualizar o rótulo. */
   postedAt?: string
+  /** Texto exatamente como no LinkedIn no momento da coleta (ex.: "há 8 horas"). */
+  postedLabel?: string
 }
 
 export type SearchParams = {

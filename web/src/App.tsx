@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import { DataWarningBanner } from './components/DataWarningBanner'
 import { JobList } from './components/JobList'
 import { JobsPanel } from './components/JobsPanel'
@@ -7,74 +7,42 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { Tabs } from './components/Tabs'
 import { useAppSettings } from './hooks/useAppSettings'
 import { useMonitorPolling } from './hooks/useMonitorPolling'
-import { useMonitors } from './hooks/useMonitors'
+import { JOBS_TITLES, useMonitors } from './hooks/useMonitors'
 import { useNotifications } from './hooks/useNotifications'
 import { usePersistedFilters } from './hooks/usePersistedFilters'
 import { useSearchRun } from './hooks/useSearchRun'
 import { useTheme } from './hooks/useTheme'
+import { runKey } from './lib/monitorHelpers'
 import { ensureNotificationPermission } from './lib/notifications'
 import type { AppNotification } from './lib/notificationsModel'
-import {
-  EMPTY_SEARCH,
-  monitorToSearch,
-  type AppTab,
-  type JobStatus,
-  type Monitor,
-} from './lib/types'
+import { EMPTY_SEARCH, monitorToSearch, type Monitor } from './lib/types'
 import './App.css'
-
-const JOBS_TITLES: Record<
-  JobStatus,
-  { title: string; empty: string; hint: string }
-> = {
-  viewed: {
-    title: 'Vagas pendentes',
-    empty: 'Nenhuma vaga pendente',
-    hint: 'Busque no Monitor. Use Descartar ou Já apliquei nos cards.',
-  },
-  applied: {
-    title: 'Vagas aplicadas',
-    empty: 'Nenhuma vaga aplicada',
-    hint: 'Marque “Já apliquei” em um card para movê-la para cá.',
-  },
-  discarded: {
-    title: 'Vagas descartadas',
-    empty: 'Nenhuma vaga descartada',
-    hint: 'Descartadas somem do Monitor. Você pode restaurá-las aqui.',
-  },
-}
 
 function App() {
   const { filters, setFilters, setLanguage, addWord, removeWord } =
     usePersistedFilters()
   const { theme, toggleTheme } = useTheme()
-  const [tab, setTab] = useState<AppTab>('monitor')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
+  const monitors = useMonitors({ filters })
   const notifications = useNotifications()
 
-  const monitors = useMonitors({
-    filters,
-    setTab,
-    setError,
-  })
-
-  const settings = useAppSettings({
-    tab,
-    setTab,
+  const appSettings = useAppSettings({
     loadMonitors: monitors.loadMonitors,
     loadSaved: monitors.loadSaved,
-    setLoading,
-    setError,
+    setLoading: monitors.setLoading,
+    setError: monitors.setError,
     activeMonitorId: monitors.activeMonitorId,
     filters,
     setFilters,
     clearNotifications: notifications.clearNotifications,
+    setNotificationsOpen: notifications.setNotificationsOpen,
   })
 
+  const activeMonitorIdRef = useRef<string | null>(null)
+  activeMonitorIdRef.current = monitors.activeMonitorId
+
   function navigateToMonitor(monitor: Monitor | null, item: AppNotification) {
-    setTab('monitor')
+    appSettings.setTab('monitor')
     monitors.setActiveMonitorId(item.monitorId)
     monitors.setMonitorDraft(
       monitor
@@ -92,18 +60,23 @@ function App() {
     )
   }
 
+  function handleAnnounceNewJobs(monitor: Monitor) {
+    notifications.announceNewJobs(monitor, openMonitorFromNotification)
+  }
+
   const polling = useMonitorPolling({
     monitors: monitors.monitors,
-    setupRequired: settings.setupRequired,
-    tab,
-    activeMonitorId: monitors.activeMonitorId,
+    setupRequired: appSettings.setupRequired,
+    tab: appSettings.tab,
+    activeMonitorIdRef,
     setMonitors: monitors.setMonitors,
     setActiveMonitorId: monitors.setActiveMonitorId,
     setMonitorDraft: monitors.setMonitorDraft,
     loadMonitorJobs: monitors.loadMonitorJobs,
     loadSaved: monitors.loadSaved,
-    announceNewJobs: notifications.announceNewJobs,
-    onOpenMonitor: openMonitorFromNotification,
+    notifiedRunsRef: notifications.notifiedRunsRef,
+    seededNotifyRef: notifications.seededNotifyRef,
+    onAnnounceNewJobs: handleAnnounceNewJobs,
   })
 
   const searchRun = useSearchRun({
@@ -115,7 +88,7 @@ function App() {
     loadMonitors: monitors.loadMonitors,
     loadSaved: monitors.loadSaved,
     setRateLimit: polling.setRateLimit,
-    setError,
+    setError: monitors.setError,
     clearPendingDraftSave: monitors.clearPendingDraftSave,
   })
 
@@ -126,132 +99,129 @@ function App() {
 
   async function handleTogglePolling(enabled: boolean, intervalMinutes: number) {
     await monitors.handleTogglePolling(enabled, intervalMinutes, async () => {
-      polling.seedNotified(monitors.monitors)
+      for (const m of monitors.monitors) {
+        const key = runKey(m)
+        if (key) notifications.notifiedRunsRef.current.add(key)
+      }
+      notifications.seededNotifyRef.current = true
       await ensureNotificationPermission()
     })
   }
 
-  const busy = loading || monitors.loading
-
   return (
     <div className="app-shell">
       <DataWarningBanner
-        onExport={settings.handleExportData}
-        onImportFile={settings.handleImportData}
+        onExport={appSettings.handleExportData}
+        onImportFile={appSettings.handleImportData}
       />
       <div className="app">
-        <div className="app__sidebar">
-          <Tabs
-            tab={tab}
-            jobsCount={monitors.savedJobs.length}
-            statusCounts={monitors.statusCounts}
-            monitors={monitors.monitors}
-            notifications={notifications.notifications}
-            notificationsOpen={notifications.notificationsOpen}
-            unreadTotal={notifications.unreadTotal}
-            setupRequired={settings.setupRequired}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onChange={settings.handleTabChange}
-            onToggleNotifications={() =>
-              notifications.setNotificationsOpen((v) => !v)
-            }
-            onCloseNotifications={() =>
-              notifications.setNotificationsOpen(false)
-            }
-            onOpenNotification={openMonitorFromNotification}
-            onMarkAllNotificationsRead={
-              notifications.handleMarkAllNotificationsRead
-            }
+      <div className="app__sidebar">
+        <Tabs
+          tab={appSettings.tab}
+          jobsCount={monitors.savedJobs.length}
+          statusCounts={monitors.statusCounts}
+          monitors={monitors.monitors}
+          notifications={notifications.notifications}
+          notificationsOpen={notifications.notificationsOpen}
+          unreadTotal={notifications.unreadTotal}
+          setupRequired={appSettings.setupRequired}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onChange={appSettings.handleTabChange}
+          onToggleNotifications={() =>
+            notifications.setNotificationsOpen((v) => !v)
+          }
+          onCloseNotifications={() => notifications.setNotificationsOpen(false)}
+          onOpenNotification={openMonitorFromNotification}
+          onMarkAllNotificationsRead={notifications.handleMarkAllNotificationsRead}
+        />
+
+        {!appSettings.setupRequired && appSettings.tab === 'jobs' ? (
+          <JobsPanel
+            subTab={monitors.jobsSubTab}
+            counts={monitors.statusCounts}
+            onSubTabChange={monitors.setJobsSubTab}
+            onRefresh={monitors.handleRefreshJobs}
+            onClearStatus={monitors.handleClearJobsStatus}
           />
+        ) : null}
 
-          {!settings.setupRequired && tab === 'jobs' ? (
-            <JobsPanel
-              subTab={monitors.jobsSubTab}
-              counts={monitors.statusCounts}
-              onSubTabChange={monitors.setJobsSubTab}
-              onRefresh={monitors.handleRefreshJobs}
-              onClearStatus={monitors.handleClearJobsStatus}
-            />
-          ) : null}
+        {!appSettings.setupRequired && appSettings.tab === 'monitor' ? (
+          <PollingPanel
+            monitors={monitors.monitors}
+            activeId={monitors.activeMonitorId}
+            draft={monitors.monitorDraft}
+            filters={filters}
+            loading={monitors.loading}
+            searching={Boolean(searchRun.displaySearchProgress)}
+            unreadByMonitor={notifications.unreadMap}
+            onSelect={handleSelectMonitor}
+            onAdd={monitors.handleAddMonitor}
+            onClose={monitors.handleCloseMonitor}
+            onDraftChange={monitors.handleMonitorDraftChange}
+            onLanguageChange={setLanguage}
+            onTogglePolling={handleTogglePolling}
+            onIntervalChange={monitors.handleIntervalChange}
+            onRunNow={searchRun.handleRunMonitorNow}
+            onAddWord={addWord}
+            onRemoveWord={removeWord}
+            rateLimit={polling.rateLimit}
+          />
+        ) : null}
+      </div>
 
-          {!settings.setupRequired && tab === 'monitor' ? (
-            <PollingPanel
-              monitors={monitors.monitors}
-              activeId={monitors.activeMonitorId}
-              draft={monitors.monitorDraft}
-              filters={filters}
-              loading={busy}
-              searching={Boolean(searchRun.displaySearchProgress)}
-              unreadByMonitor={notifications.unreadMap}
-              onSelect={handleSelectMonitor}
-              onAdd={monitors.handleAddMonitor}
-              onClose={monitors.handleCloseMonitor}
-              onDraftChange={monitors.handleMonitorDraftChange}
-              onLanguageChange={setLanguage}
-              onTogglePolling={handleTogglePolling}
-              onIntervalChange={monitors.handleIntervalChange}
-              onRunNow={searchRun.handleRunMonitorNow}
-              onAddWord={addWord}
-              onRemoveWord={removeWord}
-              rateLimit={polling.rateLimit}
-            />
-          ) : null}
-        </div>
+      <div className="app__main">
+        {appSettings.tab === 'settings' || appSettings.setupRequired ? (
+          <SettingsPanel
+            setupRequired={appSettings.setupRequired}
+            onSaved={(next) => {
+              appSettings.setAppSettings(next)
+              if (next.ready) void monitors.loadMonitors(monitors.activeMonitorId)
+            }}
+          />
+        ) : null}
 
-        <div className="app__main">
-          {tab === 'settings' || settings.setupRequired ? (
-            <SettingsPanel
-              setupRequired={settings.setupRequired}
-              onSaved={(next) => {
-                settings.setAppSettings(next)
-                if (next.ready)
-                  void monitors.loadMonitors(monitors.activeMonitorId)
-              }}
-            />
-          ) : null}
+        {!appSettings.setupRequired && appSettings.tab === 'jobs' ? (
+          <JobList
+            jobs={monitors.jobsFiltered}
+            totalCount={monitors.jobsBucket.length}
+            filters={filters}
+            loading={monitors.loading}
+            error={monitors.error}
+            showDescriptionFilters={false}
+            showTopFilters
+            showLanguageFilter
+            title={JOBS_TITLES[monitors.jobsSubTab].title}
+            emptyTitle={JOBS_TITLES[monitors.jobsSubTab].empty}
+            emptyHint={JOBS_TITLES[monitors.jobsSubTab].hint}
+            onStatusChange={monitors.handleStatusChange}
+            onDiscardAll={monitors.handleDiscardAll}
+            onLanguageChange={setLanguage}
+          />
+        ) : null}
 
-          {!settings.setupRequired && tab === 'jobs' ? (
-            <JobList
-              jobs={monitors.jobsFiltered}
-              totalCount={monitors.jobsBucket.length}
-              filters={filters}
-              loading={busy}
-              error={error}
-              showDescriptionFilters={false}
-              showTopFilters
-              showLanguageFilter
-              title={JOBS_TITLES[monitors.jobsSubTab].title}
-              emptyTitle={JOBS_TITLES[monitors.jobsSubTab].empty}
-              emptyHint={JOBS_TITLES[monitors.jobsSubTab].hint}
-              onStatusChange={monitors.handleStatusChange}
-              onDiscardAll={monitors.handleDiscardAll}
-              onLanguageChange={setLanguage}
-            />
-          ) : null}
-
-          {!settings.setupRequired && tab === 'monitor' ? (
-            <JobList
-              jobs={monitors.monitorFiltered}
-              totalCount={monitors.monitorJobs.length}
-              filters={filters}
-              loading={busy}
-              error={error}
-              searchProgress={searchRun.displaySearchProgress}
-              fetchDescriptions={monitors.monitorDraft.fetchDescriptions}
-              showDescriptionFilters={monitors.monitorDraft.fetchDescriptions}
-              title={
-                monitors.activeMonitor
-                  ? `Monitor: ${monitors.activeMonitor.search.query || monitors.activeMonitor.name}`
-                  : 'Monitor'
-              }
-              emptyTitle="Sem vagas neste monitor"
-              emptyHint="Crie uma aba com +, configure a busca e marque pooling ou clique em Buscar agora."
-              onCancelSearch={searchRun.handleCancelSearch}
-              onStatusChange={monitors.handleStatusChange}
-            />
-          ) : null}
-        </div>
+        {!appSettings.setupRequired && appSettings.tab === 'monitor' ? (
+          <JobList
+            jobs={monitors.monitorFiltered}
+            totalCount={monitors.monitorJobs.length}
+            filters={filters}
+            loading={monitors.loading}
+            error={monitors.error}
+            searchProgress={searchRun.displaySearchProgress}
+            fetchDescriptions={monitors.monitorDraft.fetchDescriptions}
+            showDescriptionFilters={monitors.monitorDraft.fetchDescriptions}
+            title={
+              monitors.activeMonitor
+                ? `Monitor: ${monitors.activeMonitor.search.query || monitors.activeMonitor.name}`
+                : 'Monitor'
+            }
+            emptyTitle="Sem vagas neste monitor"
+            emptyHint="Crie uma aba com +, configure a busca e marque pooling ou clique em Buscar agora."
+            onCancelSearch={searchRun.handleCancelSearch}
+            onStatusChange={monitors.handleStatusChange}
+          />
+        ) : null}
+      </div>
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
 import type { Job, JobFilters, JobStatus } from '../lib/types'
+import { jobStatus } from '../lib/jobStatus'
 import { matchedWords } from '../lib/filterJobs'
 import { formatPostedAt } from '../lib/formatPostedAt'
 import './JobCard.css'
@@ -10,12 +11,6 @@ type Props = {
   onStatusChange?: (job: Job, status: JobStatus) => void
 }
 
-export function jobStatus(job: Job): JobStatus {
-  if (job.status === 'viewed' || job.status === 'applied' || job.status === 'discarded') {
-    return job.status
-  }
-  return job.applied ? 'applied' : 'viewed'
-}
 
 export function JobCard({
   job,
@@ -40,6 +35,9 @@ export function JobCard({
     job.description?.trim() || 'Descrição não disponível nesta busca.'
 
   const postedLabel = formatPostedAt(job.postedAt)
+  const postedTitle = job.postedLabel
+    ? `No LinkedIn: ${job.postedLabel}`
+    : job.postedAt
 
   return (
     <article
@@ -60,7 +58,7 @@ export function JobCard({
             <span className="job-card__discarded-badge">Descartada</span>
           ) : null}
           {postedLabel ? (
-            <time dateTime={job.postedAt} title={job.postedAt}>
+            <time dateTime={job.postedAt} title={postedTitle}>
               {postedLabel}
             </time>
           ) : null}

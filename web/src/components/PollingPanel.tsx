@@ -100,15 +100,16 @@ export function PollingPanel({
   const busy = loading || searching
   const searchBlocked = rateLimit != null && !rateLimit.allowed
   const active = monitors.find((m) => m.id === activeId) ?? null
+  const activeIntervalMinutes = active?.intervalMinutes
   const [intervalDraft, setIntervalDraft] = useState(
-    () => active?.intervalMinutes ?? 5,
+    () => activeIntervalMinutes ?? 5,
   )
   const [now, setNow] = useState(() => Date.now())
   const anyPolling = monitors.some((m) => m.pollingEnabled)
 
   useEffect(() => {
-    if (active) setIntervalDraft(active.intervalMinutes)
-  }, [active?.id, active?.intervalMinutes])
+    if (activeIntervalMinutes != null) setIntervalDraft(activeIntervalMinutes)
+  }, [activeId, activeIntervalMinutes])
 
   useEffect(() => {
     if (!anyPolling) return

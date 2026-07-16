@@ -23,6 +23,36 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
   return re.test(h)
 }
 
+/** Tokens que precisam de palavra inteira no filtro rápido da lista. */
+const QUICK_FILTER_WHOLE_WORD = new Set(['java', 'javascript'])
+
+function stripQuickFilterQuotes(token: string): string {
+  return token.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
+}
+
+/**
+ * Filtro rápido da lista de vagas: substring normal, exceto java/javascript
+ * (palavra inteira, para "Java" não casar "Javascript" e vice-versa).
+ */
+export function matchesQuickFilter(text: string, query: string): boolean {
+  const tokens = query
+    .trim()
+    .split(/\s+/)
+    .map(stripQuickFilterQuotes)
+    .filter(Boolean)
+  if (tokens.length === 0) return true
+
+  const haystack = normalizeForMatch(text)
+  return tokens.every((raw) => {
+    const token = normalizeForMatch(raw)
+    if (!token) return true
+    if (QUICK_FILTER_WHOLE_WORD.has(token)) {
+      return containsWholeWord(haystack, token)
+    }
+    return haystack.includes(token)
+  })
+}
+
 function queryTokens(query: string): string[] {
   return query
     .trim()

@@ -94,6 +94,7 @@ export function useNotifications() {
 
   function clearNotifications() {
     setNotifications([])
+    setNotificationsOpen(false)
   }
 
   return {

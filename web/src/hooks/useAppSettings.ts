@@ -14,8 +14,6 @@ import {
 } from '../lib/types'
 
 export function useAppSettings(params: {
-  tab: AppTab
-  setTab: Dispatch<SetStateAction<AppTab>>
   loadMonitors: (preferredId?: string | null) => Promise<Monitor[]>
   loadSaved: () => Promise<void>
   setLoading: Dispatch<SetStateAction<boolean>>
@@ -24,10 +22,9 @@ export function useAppSettings(params: {
   filters: JobFilters
   setFilters: Dispatch<SetStateAction<JobFilters>>
   clearNotifications: () => void
+  setNotificationsOpen: Dispatch<SetStateAction<boolean>>
 }) {
   const {
-    tab,
-    setTab,
     loadMonitors,
     loadSaved,
     setLoading,
@@ -36,9 +33,14 @@ export function useAppSettings(params: {
     filters,
     setFilters,
     clearNotifications,
+    setNotificationsOpen,
   } = params
 
-  const [appSettings, setAppSettings] = useState<PublicAppSettings | null>(null)
+  const [tab, setTab] = useState<AppTab>('monitor')
+  const [appSettings, setAppSettings] = useState<PublicAppSettings | null>(
+    null,
+  )
+
   const setupRequired = appSettings != null && !appSettings.ready
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export function useAppSettings(params: {
 
   useEffect(() => {
     if (setupRequired && tab !== 'settings') setTab('settings')
-  }, [setupRequired, tab, setTab])
+  }, [setupRequired, tab])
 
   async function handleTabChange(next: AppTab) {
     if (setupRequired && next !== 'settings') {
@@ -92,9 +94,7 @@ export function useAppSettings(params: {
       try {
         await loadMonitors(activeMonitorId)
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Erro ao carregar monitores',
-        )
+        setError(err instanceof Error ? err.message : 'Erro ao carregar monitores')
       } finally {
         setLoading(false)
       }
@@ -139,6 +139,7 @@ export function useAppSettings(params: {
       setFilters({ ...EMPTY_FILTERS, ...parsed.filters })
     }
     clearNotifications()
+    setNotificationsOpen(false)
     const nextSettings = await fetchSettings()
     setAppSettings(nextSettings)
     if (!nextSettings.ready) setTab('settings')
@@ -147,6 +148,8 @@ export function useAppSettings(params: {
   }
 
   return {
+    tab,
+    setTab,
     appSettings,
     setAppSettings,
     setupRequired,

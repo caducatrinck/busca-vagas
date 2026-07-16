@@ -148,7 +148,7 @@ export async function fetchSavedJobs(options?: {
   const res = await fetch(`${API_URL}/jobs${qs ? `?${qs}` : ''}`)
   const data = await parseJson<{ jobs?: Job[]; error?: string }>(res)
   if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
-  return data.jobs ?? []
+  return Array.isArray(data.jobs) ? data.jobs : []
 }
 
 export async function setJobStatus(id: string, status: JobStatus): Promise<Job> {
@@ -184,7 +184,7 @@ export async function fetchMonitors(): Promise<Monitor[]> {
   const res = await fetch(`${API_URL}/monitors`)
   const data = await parseJson<{ monitors?: Monitor[]; error?: string }>(res)
   if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
-  return data.monitors ?? []
+  return Array.isArray(data.monitors) ? data.monitors : []
 }
 
 export async function createMonitor(input?: {

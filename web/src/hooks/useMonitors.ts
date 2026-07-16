@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { jobStatus } from '../components/JobCard'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { jobStatus } from '../lib/jobStatus'
 import {
   clearJobsByStatus,
   createMonitor,
@@ -9,12 +9,10 @@ import {
   setJobStatus,
   updateMonitor,
 } from '../lib/api'
-import { ensureNotificationPermission } from '../lib/notifications'
 import { filterJobs } from '../lib/filterJobs'
 import {
   EMPTY_SEARCH,
   monitorToSearch,
-  type AppTab,
   type Job,
   type JobFilters,
   type JobStatus,
@@ -22,26 +20,60 @@ import {
   type SearchForm,
 } from '../lib/types'
 
-export function useMonitors(params: {
-  filters: JobFilters
-  setTab: (tab: AppTab) => void
-  setError: (err: string | null) => void
-}) {
-  const { filters, setTab, setError } = params
+const EMPTY_MONITORS: Monitor[] = []
+const EMPTY_JOBS: Job[] = []
 
-  const [savedJobs, setSavedJobs] = useState<Job[]>([])
-  const [monitorJobs, setMonitorJobs] = useState<Job[]>([])
+export const JOBS_TITLES: Record<
+  JobStatus,
+  { title: string; empty: string; hint: string }
+> = {
+  viewed: {
+    title: 'Vagas pendentes',
+    empty: 'Nenhuma vaga pendente',
+    hint: 'Busque no Monitor. Use Descartar ou Já apliquei nos cards.',
+  },
+  applied: {
+    title: 'Vagas aplicadas',
+    empty: 'Nenhuma vaga aplicada',
+    hint: 'Marque “Já apliquei” em um card para movê-la para cá.',
+  },
+  discarded: {
+    title: 'Vagas descartadas',
+    empty: 'Nenhuma vaga descartada',
+    hint: 'Descartadas somem do Monitor. Você pode restaurá-las aqui.',
+  },
+}
+
+export function useMonitors(params: { filters: JobFilters }) {
+  const { filters } = params
+
   const [monitors, setMonitors] = useState<Monitor[]>([])
   const [activeMonitorId, setActiveMonitorId] = useState<string | null>(null)
-  const [monitorDraft, setMonitorDraft] = useState<SearchForm>({ ...EMPTY_SEARCH })
+  const [monitorDraft, setMonitorDraft] = useState<SearchForm>({
+    ...EMPTY_SEARCH,
+  })
+  const [monitorJobs, setMonitorJobs] = useState<Job[]>([])
+  const [savedJobs, setSavedJobs] = useState<Job[]>([])
   const [jobsSubTab, setJobsSubTab] = useState<JobStatus>('viewed')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const saveTimer = useRef<number | null>(null)
 
+  const safeMonitors = Array.isArray(monitors) ? monitors : EMPTY_MONITORS
+  const safeSavedJobs = Array.isArray(savedJobs) ? savedJobs : EMPTY_JOBS
+  const safeMonitorJobs = Array.isArray(monitorJobs) ? monitorJobs : EMPTY_JOBS
+
+  // Fast Refresh pode remapeiar slots de useState; recupera arrays inválidos.
+  useEffect(() => {
+    if (!Array.isArray(monitors)) setMonitors([])
+    if (!Array.isArray(savedJobs)) setSavedJobs([])
+    if (!Array.isArray(monitorJobs)) setMonitorJobs([])
+  }, [monitors, savedJobs, monitorJobs])
+
   const activeMonitor = useMemo(
-    () => monitors.find((m) => m.id === activeMonitorId) ?? null,
-    [monitors, activeMonitorId],
+    () => safeMonitors.find((m) => m.id === activeMonitorId) ?? null,
+    [safeMonitors, activeMonitorId],
   )
 
   const statusCounts = useMemo(() => {
@@ -50,15 +82,15 @@ export function useMonitors(params: {
       applied: 0,
       discarded: 0,
     }
-    for (const job of savedJobs) {
+    for (const job of safeSavedJobs) {
       counts[jobStatus(job)] += 1
     }
     return counts
-  }, [savedJobs])
+  }, [safeSavedJobs])
 
   const jobsBucket = useMemo(
-    () => savedJobs.filter((job) => jobStatus(job) === jobsSubTab),
-    [savedJobs, jobsSubTab],
+    () => safeSavedJobs.filter((job) => jobStatus(job) === jobsSubTab),
+    [safeSavedJobs, jobsSubTab],
   )
 
   const jobsFiltered = useMemo(
@@ -68,11 +100,10 @@ export function useMonitors(params: {
 
   const monitorFiltered = useMemo(() => {
     const known = new Set(activeMonitor?.knownIdsAtStart ?? [])
-    const marked = monitorJobs
+    const marked = safeMonitorJobs
       .filter((job) => jobStatus(job) === 'viewed')
       .map((job) => ({
         ...job,
-
         isNew: known.size > 0 ? !known.has(job.id) : true,
       }))
     return filterJobs(marked, filters, {
@@ -80,42 +111,12 @@ export function useMonitors(params: {
       requireQueryInTitle: monitorDraft.query,
     })
   }, [
-    monitorJobs,
+    safeMonitorJobs,
     filters,
     activeMonitor,
     monitorDraft.fetchDescriptions,
     monitorDraft.query,
   ])
-
-  async function loadSaved() {
-    const jobs = await fetchSavedJobs()
-    setSavedJobs(jobs)
-  }
-
-  async function loadMonitorJobs(monitorId: string) {
-    const jobs = await fetchSavedJobs({
-      monitorId,
-      excludeDiscarded: true,
-    })
-    setMonitorJobs(jobs)
-  }
-
-  async function loadMonitors(preferredId?: string | null) {
-    const list = await fetchMonitors()
-    setMonitors(list)
-    const nextId =
-      preferredId && list.some((m) => m.id === preferredId)
-        ? preferredId
-        : activeMonitorId && list.some((m) => m.id === activeMonitorId)
-          ? activeMonitorId
-          : list[0]?.id ?? null
-    setActiveMonitorId(nextId)
-    const selected = list.find((m) => m.id === nextId) ?? null
-    setMonitorDraft(monitorToSearch(selected))
-    if (nextId) await loadMonitorJobs(nextId)
-    else setMonitorJobs([])
-    return list
-  }
 
   function clearPendingDraftSave() {
     if (saveTimer.current) {
@@ -124,11 +125,42 @@ export function useMonitors(params: {
     }
   }
 
+  async function loadSaved() {
+    const jobs = await fetchSavedJobs()
+    setSavedJobs(Array.isArray(jobs) ? jobs : [])
+  }
+
+  async function loadMonitorJobs(monitorId: string) {
+    const jobs = await fetchSavedJobs({
+      monitorId,
+      excludeDiscarded: true,
+    })
+    setMonitorJobs(Array.isArray(jobs) ? jobs : [])
+  }
+
+  async function loadMonitors(preferredId?: string | null) {
+    const list = await fetchMonitors()
+    const nextList = Array.isArray(list) ? list : []
+    setMonitors(nextList)
+    const nextId =
+      preferredId && nextList.some((m) => m.id === preferredId)
+        ? preferredId
+        : activeMonitorId && nextList.some((m) => m.id === activeMonitorId)
+          ? activeMonitorId
+          : nextList[0]?.id ?? null
+    setActiveMonitorId(nextId)
+    const selected = nextList.find((m) => m.id === nextId) ?? null
+    setMonitorDraft(monitorToSearch(selected))
+    if (nextId) await loadMonitorJobs(nextId)
+    else setMonitorJobs([])
+    return nextList
+  }
+
   async function handleStatusChange(job: Job, status: JobStatus) {
     try {
       const updated = await setJobStatus(job.id, status)
       const patch = (list: Job[]) =>
-        list.map((item) =>
+        (Array.isArray(list) ? list : []).map((item) =>
           item.id === updated.id ? { ...item, ...updated } : item,
         )
       setSavedJobs(patch)
@@ -212,7 +244,7 @@ export function useMonitors(params: {
   async function handleTogglePolling(
     enabled: boolean,
     intervalMinutes: number,
-    onBeforeEnable?: () => void,
+    onBeforeEnable?: () => void | Promise<void>,
   ) {
     if (!activeMonitorId) return
     setLoading(true)
@@ -220,8 +252,7 @@ export function useMonitors(params: {
     const safeInterval = Math.min(Math.max(intervalMinutes, 1), 120)
     try {
       if (enabled) {
-        onBeforeEnable?.()
-        await ensureNotificationPermission()
+        await onBeforeEnable?.()
       }
       await updateMonitor(activeMonitorId, {
         search: monitorDraft,
@@ -289,53 +320,32 @@ export function useMonitors(params: {
     }
   }
 
-  async function handleTabChange(next: AppTab) {
-    setTab(next)
-    setError(null)
-    if (next === 'jobs') {
-      setLoading(true)
-      try {
-        await loadSaved()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar')
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (next === 'monitor') {
-      setLoading(true)
-      try {
-        await loadMonitors(activeMonitorId)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar monitores')
-      } finally {
-        setLoading(false)
-      }
-    }
-  }
-
   return {
-    savedJobs,
-    monitorJobs,
-    setMonitorJobs,
-    monitors,
+    monitors: safeMonitors,
     setMonitors,
     activeMonitorId,
     setActiveMonitorId,
-    activeMonitor,
     monitorDraft,
     setMonitorDraft,
+    monitorJobs: safeMonitorJobs,
+    setMonitorJobs,
+    savedJobs: safeSavedJobs,
+    setSavedJobs,
     jobsSubTab,
     setJobsSubTab,
     loading,
+    setLoading,
+    error,
+    setError,
+    activeMonitor,
     statusCounts,
     jobsBucket,
     jobsFiltered,
     monitorFiltered,
+    clearPendingDraftSave,
     loadSaved,
     loadMonitorJobs,
     loadMonitors,
-    clearPendingDraftSave,
     handleStatusChange,
     handleDiscardAll,
     handleAddMonitor,
@@ -346,6 +356,5 @@ export function useMonitors(params: {
     handleCloseMonitor,
     handleRefreshJobs,
     handleClearJobsStatus,
-    handleTabChange,
   }
 }

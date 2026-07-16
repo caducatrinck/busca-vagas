@@ -341,6 +341,8 @@ export async function upsertSearchResults(
         ...existing,
         ...job,
         description: job.description || existing.description,
+        postedAt: preferPostedAt(job.postedAt, existing.postedAt),
+        postedLabel: job.postedLabel?.trim() || existing.postedLabel,
         status,
         applied: status === 'applied',
         firstSeenAt: existing.firstSeenAt,
@@ -366,6 +368,22 @@ export async function upsertSearchResults(
 
   await persist(store)
   return { jobs: result, newJobs }
+}
+
+/** Prefere ISO com horário a data só-dia; atualiza quando a nova coleta traz mais precisão. */
+function preferPostedAt(
+  incoming?: string,
+  existing?: string,
+): string | undefined {
+  const next = incoming?.trim()
+  const prev = existing?.trim()
+  if (!next) return prev
+  if (!prev) return next
+  const nextPrecise = next.includes('T')
+  const prevPrecise = prev.includes('T')
+  if (nextPrecise) return next
+  if (prevPrecise && !nextPrecise) return prev
+  return next
 }
 
 export async function setJobStatus(

@@ -17,8 +17,8 @@ export const POOL_CHECK_SOON_MS = 5_000
 export const POOL_CHECK_MIN_MS = 15_000
 
 export function mergeJobs(prev: Job[], incoming: Job[]): Job[] {
-  const map = new Map(prev.map((j) => [j.id, j]))
-  for (const job of incoming) {
+  const map = new Map((Array.isArray(prev) ? prev : []).map((j) => [j.id, j]))
+  for (const job of Array.isArray(incoming) ? incoming : []) {
     const existing = map.get(job.id)
     map.set(job.id, existing ? { ...existing, ...job } : job)
   }
@@ -29,7 +29,8 @@ export function mergeJobs(prev: Job[], incoming: Job[]): Job[] {
 
 export function runKey(monitor: Monitor): string | null {
   if (!monitor.lastRunAt) return null
-  return `${monitor.id}:${monitor.lastRunAt}:${monitor.newCountLastRun}`
+  // Só lastRunAt: newCount muda no meio do run e não deve gerar chave nova.
+  return `${monitor.id}:${monitor.lastRunAt}`
 }
 
 export function msUntilNextPoolCheck(monitors: Monitor[], now = Date.now()): number {
