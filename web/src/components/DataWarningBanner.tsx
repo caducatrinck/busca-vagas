@@ -89,10 +89,12 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
       <div className="data-banner__text">
         <p className="data-banner__title">Sem banco de dados</p>
         <p className="data-banner__body">
-          Tudo fica em <strong>JSON local</strong>, filtros no{' '}
-          localstorage do browser. Se limpar cache, apagar o volume
-          Docker ou resetar os dados, <strong>você perde tudo</strong>. Exporte
-          um backup com frequência.
+          Tudo fica em <strong>JSON local</strong> (
+          <code>api/data/store.json</code>
+          ): vagas, monitores, cookies, filtros e tema. A cada mudança o app
+          guarda até 10 backups em <code>api/data/backups/</code>. Se apagar a
+          pasta/volume, <strong>você perde tudo</strong> — exporte um backup
+          com frequência.
         </p>
       </div>
       <div className="data-banner__actions">

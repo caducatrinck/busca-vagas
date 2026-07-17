@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { StoreRepository } from '../../application/ports.js'
 import { setMonitorPolling, syncSchedulers } from '../../poller.js'
 import { searchRateLimiter } from '../../rateLimit.js'
-import type { AppSettings, StoreData } from '../../store.js'
+import type { AppSettings, JobFilters, StoreData, ThemeMode } from '../../store.js'
 
 export function registerSettingsRoutes(
   app: FastifyInstance,
@@ -39,6 +39,21 @@ export function registerSettingsRoutes(
     return repo.toPublicSettings(settings)
   })
 
+  app.get('/prefs', async () => repo.getUiPrefs())
+
+  app.put<{
+    Body: {
+      filters?: JobFilters
+      theme?: ThemeMode
+    }
+  }>('/prefs', async (request) => {
+    const body = request.body ?? {}
+    return repo.updateUiPrefs({
+      filters: body.filters,
+      theme: body.theme,
+    })
+  })
+
   app.get('/data/export', async () => {
     const store = await repo.exportStoreData()
     return {
@@ -54,16 +69,26 @@ export function registerSettingsRoutes(
       store?: Partial<StoreData>
       jobs?: StoreData['jobs']
       monitors?: StoreData['monitors']
+      filters?: JobFilters
+      theme?: ThemeMode
     }
   }>('/data/import', { bodyLimit: 20 * 1024 * 1024 }, async (request, reply) => {
     const body = request.body ?? {}
     const storePayload: Partial<StoreData> =
       body.store && typeof body.store === 'object'
-        ? body.store
+        ? { ...body.store }
         : {
             jobs: body.jobs,
             monitors: body.monitors,
           }
+
+    // Backups antigos: filters/theme no topo do JSON
+    if (!storePayload.filters && body.filters) {
+      storePayload.filters = body.filters
+    }
+    if (storePayload.theme === undefined && body.theme) {
+      storePayload.theme = body.theme
+    }
 
     if (!storePayload.jobs || typeof storePayload.jobs !== 'object') {
       return reply.status(400).send({

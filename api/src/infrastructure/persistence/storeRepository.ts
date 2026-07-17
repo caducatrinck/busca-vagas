@@ -26,4 +26,6 @@ export const storeRepository: StoreRepository = {
   getRateLimitState: store.getRateLimitState,
   saveRateLimitState: store.saveRateLimitState,
   getStore: store.getStore,
+  getUiPrefs: store.getUiPrefs,
+  updateUiPrefs: store.updateUiPrefs,
 }

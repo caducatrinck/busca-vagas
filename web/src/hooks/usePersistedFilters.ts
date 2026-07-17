@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { fetchUiPrefs, saveUiPrefs } from '../lib/api'
 import { normalizeForMatch } from '../lib/filterJobs'
 import {
   EMPTY_FILTERS,
@@ -7,39 +8,64 @@ import {
   type WordFilterKey,
 } from '../lib/types'
 
-const FILTERS_KEY = 'busca-vagas:filters'
-
-function loadFilters(): JobFilters {
-  try {
-    const raw = localStorage.getItem(FILTERS_KEY)
-    if (!raw) return { ...EMPTY_FILTERS }
-    const parsed = JSON.parse(raw) as Partial<JobFilters>
-    const language =
-      parsed.language === 'pt' || parsed.language === 'en' ? parsed.language : ''
-    return {
-      ...EMPTY_FILTERS,
-      ...parsed,
-      language,
-      excludeTitle: Array.isArray(parsed.excludeTitle) ? parsed.excludeTitle : [],
-      includeTitle: Array.isArray(parsed.includeTitle) ? parsed.includeTitle : [],
-      excludeDescription: Array.isArray(parsed.excludeDescription)
-        ? parsed.excludeDescription
-        : [],
-      includeDescription: Array.isArray(parsed.includeDescription)
-        ? parsed.includeDescription
-        : [],
-    }
-  } catch {
-    return { ...EMPTY_FILTERS }
+function normalizeFilters(parsed?: Partial<JobFilters> | null): JobFilters {
+  if (!parsed) return { ...EMPTY_FILTERS }
+  const language =
+    parsed.language === 'pt' || parsed.language === 'en' ? parsed.language : ''
+  return {
+    ...EMPTY_FILTERS,
+    ...parsed,
+    language,
+    excludeTitle: Array.isArray(parsed.excludeTitle) ? parsed.excludeTitle : [],
+    includeTitle: Array.isArray(parsed.includeTitle) ? parsed.includeTitle : [],
+    excludeDescription: Array.isArray(parsed.excludeDescription)
+      ? parsed.excludeDescription
+      : [],
+    includeDescription: Array.isArray(parsed.includeDescription)
+      ? parsed.includeDescription
+      : [],
   }
 }
 
 export function usePersistedFilters() {
-  const [filters, setFilters] = useState<JobFilters>(() => loadFilters())
+  const [filters, setFilters] = useState<JobFilters>({ ...EMPTY_FILTERS })
+  const [ready, setReady] = useState(false)
+  const skipSave = useRef(true)
+  const timer = useRef<number | null>(null)
 
   useEffect(() => {
-    localStorage.setItem(FILTERS_KEY, JSON.stringify(filters))
-  }, [filters])
+    let cancelled = false
+    void fetchUiPrefs()
+      .then((prefs) => {
+        if (cancelled) return
+        setFilters(normalizeFilters(prefs.filters))
+        setReady(true)
+        skipSave.current = true
+      })
+      .catch(() => {
+        if (cancelled) return
+        setReady(true)
+        skipSave.current = true
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    if (skipSave.current) {
+      skipSave.current = false
+      return
+    }
+    if (timer.current) window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => {
+      void saveUiPrefs({ filters }).catch(() => undefined)
+    }, 250)
+    return () => {
+      if (timer.current) window.clearTimeout(timer.current)
+    }
+  }, [filters, ready])
 
   const addWord = useCallback((key: WordFilterKey, word: string) => {
     const trimmed = word.trim()
@@ -63,5 +89,18 @@ export function usePersistedFilters() {
     setFilters((prev) => ({ ...prev, language }))
   }, [])
 
-  return { filters, setFilters, setLanguage, addWord, removeWord }
+  const replaceFilters = useCallback((next: JobFilters) => {
+    skipSave.current = true
+    setFilters(normalizeFilters(next))
+  }, [])
+
+  return {
+    filters,
+    setFilters,
+    replaceFilters,
+    setLanguage,
+    addWord,
+    removeWord,
+    ready,
+  }
 }

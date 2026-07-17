@@ -1,12 +1,18 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import type { Job, SearchParams, SearchRunStats } from './types.js'
+import {
+  backupStoreFile,
+  readLatestBackup,
+  writeStoreAtomic,
+} from './storeBackup.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = path.resolve(__dirname, '../data')
 const STORE_PATH = path.join(DATA_DIR, 'store.json')
+const BACKUP_DIR = path.join(DATA_DIR, 'backups')
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
@@ -34,11 +40,17 @@ export type Monitor = {
   lastRunMode: 'manual' | 'pooling' | null
   knownIdsAtStart: string[]
   lastRunStats: SearchRunStats | null
+  /** Filtros de descrição/idioma desta aba (não globais). */
+  descriptionFilters: DescriptionFilters
 }
 
 export type StoredRateLimit = {
   events: number[]
   lastSearchAt: number | null
+  /** Bloqueio até este timestamp (ms), definido por erros reais do LinkedIn. */
+  blockedUntil: number | null
+  blockReason: string | null
+  lastLinkedInStatus: number | null
 }
 
 export type AppSettings = {
@@ -51,16 +63,104 @@ export type AppSettings = {
   jobDetailConcurrency: number
 }
 
+export type JobFilters = {
+  excludeTitle: string[]
+  includeTitle: string[]
+  excludeDescription: string[]
+  includeDescription: string[]
+  language: '' | 'pt' | 'en'
+}
+
+export type DescriptionFilters = {
+  excludeDescription: string[]
+  includeDescription: string[]
+  language: '' | 'pt' | 'en'
+}
+
+export type ThemeMode = 'light' | 'dark'
+
+export type UiPrefs = {
+  filters: JobFilters
+  theme: ThemeMode
+}
+
 export type StoreData = {
   jobs: Record<string, StoredJob>
   monitors: Monitor[]
   rateLimit: StoredRateLimit
   settings: AppSettings
+  filters: JobFilters
+  theme: ThemeMode
 }
 
 const DEFAULT_RATE_LIMIT: StoredRateLimit = {
   events: [],
   lastSearchAt: null,
+  blockedUntil: null,
+  blockReason: null,
+  lastLinkedInStatus: null,
+}
+
+export function defaultJobFilters(): JobFilters {
+  return {
+    excludeTitle: [],
+    includeTitle: [],
+    excludeDescription: [],
+    includeDescription: [],
+    language: '',
+  }
+}
+
+export function defaultDescriptionFilters(): DescriptionFilters {
+  return {
+    excludeDescription: [],
+    includeDescription: [],
+    language: '',
+  }
+}
+
+export function normalizeDescriptionFilters(
+  raw?: Partial<DescriptionFilters> | null,
+): DescriptionFilters {
+  const base = defaultDescriptionFilters()
+  if (!raw || typeof raw !== 'object') return base
+  const language =
+    raw.language === 'pt' || raw.language === 'en' ? raw.language : ''
+  return {
+    excludeDescription: Array.isArray(raw.excludeDescription)
+      ? raw.excludeDescription.filter((w) => typeof w === 'string')
+      : base.excludeDescription,
+    includeDescription: Array.isArray(raw.includeDescription)
+      ? raw.includeDescription.filter((w) => typeof w === 'string')
+      : base.includeDescription,
+    language,
+  }
+}
+
+export function normalizeJobFilters(raw?: Partial<JobFilters> | null): JobFilters {
+  const base = defaultJobFilters()
+  if (!raw || typeof raw !== 'object') return base
+  const language =
+    raw.language === 'pt' || raw.language === 'en' ? raw.language : ''
+  return {
+    excludeTitle: Array.isArray(raw.excludeTitle)
+      ? raw.excludeTitle.filter((w) => typeof w === 'string')
+      : base.excludeTitle,
+    includeTitle: Array.isArray(raw.includeTitle)
+      ? raw.includeTitle.filter((w) => typeof w === 'string')
+      : base.includeTitle,
+    excludeDescription: Array.isArray(raw.excludeDescription)
+      ? raw.excludeDescription.filter((w) => typeof w === 'string')
+      : base.excludeDescription,
+    includeDescription: Array.isArray(raw.includeDescription)
+      ? raw.includeDescription.filter((w) => typeof w === 'string')
+      : base.includeDescription,
+    language,
+  }
+}
+
+export function normalizeTheme(raw?: unknown): ThemeMode {
+  return raw === 'dark' ? 'dark' : 'light'
 }
 
 export function defaultAppSettings(): AppSettings {
@@ -69,8 +169,8 @@ export function defaultAppSettings(): AppSettings {
     linkedinJsessionId: '',
     linkedinMaxPages: 1000,
     searchCooldownMs: 5_000,
-    maxSearchesPerHour: 60,
-    maxSearchesPerDay: 300,
+    maxSearchesPerHour: 0,
+    maxSearchesPerDay: 0,
     jobDetailConcurrency: 5,
   }
 }
@@ -107,11 +207,11 @@ function normalizeSettings(raw?: Partial<AppSettings> | null): AppSettings {
       600_000,
     ),
     maxSearchesPerHour: Math.min(
-      Math.max(Number(raw.maxSearchesPerHour) || base.maxSearchesPerHour, 1),
+      Math.max(Number(raw.maxSearchesPerHour) || 0, 0),
       500,
     ),
     maxSearchesPerDay: Math.min(
-      Math.max(Number(raw.maxSearchesPerDay) || base.maxSearchesPerDay, 1),
+      Math.max(Number(raw.maxSearchesPerDay) || 0, 0),
       2000,
     ),
     jobDetailConcurrency: Math.min(
@@ -130,10 +230,12 @@ const DEFAULT_STORE: StoreData = {
     linkedinJsessionId: '',
     linkedinMaxPages: 1000,
     searchCooldownMs: 5_000,
-    maxSearchesPerHour: 60,
-    maxSearchesPerDay: 300,
+    maxSearchesPerHour: 0,
+    maxSearchesPerDay: 0,
     jobDetailConcurrency: 5,
   },
+  filters: defaultJobFilters(),
+  theme: 'light',
 }
 
 let cache: StoreData | null = null
@@ -183,6 +285,7 @@ function createMonitor(partial?: Partial<Monitor>): Monitor {
         : null,
     knownIdsAtStart: partial?.knownIdsAtStart ?? [],
     lastRunStats: partial?.lastRunStats ?? null,
+    descriptionFilters: normalizeDescriptionFilters(partial?.descriptionFilters),
   }
 }
 
@@ -193,82 +296,194 @@ function normalizeRateLimit(raw?: Partial<StoredRateLimit> | null): StoredRateLi
         .filter((n) => Number.isFinite(n) && n > 0)
     : []
   const last = raw?.lastSearchAt
+  const blockedUntil = raw?.blockedUntil
+  const lastLinkedInStatus = raw?.lastLinkedInStatus
   return {
     events,
     lastSearchAt:
       typeof last === 'number' && Number.isFinite(last) && last > 0 ? last : null,
+    blockedUntil:
+      typeof blockedUntil === 'number' &&
+      Number.isFinite(blockedUntil) &&
+      blockedUntil > 0
+        ? blockedUntil
+        : null,
+    blockReason:
+      typeof raw?.blockReason === 'string' && raw.blockReason.trim()
+        ? raw.blockReason.trim()
+        : null,
+    lastLinkedInStatus:
+      typeof lastLinkedInStatus === 'number' && Number.isFinite(lastLinkedInStatus)
+        ? lastLinkedInStatus
+        : null,
   }
+}
+
+function parseStoreRaw(raw: string): StoreData {
+  const parsed = JSON.parse(raw) as Partial<StoreData> & {
+    poller?: {
+      enabled?: boolean
+      intervalMinutes?: number
+      search?: SearchParams | null
+      lastRunAt?: string | null
+      lastError?: string | null
+      newCountLastRun?: number
+      knownIdsAtStart?: string[]
+    }
+  }
+
+  const jobs: Record<string, StoredJob> = {}
+  for (const [id, job] of Object.entries(parsed.jobs ?? {})) {
+    jobs[id] = normalizeJob(job as StoredJob)
+  }
+
+  let monitors = Array.isArray(parsed.monitors)
+    ? parsed.monitors.map((m) => {
+        const rawMon = m as Partial<Monitor> & {
+          descriptionFilters?: DescriptionFilters | null
+        }
+        const monitor = createMonitor(rawMon)
+        if (rawMon.descriptionFilters == null) {
+          const global = normalizeJobFilters(
+            (parsed as Partial<StoreData>).filters,
+          )
+          monitor.descriptionFilters = {
+            excludeDescription: global.excludeDescription,
+            includeDescription: global.includeDescription,
+            language: global.language,
+          }
+        }
+        return monitor
+      })
+    : []
+
+  if (monitors.length === 0 && parsed.poller?.search?.query) {
+    monitors = [
+      createMonitor({
+        name: parsed.poller.search.query.slice(0, 28) || 'Monitor',
+        search: parsed.poller.search,
+        pollingEnabled: Boolean(parsed.poller.enabled),
+        intervalMinutes: parsed.poller.intervalMinutes ?? 5,
+        lastRunAt: parsed.poller.lastRunAt ?? null,
+        lastError: parsed.poller.lastError ?? null,
+        newCountLastRun: parsed.poller.newCountLastRun ?? 0,
+        knownIdsAtStart: parsed.poller.knownIdsAtStart ?? [],
+      }),
+    ]
+  }
+
+  return {
+    jobs,
+    monitors,
+    rateLimit: normalizeRateLimit(parsed.rateLimit),
+    settings: migrateCookiesFromLegacyEnv(
+      normalizeSettings((parsed as Partial<StoreData>).settings),
+    ),
+    filters: normalizeJobFilters((parsed as Partial<StoreData>).filters),
+    theme: normalizeTheme((parsed as Partial<StoreData>).theme),
+  }
+}
+
+function emptyStore(): StoreData {
+  return {
+    jobs: {},
+    monitors: [],
+    rateLimit: { ...DEFAULT_RATE_LIMIT },
+    settings: migrateCookiesFromLegacyEnv(defaultAppSettings()),
+    filters: defaultJobFilters(),
+    theme: 'light',
+  }
+}
+
+function jobCount(data: StoreData): number {
+  return Object.keys(data.jobs).length
 }
 
 async function ensureStore(): Promise<StoreData> {
   if (cache) return cache
 
   await mkdir(DATA_DIR, { recursive: true })
+  await mkdir(BACKUP_DIR, { recursive: true })
 
   try {
     const raw = await readFile(STORE_PATH, 'utf8')
-    const parsed = JSON.parse(raw) as Partial<StoreData> & {
-      poller?: {
-        enabled?: boolean
-        intervalMinutes?: number
-        search?: SearchParams | null
-        lastRunAt?: string | null
-        lastError?: string | null
-        newCountLastRun?: number
-        knownIdsAtStart?: string[]
+    cache = parseStoreRaw(raw)
+    return cache
+  } catch (err) {
+    const isMissing =
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as { code?: string }).code === 'ENOENT'
+
+    if (!isMissing) {
+      console.error(
+        '[store] falha ao ler store.json — tentando backup automático',
+        err instanceof Error ? err.message : err,
+      )
+    }
+
+    const backup = await readLatestBackup(BACKUP_DIR)
+    if (backup) {
+      try {
+        cache = parseStoreRaw(backup.raw)
+        console.warn(
+          `[store] recuperado do backup ${path.basename(backup.path)} (${jobCount(cache)} vagas)`,
+        )
+        // Restaura o arquivo principal a partir do backup (sem criar novo backup vazio)
+        await writeStoreAtomic(STORE_PATH, JSON.stringify(cache, null, 2))
+        return cache
+      } catch (backupErr) {
+        console.error(
+          '[store] backup inválido',
+          backupErr instanceof Error ? backupErr.message : backupErr,
+        )
       }
     }
 
-    const jobs: Record<string, StoredJob> = {}
-    for (const [id, job] of Object.entries(parsed.jobs ?? {})) {
-      jobs[id] = normalizeJob(job as StoredJob)
+    if (isMissing) {
+      cache = emptyStore()
+      await writeStoreAtomic(STORE_PATH, JSON.stringify(cache, null, 2))
+      return cache
     }
 
-    let monitors = Array.isArray(parsed.monitors)
-      ? parsed.monitors.map((m) => createMonitor(m))
-      : []
-
-    if (monitors.length === 0 && parsed.poller?.search?.query) {
-      monitors = [
-        createMonitor({
-          name: parsed.poller.search.query.slice(0, 28) || 'Monitor',
-          search: parsed.poller.search,
-          pollingEnabled: Boolean(parsed.poller.enabled),
-          intervalMinutes: parsed.poller.intervalMinutes ?? 5,
-          lastRunAt: parsed.poller.lastRunAt ?? null,
-          lastError: parsed.poller.lastError ?? null,
-          newCountLastRun: parsed.poller.newCountLastRun ?? 0,
-          knownIdsAtStart: parsed.poller.knownIdsAtStart ?? [],
-        }),
-      ]
-    }
-
-    cache = {
-      jobs,
-      monitors,
-      rateLimit: normalizeRateLimit(parsed.rateLimit),
-      settings: migrateCookiesFromLegacyEnv(
-        normalizeSettings((parsed as Partial<StoreData>).settings),
-      ),
-    }
-  } catch {
-    cache = {
-      jobs: {},
-      monitors: [],
-      rateLimit: { ...DEFAULT_RATE_LIMIT },
-      settings: migrateCookiesFromLegacyEnv(defaultAppSettings()),
-    }
+    // Arquivo existe mas está corrompido e não há backup: NÃO sobrescreve.
+    // Mantém cache vazio em memória só para a API não cair; o disco fica intacto.
+    console.error(
+      '[store] store.json corrompido e sem backup válido — NÃO apaguei o arquivo. Corrija manualmente ou restaure de api/data/backups/',
+    )
+    cache = emptyStore()
+    return cache
   }
-
-  await persist(cache)
-  return cache
 }
 
-async function persist(data: StoreData): Promise<void> {
+async function persist(
+  data: StoreData,
+  options?: { allowEmptyOverwrite?: boolean },
+): Promise<void> {
   cache = data
   writeQueue = writeQueue.then(async () => {
     await mkdir(DATA_DIR, { recursive: true })
-    await writeFile(STORE_PATH, JSON.stringify(data, null, 2), 'utf8')
+    await mkdir(BACKUP_DIR, { recursive: true })
+
+    const nextJobs = jobCount(data)
+    if (!options?.allowEmptyOverwrite && nextJobs === 0) {
+      try {
+        const existingRaw = await readFile(STORE_PATH, 'utf8')
+        const existing = parseStoreRaw(existingRaw)
+        if (jobCount(existing) > 0) {
+          console.error(
+            `[store] recusou gravar store vazio sobre arquivo com ${jobCount(existing)} vaga(s)`,
+          )
+          return
+        }
+      } catch {
+        // sem arquivo anterior — ok gravar vazio
+      }
+    }
+
+    await backupStoreFile(STORE_PATH, BACKUP_DIR)
+    await writeStoreAtomic(STORE_PATH, JSON.stringify(data, null, 2))
   })
   await writeQueue
 }
@@ -472,6 +687,9 @@ export async function updateMonitor(
       ...current.search,
       ...patch.search,
     },
+    descriptionFilters: normalizeDescriptionFilters(
+      patch.descriptionFilters ?? current.descriptionFilters,
+    ),
   })
   store.monitors[index] = next
   await persist(store)
@@ -574,6 +792,28 @@ export async function updateAppSettings(
   return { ...store.settings }
 }
 
+export async function getUiPrefs(): Promise<UiPrefs> {
+  const store = await ensureStore()
+  return {
+    filters: normalizeJobFilters(store.filters),
+    theme: normalizeTheme(store.theme),
+  }
+}
+
+export async function updateUiPrefs(
+  patch: Partial<UiPrefs>,
+): Promise<UiPrefs> {
+  const store = await ensureStore()
+  if (patch.filters) {
+    store.filters = normalizeJobFilters(patch.filters)
+  }
+  if (patch.theme !== undefined) {
+    store.theme = normalizeTheme(patch.theme)
+  }
+  await persist(store)
+  return getUiPrefs()
+}
+
 export async function exportStoreData(): Promise<StoreData> {
   const store = await ensureStore()
   return structuredClone(store)
@@ -581,7 +821,7 @@ export async function exportStoreData(): Promise<StoreData> {
 
 export async function getRateLimitState(): Promise<StoredRateLimit> {
   const store = await ensureStore()
-  return { ...store.rateLimit, events: [...store.rateLimit.events] }
+  return normalizeRateLimit(store.rateLimit)
 }
 
 export async function saveRateLimitState(
@@ -593,7 +833,7 @@ export async function saveRateLimitState(
 }
 
 export async function replaceStoreData(
-  incoming: Partial<StoreData>,
+  incoming: Partial<StoreData> & { filters?: Partial<JobFilters> },
 ): Promise<StoreData> {
   const jobs: Record<string, StoredJob> = {}
   for (const [id, raw] of Object.entries(incoming.jobs ?? {})) {
@@ -611,7 +851,11 @@ export async function replaceStoreData(
     monitors,
     rateLimit: normalizeRateLimit(incoming.rateLimit),
     settings: normalizeSettings(incoming.settings ?? current.settings),
+    filters: normalizeJobFilters(incoming.filters ?? current.filters),
+    theme: normalizeTheme(
+      incoming.theme !== undefined ? incoming.theme : current.theme,
+    ),
   }
-  await persist(next)
+  await persist(next, { allowEmptyOverwrite: true })
   return next
 }

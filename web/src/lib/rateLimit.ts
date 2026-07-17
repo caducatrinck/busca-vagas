@@ -15,24 +15,30 @@ export function formatRateLimitWait(retryAfterMs?: number): string | null {
 export function formatRateLimitSummary(limit: RateLimitInfo): string {
   const { limits, usage } = limit
   const wait = formatRateLimitWait(limit.retryAfterMs)
-  const base = `${usage.searchesThisHour}/${limits.maxPerHour} buscas nesta hora`
+  const hourCap =
+    limits.maxPerHour > 0
+      ? `${usage.searchesThisHour}/${limits.maxPerHour} nesta hora`
+      : `${usage.searchesThisHour} buscas nesta hora`
+  const dayPart =
+    limits.maxPerDay > 0 && usage.remainingToday != null
+      ? ` · ${usage.remainingToday} restantes hoje (teto opcional)`
+      : ` · ${usage.searchesToday} hoje`
 
   if (!limit.allowed && limit.reason) {
-    // Cooldown curto: a reason já traz o tempo; não repetir "Libera em ~00:04"
+    if (limit.source === 'linkedin') {
+      return wait ? `${limit.reason} Libera em ~${wait}.` : limit.reason
+    }
     if ((limit.retryAfterMs ?? 0) > 0 && (limit.retryAfterMs ?? 0) < 60_000) {
       return limit.reason
     }
     return wait ? `${limit.reason} Libera em ~${wait}.` : limit.reason
   }
 
-  if (usage.remainingThisHour <= 1) {
-    return `${base} — poucas buscas restantes (pooling conta na mesma cota).`
-  }
-  return `${base} · ${usage.remainingToday} restantes hoje`
+  return `${hourCap}${dayPart}`
 }
 
 export function isRateLimitError(message: string): boolean {
-  return /limite|aguarde|pausa|rate|intervalo|hora|dia|proteção local/i.test(
+  return /limite|aguarde|pausa|rate|intervalo|hora|dia|anti-spam|LinkedIn pediu|HTTP 429|HTTP 999/i.test(
     message,
   )
 }

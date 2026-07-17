@@ -19,9 +19,8 @@ import type { Monitor } from './lib/types'
 import './App.css'
 
 function App() {
-  const { filters, setFilters, setLanguage, addWord, removeWord } =
-    usePersistedFilters()
-  const { theme, toggleTheme } = useTheme()
+  const { filters, replaceFilters, setLanguage } = usePersistedFilters()
+  const { theme, toggleTheme, setTheme } = useTheme()
 
   const monitors = useMonitors({ filters })
   const notifications = useNotifications()
@@ -32,8 +31,8 @@ function App() {
     setLoading: monitors.setLoading,
     setError: monitors.setError,
     activeMonitorId: monitors.activeMonitorId,
-    filters,
-    setFilters,
+    replaceFilters,
+    setTheme,
     clearNotifications: notifications.clearNotifications,
   })
 
@@ -172,19 +171,19 @@ function App() {
             monitors={monitors.monitors}
             activeId={monitors.activeMonitorId}
             draft={monitors.monitorDraft}
-            filters={filters}
+            filters={monitors.activeMonitorFilters}
             loading={monitors.loading}
             searching={Boolean(searchRun.displaySearchProgress)}
             onSelect={handleSelectMonitor}
             onAdd={monitors.handleAddMonitor}
             onClose={monitors.handleCloseMonitor}
             onDraftChange={monitors.handleMonitorDraftChange}
-            onLanguageChange={setLanguage}
+            onLanguageChange={monitors.handleMonitorDescriptionLanguage}
             onTogglePolling={handleTogglePolling}
             onIntervalChange={monitors.handleIntervalChange}
             onRunNow={searchRun.handleRunMonitorNow}
-            onAddWord={addWord}
-            onRemoveWord={removeWord}
+            onAddWord={monitors.handleMonitorDescriptionAddWord}
+            onRemoveWord={monitors.handleMonitorDescriptionRemoveWord}
             rateLimit={polling.rateLimit}
           />
         ) : null}
@@ -224,7 +223,7 @@ function App() {
           <JobList
             jobs={monitors.monitorFiltered}
             totalCount={monitors.monitorJobs.length}
-            filters={filters}
+            filters={monitors.activeMonitorFilters}
             loading={monitors.loading}
             error={monitors.error}
             searchProgress={searchRun.displaySearchProgress}

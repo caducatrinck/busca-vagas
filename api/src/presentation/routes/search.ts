@@ -78,6 +78,16 @@ export function registerSearchRoutes(
       const message =
         err instanceof Error ? err.message : 'Erro ao buscar vagas'
       request.log.error(err)
+      if (searchRateLimiter.noteLinkedInError(err)) {
+        const snap = searchRateLimiter.snapshot()
+        if (snap.retryAfterMs) {
+          reply.header('Retry-After', String(Math.ceil(snap.retryAfterMs / 1000)))
+        }
+        return reply.status(429).send({
+          error: snap.reason || message,
+          rateLimit: snap,
+        })
+      }
       return reply
         .status(502)
         .send({ error: message, rateLimit: searchRateLimiter.snapshot() })

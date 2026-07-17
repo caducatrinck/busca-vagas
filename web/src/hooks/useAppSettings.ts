@@ -2,6 +2,7 @@ import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
 import {
   exportAppData,
   fetchSettings,
+  fetchUiPrefs,
   importAppData,
   type DataBackup,
   type PublicAppSettings,
@@ -12,6 +13,7 @@ import {
   type JobFilters,
   type Monitor,
 } from '../lib/types'
+import type { ThemeMode } from './useTheme'
 
 export function useAppSettings(params: {
   loadMonitors: (preferredId?: string | null) => Promise<Monitor[]>
@@ -19,8 +21,8 @@ export function useAppSettings(params: {
   setLoading: Dispatch<SetStateAction<boolean>>
   setError: Dispatch<SetStateAction<string | null>>
   activeMonitorId: string | null
-  filters: JobFilters
-  setFilters: Dispatch<SetStateAction<JobFilters>>
+  replaceFilters: (next: JobFilters) => void
+  setTheme: (next: ThemeMode) => void
   clearNotifications: () => void
 }) {
   const {
@@ -29,8 +31,8 @@ export function useAppSettings(params: {
     setLoading,
     setError,
     activeMonitorId,
-    filters,
-    setFilters,
+    replaceFilters,
+    setTheme,
     clearNotifications,
   } = params
 
@@ -55,8 +57,8 @@ export function useAppSettings(params: {
           linkedinJsessionIdSet: false,
           linkedinMaxPages: 1000,
           searchCooldownMs: 5_000,
-          maxSearchesPerHour: 60,
-          maxSearchesPerDay: 300,
+          maxSearchesPerHour: 0,
+          maxSearchesPerDay: 0,
           jobDetailConcurrency: 5,
         })
         setTab('settings')
@@ -101,11 +103,7 @@ export function useAppSettings(params: {
 
   async function handleExportData() {
     const backup = await exportAppData()
-    const payload: DataBackup = {
-      ...backup,
-      filters,
-    }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: 'application/json',
     })
     const url = URL.createObjectURL(blob)
@@ -131,12 +129,13 @@ export function useAppSettings(params: {
         monitors: parsed.monitors ?? [],
       },
       filters: parsed.filters,
+      theme: parsed.theme,
     }
     await importAppData(backup)
-    if (parsed.filters) {
-      setFilters({ ...EMPTY_FILTERS, ...parsed.filters })
-    }
     clearNotifications()
+    const prefs = await fetchUiPrefs()
+    replaceFilters({ ...EMPTY_FILTERS, ...prefs.filters })
+    setTheme(prefs.theme === 'dark' ? 'dark' : 'light')
     const nextSettings = await fetchSettings()
     setAppSettings(nextSettings)
     if (!nextSettings.ready) setTab('settings')

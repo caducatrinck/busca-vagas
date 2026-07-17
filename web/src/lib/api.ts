@@ -6,6 +6,7 @@ import type {
   SearchForm,
   SearchProgress,
   SearchRunStats,
+  DescriptionFilters,
 } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8787'
@@ -14,6 +15,7 @@ export type RateLimitInfo = {
   allowed: boolean
   reason?: string
   retryAfterMs?: number
+  source?: 'linkedin' | 'cooldown' | 'local-cap' | null
   limits: {
     minIntervalMs: number
     maxPerHour: number
@@ -22,9 +24,11 @@ export type RateLimitInfo = {
   usage: {
     searchesThisHour: number
     searchesToday: number
-    remainingThisHour: number
-    remainingToday: number
+    remainingThisHour: number | null
+    remainingToday: number | null
     nextAllowedAt: number | null
+    blockedUntil?: number | null
+    lastLinkedInStatus?: number | null
   }
 }
 
@@ -209,6 +213,7 @@ export async function updateMonitor(
     search?: SearchForm
     pollingEnabled?: boolean
     intervalMinutes?: number
+    descriptionFilters?: DescriptionFilters
   },
 ): Promise<Monitor> {
   const res = await fetch(`${API_URL}/monitors/${encodeURIComponent(id)}`, {
@@ -254,8 +259,35 @@ export type DataBackup = {
   store: {
     jobs: Record<string, Job>
     monitors: Monitor[]
+    filters?: JobFilters
+    theme?: 'light' | 'dark'
   }
+  /** @deprecated backups antigos — agora vai em store.filters */
   filters?: JobFilters
+  theme?: 'light' | 'dark'
+}
+
+export type UiPrefs = {
+  filters: JobFilters
+  theme: 'light' | 'dark'
+}
+
+export async function fetchUiPrefs(): Promise<UiPrefs> {
+  const res = await fetch(`${API_URL}/prefs`)
+  const data = await parseJson<UiPrefs & { error?: string }>(res)
+  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  return data
+}
+
+export async function saveUiPrefs(prefs: Partial<UiPrefs>): Promise<UiPrefs> {
+  const res = await fetch(`${API_URL}/prefs`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(prefs),
+  })
+  const data = await parseJson<UiPrefs & { error?: string }>(res)
+  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  return data
 }
 
 export async function exportAppData(): Promise<DataBackup> {

@@ -30,6 +30,12 @@ export type WordFilterKey =
 
 export type DescriptionLanguage = '' | 'pt' | 'en'
 
+export type DescriptionFilters = {
+  excludeDescription: string[]
+  includeDescription: string[]
+  language: DescriptionLanguage
+}
+
 export type JobFilters = {
   excludeTitle: string[]
   includeTitle: string[]
@@ -59,6 +65,13 @@ export type Monitor = {
   lastRunStats?: SearchRunStats | null
   ticking: boolean
   nextRunAt: string | null
+  descriptionFilters: DescriptionFilters
+}
+
+export const EMPTY_DESCRIPTION_FILTERS: DescriptionFilters = {
+  excludeDescription: [],
+  includeDescription: [],
+  language: '',
 }
 
 export const EMPTY_FILTERS: JobFilters = {

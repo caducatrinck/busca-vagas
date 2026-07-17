@@ -262,10 +262,17 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
 
         <fieldset>
           <legend>Rate limit</legend>
+          <p className="settings-panel__hint">
+            O bloqueio principal vem de erros reais do LinkedIn (HTTP 429 /
+            Retry-After). Os tetos abaixo são opcionais — use <strong>0</strong>{' '}
+            para desligar.
+          </p>
 
           <label>
             Intervalo mínimo entre buscas (ms)
-            <span className="settings-panel__hint">Ex.: 30000 = 30 segundos</span>
+            <span className="settings-panel__hint">
+              Anti-spam local. Ex.: 5000 = 5s. 0 = desligado
+            </span>
             <input
               type="number"
               min={0}
@@ -282,32 +289,36 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
           </label>
 
           <label>
-            Máx. buscas por hora
+            Máx. buscas por hora (opcional)
+            <span className="settings-panel__hint">
+              Teto local de segurança. 0 = só responde ao LinkedIn
+            </span>
             <input
               type="number"
-              min={1}
+              min={0}
               max={500}
               value={form.maxSearchesPerHour}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  maxSearchesPerHour: Number(e.target.value) || 1,
+                  maxSearchesPerHour: Math.max(0, Number(e.target.value) || 0),
                 })
               }
             />
           </label>
 
           <label>
-            Máx. buscas por dia
+            Máx. buscas por dia (opcional)
+            <span className="settings-panel__hint">0 = desligado</span>
             <input
               type="number"
-              min={1}
+              min={0}
               max={2000}
               value={form.maxSearchesPerDay}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  maxSearchesPerDay: Number(e.target.value) || 1,
+                  maxSearchesPerDay: Math.max(0, Number(e.target.value) || 0),
                 })
               }
             />

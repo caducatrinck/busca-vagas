@@ -115,9 +115,6 @@ export function PollingPanel({
 
   function handleLanguageChange(value: DescriptionLanguage) {
     onLanguageChange(value)
-    if (value && !draft.fetchDescriptions) {
-      onDraftChange({ ...draft, fetchDescriptions: true })
-    }
   }
 
   function commitInterval(raw: number) {

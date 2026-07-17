@@ -350,6 +350,28 @@ async function runMonitor(
         err instanceof Error
           ? (err as Error & { retryAfterMs?: number }).retryAfterMs
           : undefined
+      if (searchRateLimiter.noteLinkedInError(err)) {
+        const snap = searchRateLimiter.snapshot()
+        callbacks.onProgress?.({
+          phase: 'error',
+          label: 'LinkedIn pediu pausa',
+          message: snap.reason || message,
+          overallPercent: 0,
+          listing: { current: 0, total: null },
+          descriptions: { current: 0, total: 0 },
+          startedAt,
+          elapsedMs: Date.now() - startedAt,
+          etaSeconds: null,
+        })
+        await updateMonitor(id, {
+          lastError: snap.reason || message,
+        })
+        return {
+          newCount: 0,
+          error: snap.reason || message,
+          retryAfterMs: snap.retryAfterMs ?? retryAfterMs,
+        }
+      }
       callbacks.onProgress?.({
         phase: 'error',
         label: 'Erro na busca',

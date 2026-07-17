@@ -5,6 +5,7 @@ import type {
   StoredJob,
   StoreData,
   StoredRateLimit,
+  UiPrefs,
 } from '../store.js'
 import type { Job, SearchParams, SearchRunStats } from '../types.js'
 
@@ -60,6 +61,8 @@ export type StoreRepository = JobRepository &
     getRateLimitState(): Promise<StoredRateLimit>
     saveRateLimitState(state: StoredRateLimit): Promise<void>
     getStore(): Promise<StoreData>
+    getUiPrefs(): Promise<UiPrefs>
+    updateUiPrefs(patch: Partial<UiPrefs>): Promise<UiPrefs>
   }
 
 export type { SearchRunStats }

@@ -10,6 +10,7 @@ import {
 } from '../../poller.js'
 import { searchRateLimiter } from '../../rateLimit.js'
 import type { SearchParams } from '../../types.js'
+import type { DescriptionFilters } from '../../store.js'
 import type { StoreRepository } from '../../application/ports.js'
 
 type ReplyLike = {
@@ -63,6 +64,7 @@ export function registerMonitorRoutes(
       search?: SearchParams
       pollingEnabled?: boolean
       intervalMinutes?: number
+      descriptionFilters?: DescriptionFilters
     }
   }>('/monitors/:id', async (request, reply) => {
     const existing = await repo.getMonitor(request.params.id)
@@ -86,6 +88,7 @@ export function registerMonitorRoutes(
       search: body.search,
       pollingEnabled: body.pollingEnabled,
       intervalMinutes: body.intervalMinutes,
+      descriptionFilters: body.descriptionFilters,
     })
 
     if (turningOn) {

@@ -11,17 +11,52 @@ import {
 } from '../lib/api'
 import { filterJobs } from '../lib/filterJobs'
 import {
+  EMPTY_DESCRIPTION_FILTERS,
   EMPTY_SEARCH,
   monitorToSearch,
+  type DescriptionFilters,
+  type DescriptionLanguage,
   type Job,
   type JobFilters,
   type JobStatus,
   type Monitor,
   type SearchForm,
+  type WordFilterKey,
 } from '../lib/types'
 
 const EMPTY_MONITORS: Monitor[] = []
 const EMPTY_JOBS: Job[] = []
+
+function normalizeDescriptionFilters(
+  raw?: Partial<DescriptionFilters> | null,
+): DescriptionFilters {
+  if (!raw) return { ...EMPTY_DESCRIPTION_FILTERS }
+  const language =
+    raw.language === 'pt' || raw.language === 'en' ? raw.language : ''
+  return {
+    excludeDescription: Array.isArray(raw.excludeDescription)
+      ? raw.excludeDescription
+      : [],
+    includeDescription: Array.isArray(raw.includeDescription)
+      ? raw.includeDescription
+      : [],
+    language,
+  }
+}
+
+function mergeMonitorFilters(
+  globalFilters: JobFilters,
+  descriptionFilters?: DescriptionFilters | null,
+): JobFilters {
+  const desc = normalizeDescriptionFilters(descriptionFilters)
+  return {
+    excludeTitle: globalFilters.excludeTitle,
+    includeTitle: globalFilters.includeTitle,
+    excludeDescription: desc.excludeDescription,
+    includeDescription: desc.includeDescription,
+    language: desc.language,
+  }
+}
 
 export const JOBS_TITLES: Record<
   JobStatus,
@@ -59,6 +94,7 @@ export function useMonitors(params: { filters: JobFilters }) {
   const [error, setError] = useState<string | null>(null)
 
   const saveTimer = useRef<number | null>(null)
+  const descFilterTimer = useRef<number | null>(null)
 
   const safeMonitors = Array.isArray(monitors) ? monitors : EMPTY_MONITORS
   const safeSavedJobs = Array.isArray(savedJobs) ? savedJobs : EMPTY_JOBS
@@ -106,7 +142,11 @@ export function useMonitors(params: { filters: JobFilters }) {
         ...job,
         isNew: known.size > 0 ? !known.has(job.id) : true,
       }))
-    return filterJobs(marked, filters, {
+    const merged = mergeMonitorFilters(
+      filters,
+      activeMonitor?.descriptionFilters,
+    )
+    return filterJobs(marked, merged, {
       useDescriptionFilters: monitorDraft.fetchDescriptions,
       requireQueryInTitle: monitorDraft.query,
     })
@@ -118,10 +158,19 @@ export function useMonitors(params: { filters: JobFilters }) {
     monitorDraft.query,
   ])
 
+  const activeMonitorFilters = useMemo(
+    () => mergeMonitorFilters(filters, activeMonitor?.descriptionFilters),
+    [filters, activeMonitor],
+  )
+
   function clearPendingDraftSave() {
     if (saveTimer.current) {
       window.clearTimeout(saveTimer.current)
       saveTimer.current = null
+    }
+    if (descFilterTimer.current) {
+      window.clearTimeout(descFilterTimer.current)
+      descFilterTimer.current = null
     }
   }
 
@@ -140,7 +189,10 @@ export function useMonitors(params: { filters: JobFilters }) {
 
   async function loadMonitors(preferredId?: string | null) {
     const list = await fetchMonitors()
-    const nextList = Array.isArray(list) ? list : []
+    const nextList = (Array.isArray(list) ? list : []).map((m) => ({
+      ...m,
+      descriptionFilters: normalizeDescriptionFilters(m.descriptionFilters),
+    }))
     setMonitors(nextList)
     const nextId =
       preferredId && nextList.some((m) => m.id === preferredId)
@@ -239,6 +291,79 @@ export function useMonitors(params: { filters: JobFilters }) {
         }
       })()
     }, 450)
+  }
+
+  function patchActiveDescriptionFilters(
+    updater: (prev: DescriptionFilters) => DescriptionFilters,
+  ) {
+    if (!activeMonitorId) return
+    const current = normalizeDescriptionFilters(
+      activeMonitor?.descriptionFilters,
+    )
+    const next = updater(current)
+    setMonitors((prev) =>
+      prev.map((m) =>
+        m.id === activeMonitorId
+          ? { ...m, descriptionFilters: next }
+          : m,
+      ),
+    )
+    if (descFilterTimer.current) window.clearTimeout(descFilterTimer.current)
+    descFilterTimer.current = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const updated = await updateMonitor(activeMonitorId, {
+            descriptionFilters: next,
+          })
+          setMonitors((prev) =>
+            prev.map((m) =>
+              m.id === updated.id
+                ? {
+                    ...m,
+                    ...updated,
+                    descriptionFilters: normalizeDescriptionFilters(
+                      updated.descriptionFilters,
+                    ),
+                  }
+                : m,
+            ),
+          )
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Erro ao salvar filtros da aba',
+          )
+        }
+      })()
+    }, 350)
+  }
+
+  function handleMonitorDescriptionLanguage(language: DescriptionLanguage) {
+    patchActiveDescriptionFilters((prev) => ({ ...prev, language }))
+    if (language && !monitorDraft.fetchDescriptions) {
+      handleMonitorDraftChange({ ...monitorDraft, fetchDescriptions: true })
+    }
+  }
+
+  function handleMonitorDescriptionAddWord(key: WordFilterKey, word: string) {
+    if (key !== 'excludeDescription' && key !== 'includeDescription') return
+    const trimmed = word.trim()
+    if (!trimmed) return
+    patchActiveDescriptionFilters((prev) => {
+      if (prev[key].some((w) => w.toLowerCase() === trimmed.toLowerCase())) {
+        return prev
+      }
+      return { ...prev, [key]: [...prev[key], trimmed] }
+    })
+  }
+
+  function handleMonitorDescriptionRemoveWord(key: WordFilterKey, word: string) {
+    if (key !== 'excludeDescription' && key !== 'includeDescription') return
+    patchActiveDescriptionFilters((prev) => ({
+      ...prev,
+      [key]: prev[key].filter((w) => w !== word),
+    }))
   }
 
   async function handleTogglePolling(
@@ -342,6 +467,7 @@ export function useMonitors(params: { filters: JobFilters }) {
     jobsBucket,
     jobsFiltered,
     monitorFiltered,
+    activeMonitorFilters,
     clearPendingDraftSave,
     loadSaved,
     loadMonitorJobs,
@@ -351,6 +477,9 @@ export function useMonitors(params: { filters: JobFilters }) {
     handleAddMonitor,
     handleSelectMonitor,
     handleMonitorDraftChange,
+    handleMonitorDescriptionLanguage,
+    handleMonitorDescriptionAddWord,
+    handleMonitorDescriptionRemoveWord,
     handleTogglePolling,
     handleIntervalChange,
     handleCloseMonitor,

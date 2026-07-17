@@ -1,14 +1,20 @@
 {
   "name": "busca-vagas",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "workspaces": [
     "web",
     "api"
   ],
   "scripts": {
-    "dev": "npm run dev -w web",
+    "up": "npm install && npm run dev",
+    "dev": "npm run dev:api & npm run dev:web; wait",
     "dev:web": "npm run dev -w web",
     "dev:api": "npm run dev -w api",
+    "start:api": "npm run start -w api",
+    "preview:web": "npm run preview -w web",
     "build": "npm run build -w web && npm run build -w api",
     "test": "npm run test -w api && npm run test -w web"
   }
