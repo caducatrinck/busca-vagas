@@ -9,7 +9,10 @@ import type {
   DescriptionFilters,
 } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8787'
+const rawApiUrl = import.meta.env.VITE_API_URL
+/** Vazio = mesma origem (app desktop). Sem env = API local de desenvolvimento. */
+const API_URL =
+  rawApiUrl === '' ? '' : rawApiUrl || 'http://127.0.0.1:8787'
 
 export type RateLimitInfo = {
   allowed: boolean

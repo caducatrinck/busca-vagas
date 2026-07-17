@@ -6,7 +6,8 @@
   },
   "workspaces": [
     "web",
-    "api"
+    "api",
+    "desktop"
   ],
   "scripts": {
     "up": "npm install && npm run dev",
@@ -16,6 +17,14 @@
     "start:api": "npm run start -w api",
     "preview:web": "npm run preview -w web",
     "build": "npm run build -w web && npm run build -w api",
-    "test": "npm run test -w api && npm run test -w web"
+    "test": "npm run test -w api && npm run test -w web",
+    "desktop:prepare": "node scripts/prepare-desktop.mjs",
+    "desktop:dev": "npm run desktop:prepare && npm start -w desktop",
+    "desktop:dist": "npm run desktop:prepare && npm run dist -w desktop",
+    "desktop:dist:win": "npm run desktop:prepare && npm run dist:win -w desktop",
+    "desktop:dist:linux": "npm run desktop:prepare && npm run dist:linux -w desktop"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
   }
 }

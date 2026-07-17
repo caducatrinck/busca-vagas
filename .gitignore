@@ -52,3 +52,8 @@ Thumbs.db
 
 # Docker / local overrides
 docker-compose.override.yml
+
+# Desktop (Electron)
+desktop/resources/
+desktop/release/
+desktop/dist/

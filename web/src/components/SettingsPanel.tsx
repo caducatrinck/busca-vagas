@@ -53,6 +53,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [okMsg, setOkMsg] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +76,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -139,11 +140,35 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     setForm({ ...form, [field]: next })
   }
 
-  if (loading || !form || !current) {
+  if (loading) {
     return (
       <section className="settings-panel">
         <p className="settings-panel__lead">Carregando configurações…</p>
-        {error ? <p className="settings-panel__error">{error}</p> : null}
+      </section>
+    )
+  }
+
+  if (!form || !current) {
+    return (
+      <section className="settings-panel">
+        <header className="settings-panel__header">
+          <p className="settings-panel__mark">Configurações</p>
+          <h1>Não foi possível carregar</h1>
+        </header>
+        <p className="settings-panel__error">
+          {error || 'API indisponível. Confira se o serviço está no ar.'}
+        </p>
+        <p className="settings-panel__lead">
+          Em desenvolvimento a API precisa estar em{' '}
+          <code>http://127.0.0.1:8787</code>.
+        </p>
+        <button
+          type="button"
+          className="settings-panel__retry"
+          onClick={() => setReloadKey((n) => n + 1)}
+        >
+          Tentar de novo
+        </button>
       </section>
     )
   }

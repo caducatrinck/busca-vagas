@@ -200,6 +200,24 @@
   font-weight: 600;
 }
 
+.settings-panel__retry {
+  align-self: flex-start;
+  margin-top: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  background: var(--panel-solid);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-panel__retry:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .settings-panel__ok {
   margin: 0;
   color: var(--accent);

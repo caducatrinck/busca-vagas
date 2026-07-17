@@ -10,10 +10,34 @@ import {
   writeStoreAtomic,
 } from './storeBackup.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DATA_DIR = path.resolve(__dirname, '../data')
-const STORE_PATH = path.join(DATA_DIR, 'store.json')
-const BACKUP_DIR = path.join(DATA_DIR, 'backups')
+function resolveModuleDir(): string {
+  try {
+    const meta = import.meta.url
+    if (meta && String(meta).startsWith('file:')) {
+      return path.dirname(fileURLToPath(meta))
+    }
+  } catch {
+    /* esbuild CJS: import.meta.url vazio */
+  }
+  return path.dirname(path.resolve(process.argv[1] || process.cwd()))
+}
+
+const moduleDir = resolveModuleDir()
+
+function resolveDataDir(): string {
+  const fromEnv = process.env.BUSCA_VAGAS_DATA_DIR?.trim()
+  if (fromEnv) return path.resolve(fromEnv)
+  return path.resolve(moduleDir, '../data')
+}
+
+function dataPaths() {
+  const DATA_DIR = resolveDataDir()
+  return {
+    DATA_DIR,
+    STORE_PATH: path.join(DATA_DIR, 'store.json'),
+    BACKUP_DIR: path.join(DATA_DIR, 'backups'),
+  }
+}
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
@@ -418,6 +442,7 @@ function jobCount(data: StoreData): number {
 async function ensureStore(): Promise<StoreData> {
   if (cache) return cache
 
+  const { DATA_DIR, STORE_PATH, BACKUP_DIR } = dataPaths()
   await mkdir(DATA_DIR, { recursive: true })
   await mkdir(BACKUP_DIR, { recursive: true })
 
@@ -479,6 +504,7 @@ async function persist(
 ): Promise<void> {
   cache = data
   writeQueue = writeQueue.then(async () => {
+    const { DATA_DIR, STORE_PATH, BACKUP_DIR } = dataPaths()
     await mkdir(DATA_DIR, { recursive: true })
     await mkdir(BACKUP_DIR, { recursive: true })
 

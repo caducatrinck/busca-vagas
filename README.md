@@ -9,6 +9,9 @@
 Nunca instalou Git/Node? Comece pelo guia **[Instalação do zero](./INSTALACAO-DO-ZERO.md)**.  
 Never installed Git/Node? Start with **[Setup from scratch](./INSTALACAO-DO-ZERO.md)**.
 
+Quer um **.exe** / AppImage sem instalar Node? Veja **[DESKTOP.md](./DESKTOP.md)** (branch desktop).  
+Want a portable desktop app? See **[DESKTOP.md](./DESKTOP.md)**.
+
 ---
 
 <a id="português"></a>
