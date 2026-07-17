@@ -23,7 +23,7 @@ describe('SearchRateLimiter', () => {
     limiter.recordSearch(t0)
     const snap = limiter.snapshot(t0 + 5_000)
     assert.equal(snap.allowed, false)
-    assert.match(snap.reason ?? '', /Cota local/)
+    assert.match(snap.reason ?? '', /Pausa de|proteção local/i)
   })
 
   it('bloqueia ao atingir o limite horário', () => {
@@ -37,6 +37,6 @@ describe('SearchRateLimiter', () => {
     limiter.recordSearch(t0 + 1)
     const snap = limiter.snapshot(t0 + 2)
     assert.equal(snap.allowed, false)
-    assert.match(snap.reason ?? '', /limite horário/i)
+    assert.match(snap.reason ?? '', /Limite horário local/i)
   })
 })

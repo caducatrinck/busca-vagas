@@ -138,7 +138,7 @@ export function registerMonitorRoutes(
       }
       if (status.lastError) {
         const isRate =
-          /rate|limite|aguarde|intervalo|hora|dia/i.test(status.lastError)
+          /rate|limite|aguarde|pausa|intervalo|hora|dia|proteção local/i.test(status.lastError)
         return reply.status(isRate ? 429 : 502).send({
           error: status.lastError,
           monitor: status,
@@ -226,7 +226,7 @@ export function registerMonitorRoutes(
 
         if (status.lastError && !status.lastRunStats?.cancelled) {
           const isRate =
-            /rate|limite|aguarde|intervalo|hora|dia/i.test(status.lastError)
+            /rate|limite|aguarde|pausa|intervalo|hora|dia|proteção local/i.test(status.lastError)
           send('error', {
             error: status.lastError,
             monitor: status,

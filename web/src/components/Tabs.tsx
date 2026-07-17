@@ -1,8 +1,6 @@
 import type { AppTab, JobStatus, Monitor } from '../lib/types'
-import type { AppNotification } from '../lib/notificationsModel'
 import { formatBadgeCount } from '../lib/notificationsModel'
 import type { ThemeMode } from '../hooks/useTheme'
-import { NotificationBell } from './NotificationBell'
 import './Tabs.css'
 
 type Props = {
@@ -10,17 +8,11 @@ type Props = {
   jobsCount: number
   statusCounts: Record<JobStatus, number>
   monitors: Monitor[]
-  notifications: AppNotification[]
-  notificationsOpen: boolean
   unreadTotal: number
   setupRequired?: boolean
   theme: ThemeMode
   onToggleTheme: () => void
   onChange: (tab: AppTab) => void
-  onToggleNotifications: () => void
-  onCloseNotifications: () => void
-  onOpenNotification: (notification: AppNotification) => void
-  onMarkAllNotificationsRead: () => void
 }
 
 function GearIcon() {
@@ -79,17 +71,11 @@ export function Tabs({
   jobsCount,
   statusCounts,
   monitors,
-  notifications,
-  notificationsOpen,
   unreadTotal,
   setupRequired = false,
   theme,
   onToggleTheme,
   onChange,
-  onToggleNotifications,
-  onCloseNotifications,
-  onOpenNotification,
-  onMarkAllNotificationsRead,
 }: Props) {
   const activeMonitors = monitors.filter((m) => m.pollingEnabled).length
   const runningMonitors = monitors.filter((m) => m.ticking).length
@@ -100,8 +86,8 @@ export function Tabs({
       : runningMonitors > 0
         ? `${runningMonitors} buscando`
         : activeMonitors > 0
-        ? `${activeMonitors} pooling`
-        : `${monitors.length} busca${monitors.length === 1 ? '' : 's'}`
+          ? `${activeMonitors} pooling`
+          : `${monitors.length} busca${monitors.length === 1 ? '' : 's'}`
 
   const pendingCount = statusCounts.viewed
   const jobsMeta = setupRequired
@@ -110,9 +96,11 @@ export function Tabs({
       ? 'Banco local'
       : `${jobsCount} no total`
 
-  const monitorBadge = setupRequired ? null : formatBadgeCount(unreadTotal)
+  const jobsNotifBadge = setupRequired ? null : formatBadgeCount(unreadTotal)
   const pendingBadge =
-    !setupRequired && jobsCount > 0 ? String(pendingCount) : null
+    !setupRequired && jobsCount > 0 && pendingCount > 0 && !jobsNotifBadge
+      ? String(pendingCount)
+      : null
 
   return (
     <header className="app-nav">
@@ -132,15 +120,6 @@ export function Tabs({
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
-          <NotificationBell
-            notifications={notifications}
-            open={notificationsOpen}
-            unreadTotal={unreadTotal}
-            onToggle={onToggleNotifications}
-            onOpenItem={onOpenNotification}
-            onMarkAllRead={onMarkAllNotificationsRead}
-            onClose={onCloseNotifications}
-          />
           <button
             type="button"
             className={`app-nav__icon-btn app-nav__settings${setupRequired ? ' app-nav__settings--need' : ''}${tab === 'settings' ? ' app-nav__icon-btn--active' : ''}`}
@@ -183,11 +162,6 @@ export function Tabs({
                 }
               />
             ) : null}
-            {monitorBadge ? (
-              <span className="app-nav__alert-badge" title="Vagas novas no pooling">
-                {monitorBadge}
-              </span>
-            ) : null}
           </span>
           <span className="app-nav__meta">{monitorMeta}</span>
         </button>
@@ -202,7 +176,15 @@ export function Tabs({
         >
           <span className="app-nav__label">
             Vagas
-            {pendingBadge ? (
+            {jobsNotifBadge ? (
+              <span
+                className="app-nav__alert-badge"
+                title="Vagas novas no pooling"
+                aria-label={`${unreadTotal} notificações não lidas`}
+              >
+                {jobsNotifBadge}
+              </span>
+            ) : pendingBadge ? (
               <span className="app-nav__count" title="Pendentes">
                 {pendingBadge}
               </span>

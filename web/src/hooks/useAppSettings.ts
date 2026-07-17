@@ -22,7 +22,6 @@ export function useAppSettings(params: {
   filters: JobFilters
   setFilters: Dispatch<SetStateAction<JobFilters>>
   clearNotifications: () => void
-  setNotificationsOpen: Dispatch<SetStateAction<boolean>>
 }) {
   const {
     loadMonitors,
@@ -33,7 +32,6 @@ export function useAppSettings(params: {
     filters,
     setFilters,
     clearNotifications,
-    setNotificationsOpen,
   } = params
 
   const [tab, setTab] = useState<AppTab>('monitor')
@@ -139,7 +137,6 @@ export function useAppSettings(params: {
       setFilters({ ...EMPTY_FILTERS, ...parsed.filters })
     }
     clearNotifications()
-    setNotificationsOpen(false)
     const nextSettings = await fetchSettings()
     setAppSettings(nextSettings)
     if (!nextSettings.ready) setTab('settings')

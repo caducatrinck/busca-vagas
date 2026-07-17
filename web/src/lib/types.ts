@@ -54,6 +54,7 @@ export type Monitor = {
   lastRunAt: string | null
   lastError: string | null
   newCountLastRun: number
+  lastRunMode?: 'manual' | 'pooling' | null
   knownIdsAtStart: string[]
   lastRunStats?: SearchRunStats | null
   ticking: boolean

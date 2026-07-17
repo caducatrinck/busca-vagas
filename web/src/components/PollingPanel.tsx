@@ -6,7 +6,6 @@ import {
   type SearchForm,
   type WordFilterKey,
 } from '../lib/types'
-import { formatBadgeCount } from '../lib/notificationsModel'
 import { formatRateLimitSummary } from '../lib/rateLimit'
 import type { RateLimitInfo } from '../lib/api'
 import { FilterTags } from './FilterTags'
@@ -73,8 +72,6 @@ type Props = {
   onAddWord: (key: WordFilterKey, word: string) => void
   onRemoveWord: (key: WordFilterKey, word: string) => void
   rateLimit?: RateLimitInfo | null
-
-  unreadByMonitor?: Record<string, number>
 }
 
 export function PollingPanel({
@@ -95,7 +92,6 @@ export function PollingPanel({
   onAddWord,
   onRemoveWord,
   rateLimit = null,
-  unreadByMonitor = {},
 }: Props) {
   const busy = loading || searching
   const searchBlocked = rateLimit != null && !rateLimit.allowed
@@ -136,8 +132,6 @@ export function PollingPanel({
     <aside className="search-panel search-panel--compact">
       <div className="monitor-tabs">
         {monitors.map((monitor) => {
-          const unread = unreadByMonitor[monitor.id] ?? 0
-          const badge = formatBadgeCount(unread)
           const running =
             monitor.ticking || (searching && monitor.id === activeId)
           const eta =
@@ -178,11 +172,6 @@ export function PollingPanel({
                     </span>
                   ) : null}
                 </span>
-                {badge ? (
-                  <span className="monitor-tabs__alert" title={`${unread} nova(s)`}>
-                    {badge}
-                  </span>
-                ) : null}
               </button>
               <button
                 type="button"

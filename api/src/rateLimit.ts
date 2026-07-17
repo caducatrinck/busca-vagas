@@ -109,17 +109,21 @@ export class SearchRateLimiter {
 
     if (nextAllowedAt) {
       allowed = false
-      reason = `Cota local: aguarde ${Math.ceil((nextAllowedAt - now) / 1000)}s entre buscas.`
+      const waitSec = Math.max(1, Math.ceil((nextAllowedAt - now) / 1000))
+      reason =
+        waitSec === 1
+          ? 'Pausa de 1s entre buscas (proteção local contra bloqueio do LinkedIn).'
+          : `Pausa de ${waitSec}s entre buscas (proteção local contra bloqueio do LinkedIn).`
       retryAfterMs = nextAllowedAt - now
     } else if (searchesThisHour >= config.maxPerHour) {
       const oldestInHour = this.events.find((e) => e.at >= now - HOUR_MS)
       const resetAt = (oldestInHour?.at ?? now) + HOUR_MS
       allowed = false
-      reason = `Cota local: limite horário (${config.maxPerHour} buscas/hora).`
+      reason = `Limite horário local: ${config.maxPerHour} buscas/hora (pooling e manuais contam juntos).`
       retryAfterMs = Math.max(0, resetAt - now)
     } else if (searchesToday >= config.maxPerDay) {
       allowed = false
-      reason = `Cota local: limite diário (${config.maxPerDay} buscas/dia).`
+      reason = `Limite diário local: ${config.maxPerDay} buscas/dia (pooling e manuais contam juntos).`
       retryAfterMs = DAY_MS
     }
 

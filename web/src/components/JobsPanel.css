@@ -42,9 +42,28 @@
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 
+.jobs-tabs__alert {
+  font-size: 0.72rem;
+  font-weight: 800;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e11d48;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
 .jobs-tabs__btn--active .jobs-tabs__count {
   background: color-mix(in srgb, #fff 22%, transparent);
   color: #f4fff9;
+}
+
+.jobs-tabs__btn--active .jobs-tabs__alert {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .jobs-clear {

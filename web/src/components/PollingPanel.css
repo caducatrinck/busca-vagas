@@ -45,24 +45,24 @@
 }
 
 .monitor-tabs__item--pooling .monitor-tabs__btn {
-  border-color: color-mix(in srgb, #f0c24b 45%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 18%, transparent);
-  animation: monitor-tab-pooling-pulse 1.75s ease-in-out infinite;
+  border-color: color-mix(in srgb, #f0c24b 32%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 10%, transparent);
+  animation: monitor-tab-pooling-pulse 2s ease-in-out infinite;
 }
 
 .monitor-tabs__item--pooling.monitor-tabs__item--active .monitor-tabs__btn {
-  box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 26%, transparent);
-  animation: monitor-tab-pooling-pulse-active 1.75s ease-in-out infinite;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 16%, transparent);
+  animation: monitor-tab-pooling-pulse-active 2s ease-in-out infinite;
 }
 
 .monitor-tabs__item--running .monitor-tabs__btn {
-  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
-  animation: monitor-tab-pulse 1.1s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+  animation: monitor-tab-pulse 1.25s ease-in-out infinite;
 }
 
 .monitor-tabs__item--running.monitor-tabs__item--active .monitor-tabs__btn {
-  animation: monitor-tab-pulse-active 1.1s ease-in-out infinite;
+  animation: monitor-tab-pulse-active 1.25s ease-in-out infinite;
 }
 
 .monitor-tabs__label {
@@ -120,48 +120,48 @@
 @keyframes monitor-tab-pooling-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 14%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 8%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 4px color-mix(in srgb, #f0c24b 30%, transparent);
-    filter: brightness(1.04);
+    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 16%, transparent);
+    filter: brightness(1.02);
   }
 }
 
 @keyframes monitor-tab-pooling-pulse-active {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 26%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 14%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, #f0c24b 45%, transparent);
-    filter: brightness(1.08);
+    box-shadow: 0 0 0 3px color-mix(in srgb, #f0c24b 22%, transparent);
+    filter: brightness(1.03);
   }
 }
 
 @keyframes monitor-tab-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 42%, transparent);
-    filter: brightness(1.08);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+    filter: brightness(1.03);
   }
 }
 
 @keyframes monitor-tab-pulse-active {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, #fff 35%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, #fff 55%, transparent);
-    filter: brightness(1.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, #fff 28%, transparent);
+    filter: brightness(1.05);
   }
 }
 

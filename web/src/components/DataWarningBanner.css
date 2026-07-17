@@ -7,7 +7,6 @@
   border-radius: 14px;
   background: color-mix(in srgb, #fff7ed 88%, var(--panel-solid));
   border: 1px solid color-mix(in srgb, #c2410c 28%, var(--line));
-  box-shadow: var(--shadow);
 }
 
 .data-banner__text {

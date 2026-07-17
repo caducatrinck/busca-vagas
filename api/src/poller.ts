@@ -278,6 +278,7 @@ async function runMonitor(
         lastRunAt: stats.finishedAt,
         lastError: null,
         newCountLastRun: newCount,
+        lastRunMode: mode,
         lastRunStats: stats,
       })
 
@@ -321,6 +322,7 @@ async function runMonitor(
           lastRunAt: stats.finishedAt,
           lastError: null,
           newCountLastRun: stats.newCount,
+          lastRunMode: mode,
           lastRunStats: stats,
         })
         callbacks.onProgress?.({
@@ -460,7 +462,7 @@ export async function syncSchedulers(): Promise<void> {
 
     if (
       monitor.lastError &&
-      /aguarde|limite|rate|intervalo|hora|dia|nenhuma vaga encontrada/i.test(
+      /aguarde|pausa|limite|rate|intervalo|hora|dia|proteção local|nenhuma vaga encontrada/i.test(
         monitor.lastError,
       )
     ) {

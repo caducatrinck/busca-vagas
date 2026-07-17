@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { BASE_TITLE, MAX_NOTIFICATIONS } from '../lib/monitorHelpers'
 import { notifyNewJobs } from '../lib/notifications'
 import {
-  unreadByMonitor,
   unreadJobCount,
   type AppNotification,
 } from '../lib/notificationsModel'
@@ -11,17 +10,12 @@ import type { Monitor } from '../lib/types'
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<AppNotification[]>([])
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   const notifiedRunsRef = useRef<Set<string>>(new Set())
   const seededNotifyRef = useRef(false)
 
   const unreadTotal = useMemo(
     () => unreadJobCount(notifications),
-    [notifications],
-  )
-  const unreadMap = useMemo(
-    () => unreadByMonitor(notifications),
     [notifications],
   )
 
@@ -40,6 +34,7 @@ export function useNotifications() {
     monitor: Monitor,
     onOpen: (item: AppNotification) => void,
   ) {
+    if (monitor.lastRunMode !== 'pooling') return
     if (monitor.newCountLastRun <= 0) return
     const name = monitor.search.query?.trim() || monitor.name
     const count = monitor.newCountLastRun
@@ -52,14 +47,13 @@ export function useNotifications() {
       read: false,
     }
     setNotifications((prev) => [item, ...prev].slice(0, MAX_NOTIFICATIONS))
-    setNotificationsOpen(true)
     playNewJobsAlert()
     notifyNewJobs({
       title:
         count === 1
           ? '1 vaga nova no pooling'
           : `${count} vagas novas no pooling`,
-      body: `${name} — clique para abrir a busca`,
+      body: `${name} — clique para abrir Pendentes`,
       tag: `busca-vagas-${monitor.id}`,
       onClick: () => {
         onOpen(item)
@@ -67,19 +61,16 @@ export function useNotifications() {
     })
   }
 
-  function openMonitorFromNotification(
+  function openFromNotification(
     item: AppNotification,
-    monitors: Monitor[],
-    onNavigate: (monitor: Monitor | null, item: AppNotification) => void,
+    onNavigate: (item: AppNotification) => void,
   ) {
-    const monitor = monitors.find((m) => m.id === item.monitorId) ?? null
-    onNavigate(monitor, item)
+    onNavigate(item)
     setNotifications((prev) =>
       prev.map((n) =>
         n.monitorId === item.monitorId ? { ...n, read: true } : n,
       ),
     )
-    setNotificationsOpen(false)
   }
 
   function markMonitorRead(monitorId: string) {
@@ -94,17 +85,13 @@ export function useNotifications() {
 
   function clearNotifications() {
     setNotifications([])
-    setNotificationsOpen(false)
   }
 
   return {
     notifications,
-    notificationsOpen,
-    setNotificationsOpen,
     unreadTotal,
-    unreadMap,
     announceNewJobs,
-    openMonitorFromNotification,
+    openFromNotification,
     markMonitorRead,
     handleMarkAllNotificationsRead,
     clearNotifications,

@@ -15,7 +15,7 @@ import { useTheme } from './hooks/useTheme'
 import { runKey } from './lib/monitorHelpers'
 import { ensureNotificationPermission } from './lib/notifications'
 import type { AppNotification } from './lib/notificationsModel'
-import { EMPTY_SEARCH, monitorToSearch, type Monitor } from './lib/types'
+import type { Monitor } from './lib/types'
 import './App.css'
 
 function App() {
@@ -35,33 +35,21 @@ function App() {
     filters,
     setFilters,
     clearNotifications: notifications.clearNotifications,
-    setNotificationsOpen: notifications.setNotificationsOpen,
   })
 
   const activeMonitorIdRef = useRef<string | null>(null)
   activeMonitorIdRef.current = monitors.activeMonitorId
 
-  function navigateToMonitor(monitor: Monitor | null, item: AppNotification) {
-    appSettings.setTab('monitor')
-    monitors.setActiveMonitorId(item.monitorId)
-    monitors.setMonitorDraft(
-      monitor
-        ? monitorToSearch(monitor)
-        : { ...EMPTY_SEARCH, query: item.monitorName },
-    )
-    void monitors.loadMonitorJobs(item.monitorId).catch(() => undefined)
-  }
-
-  function openMonitorFromNotification(item: AppNotification) {
-    notifications.openMonitorFromNotification(
-      item,
-      monitors.monitors,
-      navigateToMonitor,
-    )
+  function openPendingFromNotification(_item: AppNotification) {
+    appSettings.setTab('jobs')
+    monitors.setJobsSubTab('viewed')
+    notifications.handleMarkAllNotificationsRead()
   }
 
   function handleAnnounceNewJobs(monitor: Monitor) {
-    notifications.announceNewJobs(monitor, openMonitorFromNotification)
+    notifications.announceNewJobs(monitor, (item) => {
+      notifications.openFromNotification(item, openPendingFromNotification)
+    })
   }
 
   const polling = useMonitorPolling({
@@ -97,6 +85,20 @@ function App() {
     void monitors.handleSelectMonitor(id)
   }
 
+  function handleTabChange(next: typeof appSettings.tab) {
+    if (next === 'jobs') {
+      monitors.setJobsSubTab('viewed')
+    }
+    appSettings.handleTabChange(next)
+  }
+
+  function handleJobsSubTabChange(value: typeof monitors.jobsSubTab) {
+    if (value === 'viewed' && notifications.unreadTotal > 0) {
+      notifications.handleMarkAllNotificationsRead()
+    }
+    monitors.setJobsSubTab(value)
+  }
+
   async function handleTogglePolling(enabled: boolean, intervalMinutes: number) {
     await monitors.handleTogglePolling(enabled, intervalMinutes, async () => {
       for (const m of monitors.monitors) {
@@ -106,6 +108,32 @@ function App() {
       notifications.seededNotifyRef.current = true
       await ensureNotificationPermission()
     })
+  }
+
+  function clearNotifIfAction(status: 'applied' | 'discarded' | 'viewed') {
+    if (
+      (status === 'applied' || status === 'discarded') &&
+      notifications.unreadTotal > 0
+    ) {
+      notifications.handleMarkAllNotificationsRead()
+    }
+  }
+
+  async function handleStatusChange(
+    job: Parameters<typeof monitors.handleStatusChange>[0],
+    status: Parameters<typeof monitors.handleStatusChange>[1],
+  ) {
+    clearNotifIfAction(status)
+    await monitors.handleStatusChange(job, status)
+  }
+
+  async function handleDiscardAll(
+    jobs: Parameters<typeof monitors.handleDiscardAll>[0],
+  ) {
+    if (notifications.unreadTotal > 0) {
+      notifications.handleMarkAllNotificationsRead()
+    }
+    await monitors.handleDiscardAll(jobs)
   }
 
   return (
@@ -121,26 +149,19 @@ function App() {
           jobsCount={monitors.savedJobs.length}
           statusCounts={monitors.statusCounts}
           monitors={monitors.monitors}
-          notifications={notifications.notifications}
-          notificationsOpen={notifications.notificationsOpen}
           unreadTotal={notifications.unreadTotal}
           setupRequired={appSettings.setupRequired}
           theme={theme}
           onToggleTheme={toggleTheme}
-          onChange={appSettings.handleTabChange}
-          onToggleNotifications={() =>
-            notifications.setNotificationsOpen((v) => !v)
-          }
-          onCloseNotifications={() => notifications.setNotificationsOpen(false)}
-          onOpenNotification={openMonitorFromNotification}
-          onMarkAllNotificationsRead={notifications.handleMarkAllNotificationsRead}
+          onChange={handleTabChange}
         />
 
         {!appSettings.setupRequired && appSettings.tab === 'jobs' ? (
           <JobsPanel
             subTab={monitors.jobsSubTab}
             counts={monitors.statusCounts}
-            onSubTabChange={monitors.setJobsSubTab}
+            unreadTotal={notifications.unreadTotal}
+            onSubTabChange={handleJobsSubTabChange}
             onRefresh={monitors.handleRefreshJobs}
             onClearStatus={monitors.handleClearJobsStatus}
           />
@@ -154,7 +175,6 @@ function App() {
             filters={filters}
             loading={monitors.loading}
             searching={Boolean(searchRun.displaySearchProgress)}
-            unreadByMonitor={notifications.unreadMap}
             onSelect={handleSelectMonitor}
             onAdd={monitors.handleAddMonitor}
             onClose={monitors.handleCloseMonitor}
@@ -194,8 +214,8 @@ function App() {
             title={JOBS_TITLES[monitors.jobsSubTab].title}
             emptyTitle={JOBS_TITLES[monitors.jobsSubTab].empty}
             emptyHint={JOBS_TITLES[monitors.jobsSubTab].hint}
-            onStatusChange={monitors.handleStatusChange}
-            onDiscardAll={monitors.handleDiscardAll}
+            onStatusChange={handleStatusChange}
+            onDiscardAll={handleDiscardAll}
             onLanguageChange={setLanguage}
           />
         ) : null}
@@ -218,7 +238,7 @@ function App() {
             emptyTitle="Sem vagas neste monitor"
             emptyHint="Crie uma aba com +, configure a busca e marque pooling ou clique em Buscar agora."
             onCancelSearch={searchRun.handleCancelSearch}
-            onStatusChange={monitors.handleStatusChange}
+            onStatusChange={handleStatusChange}
           />
         ) : null}
       </div>

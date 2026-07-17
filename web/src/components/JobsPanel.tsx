@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatBadgeCount } from '../lib/notificationsModel'
 import type { JobStatus } from '../lib/types'
 import './SearchPanel.css'
 import './JobsPanel.css'
@@ -6,6 +7,7 @@ import './JobsPanel.css'
 type Props = {
   subTab: JobStatus
   counts: Record<JobStatus, number>
+  unreadTotal?: number
   onSubTabChange: (value: JobStatus) => void
   onRefresh: () => void
   onClearStatus: (status: 'applied' | 'discarded') => Promise<void>
@@ -20,11 +22,13 @@ const SUB_TABS: { id: JobStatus; label: string }[] = [
 export function JobsPanel({
   subTab,
   counts,
+  unreadTotal = 0,
   onSubTabChange,
   onRefresh,
   onClearStatus,
 }: Props) {
   const [clearing, setClearing] = useState<'applied' | 'discarded' | null>(null)
+  const notifBadge = formatBadgeCount(unreadTotal)
 
   async function handleClear(status: 'applied' | 'discarded') {
     const count = counts[status]
@@ -51,21 +55,34 @@ export function JobsPanel({
       </p>
 
       <div className="jobs-tabs" role="tablist" aria-label="Status das vagas">
-        {SUB_TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={subTab === item.id}
-            className={`jobs-tabs__btn${subTab === item.id ? ' jobs-tabs__btn--active' : ''}`}
-            onClick={() => onSubTabChange(item.id)}
-          >
-            {item.label}
-            {counts[item.id] > 0 ? (
-              <span className="jobs-tabs__count">{counts[item.id]}</span>
-            ) : null}
-          </button>
-        ))}
+        {SUB_TABS.map((item) => {
+          const isPending = item.id === 'viewed'
+          const showNotif = isPending && notifBadge
+          const showCount = !showNotif && counts[item.id] > 0
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={subTab === item.id}
+              className={`jobs-tabs__btn${subTab === item.id ? ' jobs-tabs__btn--active' : ''}`}
+              onClick={() => onSubTabChange(item.id)}
+            >
+              {item.label}
+              {showNotif ? (
+                <span
+                  className="jobs-tabs__alert"
+                  title="Vagas novas no pooling"
+                  aria-label={`${unreadTotal} notificações não lidas`}
+                >
+                  {notifBadge}
+                </span>
+              ) : showCount ? (
+                <span className="jobs-tabs__count">{counts[item.id]}</span>
+              ) : null}
+            </button>
+          )
+        })}
       </div>
 
       <div className="jobs-clear">

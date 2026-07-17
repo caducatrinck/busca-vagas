@@ -30,6 +30,8 @@ export type Monitor = {
   nextRunAt: string | null
   lastError: string | null
   newCountLastRun: number
+  /** Origem da última rodada — só pooling dispara notificação no cliente. */
+  lastRunMode: 'manual' | 'pooling' | null
   knownIdsAtStart: string[]
   lastRunStats: SearchRunStats | null
 }
@@ -175,6 +177,10 @@ function createMonitor(partial?: Partial<Monitor>): Monitor {
     nextRunAt: partial?.nextRunAt ?? null,
     lastError: partial?.lastError ?? null,
     newCountLastRun: partial?.newCountLastRun ?? 0,
+    lastRunMode:
+      partial?.lastRunMode === 'manual' || partial?.lastRunMode === 'pooling'
+        ? partial.lastRunMode
+        : null,
     knownIdsAtStart: partial?.knownIdsAtStart ?? [],
     lastRunStats: partial?.lastRunStats ?? null,
   }

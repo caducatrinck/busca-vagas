@@ -227,18 +227,18 @@
 }
 
 .app-nav__live {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #f0c24b;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #f0c24b 35%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 22%, transparent);
   flex-shrink: 0;
-  animation: app-nav-live-pulse 1.35s ease-in-out infinite;
+  animation: app-nav-live-pulse 1.6s ease-in-out infinite;
 }
 
 .app-nav__live--running {
   background: #fff;
-  animation: app-nav-live-running-pulse 0.85s ease-in-out infinite;
+  animation: app-nav-live-running-pulse 1s ease-in-out infinite;
 }
 
 @keyframes app-nav-pooling-pulse {
@@ -247,31 +247,31 @@
     box-shadow: 0 0 0 0 color-mix(in srgb, #f0c24b 0%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, #f0c24b 18%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 10%, transparent);
   }
 }
 
 @keyframes app-nav-running-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 38%, transparent);
-    filter: brightness(1.08);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    filter: brightness(1.04);
   }
 }
 
 @keyframes app-nav-live-pulse {
   0%,
   100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 22%, transparent);
+    transform: scale(0.98);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 14%, transparent);
   }
   50% {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 5px color-mix(in srgb, #f0c24b 36%, transparent);
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px color-mix(in srgb, #f0c24b 20%, transparent);
   }
 }
 
@@ -279,11 +279,11 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 2px color-mix(in srgb, #fff 30%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
   }
   50% {
-    transform: scale(1.35);
-    box-shadow: 0 0 0 6px color-mix(in srgb, #fff 48%, transparent);
+    transform: scale(1.12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, #fff 28%, transparent);
   }
 }
 

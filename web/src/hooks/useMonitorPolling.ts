@@ -101,7 +101,9 @@ export function useMonitorPolling(params: {
             if (!key || notifiedRunsRef.current.has(key)) continue
             notifiedRunsRef.current.add(key)
             completedRun = true
-            if (m.newCountLastRun > 0) onAnnounceRef.current(m)
+            if (m.lastRunMode === 'pooling' && m.newCountLastRun > 0) {
+              onAnnounceRef.current(m)
+            }
           }
         }
 
