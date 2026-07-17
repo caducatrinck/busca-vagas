@@ -6,6 +6,9 @@
   <a href="#english"><strong>🇺🇸 English</strong></a>
 </p>
 
+Nunca instalou Git/Node? Comece pelo guia **[Instalação do zero](./INSTALACAO-DO-ZERO.md)**.  
+Never installed Git/Node? Start with **[Setup from scratch](./INSTALACAO-DO-ZERO.md)**.
+
 ---
 
 <a id="português"></a>
