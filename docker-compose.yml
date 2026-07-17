@@ -2,7 +2,6 @@ services:
   api:
     build:
       context: ./api
-      target: development
     container_name: busca-vagas-api
     restart: unless-stopped
     ports:
@@ -38,7 +37,6 @@ services:
   web:
     build:
       context: ./web
-      target: development
       args:
         VITE_API_URL: http://localhost:8787
     container_name: busca-vagas-web
