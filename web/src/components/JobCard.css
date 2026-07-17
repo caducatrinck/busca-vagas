@@ -56,6 +56,26 @@
   color: var(--ink-soft);
 }
 
+.job-card__tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.15rem 0 0;
+  padding: 0;
+}
+
+.job-card__tags li {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ink-soft) 45%, var(--line));
+  color: var(--ink-soft);
+  background: transparent;
+}
+
 .job-card__excerpt {
   margin: 0.35rem 0 0.2rem;
   font-size: 0.92rem;

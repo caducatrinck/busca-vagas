@@ -27,6 +27,7 @@ export type JobRepository = {
   getJobSearchHints(): Promise<{
     discardedIds: Set<string>
     knownDescriptions: Map<string, string>
+    knownWorkplaceTypes: Map<string, Job['workplaceType']>
   }>
 }
 

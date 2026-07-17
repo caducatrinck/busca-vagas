@@ -22,7 +22,7 @@ function formatCountdown(ms: number): string {
 }
 
 function clampInterval(minutes: number): number {
-  return Math.min(Math.max(Number.isFinite(minutes) ? minutes : 5, 1), 120)
+  return Math.min(Math.max(Number.isFinite(minutes) ? minutes : 20, 1), 120)
 }
 
 function poolingWindowMinutes(
@@ -98,7 +98,7 @@ export function PollingPanel({
   const active = monitors.find((m) => m.id === activeId) ?? null
   const activeIntervalMinutes = active?.intervalMinutes
   const [intervalDraft, setIntervalDraft] = useState(
-    () => activeIntervalMinutes ?? 5,
+    () => activeIntervalMinutes ?? 20,
   )
   const [now, setNow] = useState(() => Date.now())
   const anyPolling = monitors.some((m) => m.pollingEnabled)

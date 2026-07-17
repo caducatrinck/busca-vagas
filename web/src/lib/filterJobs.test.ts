@@ -2,9 +2,12 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   containsWholeWord,
+  filterJobs,
   matchesQuickFilter,
   titleMatchesQuery,
+  titleSearchText,
 } from './filterJobs.ts'
+import type { Job } from './types.ts'
 
 describe('containsWholeWord', () => {
   it('casa palavra inteira', () => {
@@ -37,5 +40,73 @@ describe('titleMatchesQuery', () => {
   it('exige todos os tokens', () => {
     assert.equal(titleMatchesQuery('React Senior', 'React Senior'), true)
     assert.equal(titleMatchesQuery('React Junior', 'React Senior'), false)
+  })
+})
+
+describe('filtro de título com tag de workplace', () => {
+  const base: Job = {
+    id: '1',
+    title: 'Desenvolvedor Full-Stack Sênior',
+    company: 'Igma',
+    location: 'São Paulo, SP',
+    description: '',
+    url: 'https://linkedin.com/jobs/view/1',
+  }
+
+  it('inclui a tag no texto de busca', () => {
+    assert.match(
+      titleSearchText({ ...base, workplaceType: 'onsite' }),
+      /Presencial/i,
+    )
+  })
+
+  it('casa query presencial pela tag mesmo sem no título', () => {
+    const jobs = filterJobs(
+      [{ ...base, workplaceType: 'onsite' }],
+      {
+        excludeTitle: [],
+        includeTitle: [],
+        excludeDescription: [],
+        includeDescription: [],
+        language: '',
+      },
+      { requireQueryInTitle: 'presencial' },
+    )
+    assert.equal(jobs.length, 1)
+  })
+
+  it('não casa presencial se não houver tag', () => {
+    const jobs = filterJobs(
+      [base],
+      {
+        excludeTitle: [],
+        includeTitle: [],
+        excludeDescription: [],
+        includeDescription: [],
+        language: '',
+      },
+      { requireQueryInTitle: 'presencial' },
+    )
+    assert.equal(jobs.length, 0)
+  })
+
+  it('casa CLT/PJ pela tag da descrição', () => {
+    const withClt: Job = {
+      ...base,
+      description: 'Contratação CLT com benefícios.',
+      contractTags: ['CLT'],
+    }
+    const jobs = filterJobs(
+      [withClt],
+      {
+        excludeTitle: [],
+        includeTitle: [],
+        excludeDescription: [],
+        includeDescription: [],
+        language: '',
+      },
+      { requireQueryInTitle: 'CLT' },
+    )
+    assert.equal(jobs.length, 1)
   })
 })

@@ -23,6 +23,14 @@ export async function buildCookieHeader(): Promise<string | undefined> {
   return parts.length > 0 ? parts.join('; ') : undefined
 }
 
+/** CSRF do Voyager = valor do JSESSIONID (com ou sem prefixo ajax:). */
+export async function buildCsrfToken(): Promise<string | undefined> {
+  const settings = await getAppSettings()
+  const raw = settings.linkedinJsessionId.trim().replace(/^"|"$/g, '')
+  if (!raw) return undefined
+  return raw.startsWith('ajax:') ? raw : `ajax:${raw}`
+}
+
 function formatNetworkError(err: unknown): string {
   if (!(err instanceof Error)) return 'Falha de rede ao contatar o LinkedIn'
   const cause = (err as Error & { cause?: unknown }).cause
@@ -189,6 +197,98 @@ export async function linkedInFetch(
           err.message.startsWith('LinkedIn rate limit') ||
           err.message.startsWith('LinkedIn respondeu') ||
           err.message.startsWith('LinkedIn não respondeu'))
+      ) {
+        throw err
+      }
+      lastErr = err
+      if (!isRetryableNetworkError(err) || attempt === maxAttempts) {
+        throw new Error(formatNetworkError(err))
+      }
+      await randomDelay(400 * attempt, 900 * attempt)
+    }
+  }
+
+  throw new Error(formatNetworkError(lastErr))
+}
+
+/**
+ * JSON autenticado do Voyager (precisa li_at + JSESSIONID).
+ * Usado para workplaceTypes (híbrido/presencial/remoto) e descrição estruturada.
+ */
+export async function linkedInVoyagerFetch(
+  path: string,
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const cookie = await buildCookieHeader()
+  const csrf = await buildCsrfToken()
+  if (!cookie || !csrf) {
+    throw new Error(
+      'Cookie LinkedIn incompleto para Voyager (li_at + JSESSIONID).',
+    )
+  }
+
+  const url = path.startsWith('http') ? path : `${LINKEDIN_BASE}${path}`
+  const maxAttempts = 3
+  let lastErr: unknown
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (signal?.aborted) throw new SearchCancelledError([])
+    const timeout =
+      typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(FETCH_TIMEOUT_MS)
+        : undefined
+    const combined = mergeAbortSignals(signal, timeout)
+    try {
+      const res = await fetch(url, {
+        signal: combined,
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'application/vnd.linkedin.normalized+json+2.1',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+          'csrf-token': csrf,
+          'x-restli-protocol-version': '2.0.0',
+          'x-li-lang': 'pt_BR',
+          Cookie: cookie,
+        },
+      })
+
+      if (!res.ok) {
+        if (res.status === 429 && attempt < maxAttempts) {
+          const wait = parseRetryAfterMs(res) ?? 1500 * attempt
+          console.warn(
+            `[linkedin] Voyager HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
+          )
+          await randomDelay(wait, wait + 500)
+          continue
+        }
+        throwLinkedInHttpError(res)
+      }
+
+      return res.json()
+    } catch (err) {
+      if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        if (
+          !signal?.aborted &&
+          err instanceof Error &&
+          (err.name === 'TimeoutError' || err.name === 'AbortError')
+        ) {
+          lastErr = new Error(
+            `LinkedIn Voyager não respondeu a tempo (${FETCH_TIMEOUT_MS / 1000}s).`,
+          )
+          if (attempt === maxAttempts) throw lastErr
+          await randomDelay(400 * attempt, 900 * attempt)
+          continue
+        }
+        throw err
+      }
+
+      if (
+        err instanceof Error &&
+        (err.message.startsWith('LinkedIn bloqueou') ||
+          err.message.startsWith('LinkedIn rate limit') ||
+          err.message.startsWith('LinkedIn respondeu') ||
+          err.message.startsWith('LinkedIn não respondeu') ||
+          err.message.startsWith('Cookie LinkedIn'))
       ) {
         throw err
       }

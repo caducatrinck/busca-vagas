@@ -1,7 +1,12 @@
 import type { Job, JobFilters, JobStatus } from '../lib/types'
 import { jobStatus } from '../lib/jobStatus'
-import { matchedWords } from '../lib/filterJobs'
+import { matchedWords, titleSearchText } from '../lib/filterJobs'
 import { formatPostedAt } from '../lib/formatPostedAt'
+import {
+  WORKPLACE_TYPE_LABELS,
+  parseContractTags,
+  resolveWorkplaceType,
+} from '../shared/domain'
 import './JobCard.css'
 
 type Props = {
@@ -11,7 +16,6 @@ type Props = {
   onStatusChange?: (job: Job, status: JobStatus) => void
 }
 
-
 export function JobCard({
   job,
   filters,
@@ -19,9 +23,10 @@ export function JobCard({
   onStatusChange,
 }: Props) {
   const status = jobStatus(job)
+  const titleHaystack = titleSearchText(job)
   const titleHits = [
-    ...matchedWords(job.title, filters.includeTitle),
-    ...matchedWords(job.title, filters.excludeTitle),
+    ...matchedWords(titleHaystack, filters.includeTitle),
+    ...matchedWords(titleHaystack, filters.excludeTitle),
   ]
   const descHits = showDescriptionFilters
     ? [
@@ -39,6 +44,15 @@ export function JobCard({
     ? `No LinkedIn: ${job.postedLabel}`
     : job.postedAt
 
+  const contractTags = job.contractTags?.length
+    ? job.contractTags
+    : parseContractTags(job.description ?? '')
+  const workplace = resolveWorkplaceType(job.workplaceType, job.description)
+  const metaTags = [
+    ...(workplace ? [WORKPLACE_TYPE_LABELS[workplace]] : []),
+    ...contractTags,
+  ]
+
   return (
     <article
       className={`job-card${job.isNew ? ' job-card--new' : ''}${
@@ -50,7 +64,10 @@ export function JobCard({
         <div className="job-card__meta">
           {job.isNew ? <span className="job-card__new">Nova</span> : null}
           {job.isNew === false ? (
-            <span className="job-card__seen" title="Já apareceu em buscas anteriores">
+            <span
+              className="job-card__seen"
+              title="Já apareceu em buscas anteriores"
+            >
               Já vista
             </span>
           ) : null}
@@ -66,6 +83,13 @@ export function JobCard({
       </div>
       <p className="job-card__company">{job.company || 'Empresa não informada'}</p>
       <p className="job-card__location">{job.location || 'Local não informado'}</p>
+      {metaTags.length > 0 ? (
+        <ul className="job-card__tags">
+          {metaTags.map((tag) => (
+            <li key={tag}>{tag}</li>
+          ))}
+        </ul>
+      ) : null}
       <p className="job-card__excerpt">{excerpt}</p>
       {badges.length > 0 ? (
         <ul className="job-card__badges">

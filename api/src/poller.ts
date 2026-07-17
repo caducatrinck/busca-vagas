@@ -239,6 +239,7 @@ async function runMonitor(
         {
           discardedIds: hints.discardedIds,
           knownDescriptions: hints.knownDescriptions,
+          knownWorkplaceTypes: hints.knownWorkplaceTypes,
           onProgress: callbacks.onProgress,
           onJobsBatch: emitJobs,
           onListingComplete,

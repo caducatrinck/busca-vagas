@@ -7,8 +7,13 @@ import type {
   SearchProgressCallback,
 } from '../../types.js'
 import { SearchCancelledError } from '../../types.js'
-import { linkedInFetch } from './client.js'
-import { parseJobDescriptionHtml, parseJobsFromSearchHtml } from './parser.js'
+import { linkedInFetch, linkedInVoyagerFetch } from './client.js'
+import {
+  parseDescriptionFromVoyagerPayload,
+  parseJobDetailHtml,
+  parseJobsFromSearchHtml,
+  parseWorkplaceFromVoyagerPayload,
+} from './parser.js'
 import { ProgressEmitter } from './progress.js'
 
 export const PAGE_SIZE = 10
@@ -73,12 +78,46 @@ export function buildSearchPath(params: SearchParams, start: number): string {
   return `/jobs-guest/jobs/api/seeMoreJobPostings/search?${searchParams.toString()}`
 }
 
-async function fetchJobDescription(
+async function fetchJobDetail(
   jobId: string,
   signal?: AbortSignal,
-): Promise<string> {
-  const html = await linkedInFetch(`/jobs-guest/jobs/api/jobPosting/${jobId}`, signal)
-  return parseJobDescriptionHtml(html)
+): Promise<{
+  description: string
+  workplaceType?: Job['workplaceType']
+  workplaceResolved: boolean
+}> {
+  // Tags Híbrido/Presencial/Remoto só vêm no Voyager autenticado (HTML guest não traz).
+  try {
+    const payload = await linkedInVoyagerFetch(
+      `/voyager/api/jobs/jobPostings/${jobId}`,
+      signal,
+    )
+    return {
+      description: parseDescriptionFromVoyagerPayload(payload),
+      workplaceType: parseWorkplaceFromVoyagerPayload(payload) ?? null,
+      workplaceResolved: true,
+    }
+  } catch (err) {
+    if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+      throw err
+    }
+    console.warn(
+      `[linkedin] Voyager falhou para ${jobId} · fallback guest · ${
+        err instanceof Error ? err.message : err
+      }`,
+    )
+  }
+
+  const html = await linkedInFetch(
+    `/jobs-guest/jobs/api/jobPosting/${jobId}`,
+    signal,
+  )
+  const detail = parseJobDetailHtml(html)
+  return {
+    description: detail.description,
+    workplaceType: detail.workplaceType,
+    workplaceResolved: false,
+  }
 }
 
 export async function enrichDescriptions(
@@ -88,15 +127,26 @@ export async function enrichDescriptions(
   progress: ProgressEmitter,
   signal?: AbortSignal,
   onJobsBatch?: (jobs: Job[]) => void | Promise<void>,
+  knownWorkplaceTypes: Map<string, Job['workplaceType']> = new Map(),
+  fetchDescriptions = true,
 ): Promise<Job[]> {
   const { detailConcurrency } = await getScrapeDelayConfig()
 
   const withCached = jobs.map((job) => {
-    const cached = knownDescriptions.get(job.id)
-    if (cached && !job.description?.trim()) {
-      return { ...job, description: cached }
+    const cachedDesc = knownDescriptions.get(job.id)
+    let next = job
+    if (fetchDescriptions && cachedDesc && !job.description?.trim()) {
+      next = { ...next, description: cachedDesc }
     }
-    return job
+    if (
+      !next.workplaceType &&
+      next.workplaceResolved !== true &&
+      knownWorkplaceTypes.has(job.id)
+    ) {
+      const known = knownWorkplaceTypes.get(job.id)
+      if (known) next = { ...next, workplaceType: known, workplaceResolved: true }
+    }
+    return next
   })
 
   const tokens = query
@@ -116,7 +166,13 @@ export async function enrichDescriptions(
   }
 
   const needingFetch = withCached
-    .filter((job) => !job.description?.trim())
+    .filter((job) => {
+      const needDesc = fetchDescriptions && !job.description?.trim()
+      // null antigo sem Voyager deve ser reconsultado
+      const needWorkplace =
+        !job.workplaceType && job.workplaceResolved !== true
+      return needDesc || needWorkplace
+    })
     .sort((a, b) => score(b.title) - score(a.title))
 
   const cachedCount = withCached.length - needingFetch.length
@@ -133,11 +189,11 @@ export async function enrichDescriptions(
       phase: 'descriptions',
       label:
         cachedCount > 0
-          ? `Descrições em cache · ${cachedCount}/${jobs.length}`
-          : 'Nada a buscar na descrição',
+          ? `Detalhes em cache · ${cachedCount}/${jobs.length}`
+          : 'Nada a buscar nos detalhes',
       message:
         cachedCount > 0
-          ? 'Nenhuma descrição nova — reaproveitando o banco local'
+          ? 'Reaproveitando tags e descrições do banco local'
           : undefined,
       listing: listingDone,
       descriptions: { current: cachedCount, total: cachedCount },
@@ -153,11 +209,11 @@ export async function enrichDescriptions(
 
   progress.emit({
     phase: 'descriptions',
-    label: `Buscando descrições 0/${needingFetch.length}`,
+    label: `Buscando detalhes 0/${needingFetch.length}`,
     message:
       cachedCount > 0
-        ? `${cachedCount} já no banco — só busca as que faltam`
-        : undefined,
+        ? `${cachedCount} já no banco — só busca o que falta`
+        : 'Tags de modelo de trabalho (híbrido/presencial/remoto)',
     listing: listingDone,
     descriptions: { current: 0, total: needingFetch.length },
   })
@@ -168,8 +224,18 @@ export async function enrichDescriptions(
     const results = await Promise.all(
       chunk.map(async (job) => {
         try {
-          const description = await fetchJobDescription(job.id, signal)
-          return { ...job, description }
+          const detail = await fetchJobDetail(job.id, signal)
+          return {
+            ...job,
+            description: fetchDescriptions
+              ? detail.description || job.description
+              : job.description,
+            workplaceType: detail.workplaceResolved
+              ? detail.workplaceType ?? null
+              : detail.workplaceType ?? job.workplaceType,
+            workplaceResolved:
+              detail.workplaceResolved || Boolean(job.workplaceResolved),
+          }
         } catch (err) {
           if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
             throw new SearchCancelledError(working)
@@ -186,7 +252,7 @@ export async function enrichDescriptions(
     doneCount = Math.min(needingFetch.length, i + chunk.length)
     progress.emit({
       phase: 'descriptions',
-      label: `Buscando descrições ${doneCount}/${needingFetch.length}`,
+      label: `Buscando detalhes ${doneCount}/${needingFetch.length}`,
       listing: listingDone,
       descriptions: { current: doneCount, total: needingFetch.length },
     })
@@ -205,6 +271,7 @@ export async function enrichDescriptions(
 export type SearchLinkedInOptions = {
   discardedIds?: Set<string>
   knownDescriptions?: Map<string, string>
+  knownWorkplaceTypes?: Map<string, Job['workplaceType']>
   onProgress?: SearchProgressCallback
 
   onJobsBatch?: (jobs: Job[]) => void | Promise<void>
@@ -230,9 +297,11 @@ export async function searchLinkedInJobs(
 
   const discardedIds = options.discardedIds ?? new Set<string>()
   const knownDescriptions = options.knownDescriptions ?? new Map<string, string>()
+  const knownWorkplaceTypes =
+    options.knownWorkplaceTypes ?? new Map<string, Job['workplaceType']>()
   const fetchDescriptions = Boolean(params.fetchDescriptions)
   const signal = options.signal
-  const progress = new ProgressEmitter(options.onProgress, fetchDescriptions, PAGE_SIZE)
+  const progress = new ProgressEmitter(options.onProgress, true, PAGE_SIZE)
 
   const jobs: Job[] = []
   const seen = new Set<string>()
@@ -324,7 +393,7 @@ export async function searchLinkedInJobs(
       label: `Buscando vagas ${jobs.length}/${jobs.length}`,
       listing: { current: jobs.length, total: jobs.length },
       descriptions: { current: 0, total: 0 },
-      overallPercent: fetchDescriptions ? 48 : 92,
+      overallPercent: 48,
     })
 
     if (jobs.length === 0) {
@@ -347,15 +416,6 @@ export async function searchLinkedInJobs(
     })
     await options.onListingComplete?.(jobs)
 
-    if (!fetchDescriptions) {
-      return jobs.map((job) => {
-        const cached = knownDescriptions.get(job.id)
-        return cached && !job.description?.trim()
-          ? { ...job, description: cached }
-          : job
-      })
-    }
-
     return await enrichDescriptions(
       jobs,
       query,
@@ -363,6 +423,8 @@ export async function searchLinkedInJobs(
       progress,
       signal,
       options.onJobsBatch,
+      knownWorkplaceTypes,
+      fetchDescriptions,
     )
   } catch (err) {
     if (err instanceof SearchCancelledError) {

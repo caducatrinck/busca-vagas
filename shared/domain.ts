@@ -2,6 +2,76 @@ export type PostedWithin = '24h' | 'week' | 'month'
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
+/** Modelo de trabalho: híbrido, presencial ou remoto. */
+export type WorkplaceType = 'hybrid' | 'onsite' | 'remote'
+
+export const WORKPLACE_TYPE_LABELS: Record<WorkplaceType, string> = {
+  hybrid: 'Híbrido',
+  onsite: 'Presencial',
+  remote: 'Remoto',
+}
+
+/** Tipo de contrato detectado na descrição. */
+export type ContractTag = 'CLT' | 'PJ'
+
+/** Detecta CLT / PJ como palavra inteira na descrição. */
+export function parseContractTags(text: string): ContractTag[] {
+  const hay = text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+  if (!hay.trim()) return []
+
+  const tags: ContractTag[] = []
+  if (/(?<![\p{L}\p{N}_])clt(?![\p{L}\p{N}_])/u.test(hay)) tags.push('CLT')
+  if (/(?<![\p{L}\p{N}_])pj(?![\p{L}\p{N}_])/u.test(hay)) tags.push('PJ')
+  return tags
+}
+
+/**
+ * Fallback na descrição quando o LinkedIn não trouxe a tag oficial.
+ * Ordem: híbrido > remoto > presencial (evita ambiguidade).
+ */
+export function inferWorkplaceFromDescription(
+  text: string,
+): WorkplaceType | undefined {
+  const hay = text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+  if (!hay.trim()) return undefined
+
+  if (
+    /(?<![\p{L}\p{N}_])hibrid[oa]?(?![\p{L}\p{N}_])/u.test(hay) ||
+    /(?<![\p{L}\p{N}_])hybrid(?![\p{L}\p{N}_])/u.test(hay)
+  ) {
+    return 'hybrid'
+  }
+  if (
+    /(?<![\p{L}\p{N}_])remoto(?![\p{L}\p{N}_])/u.test(hay) ||
+    /(?<![\p{L}\p{N}_])remote(?![\p{L}\p{N}_])/u.test(hay) ||
+    /(?<![\p{L}\p{N}_])work from home(?![\p{L}\p{N}_])/u.test(hay)
+  ) {
+    return 'remote'
+  }
+  if (
+    /(?<![\p{L}\p{N}_])presencial(?![\p{L}\p{N}_])/u.test(hay) ||
+    /(?<![\p{L}\p{N}_])on[\s-]?site(?![\p{L}\p{N}_])/u.test(hay)
+  ) {
+    return 'onsite'
+  }
+  return undefined
+}
+
+/** Prefere a tag oficial do LinkedIn; senão infere da descrição. */
+export function resolveWorkplaceType(
+  workplaceType: WorkplaceType | null | undefined,
+  description?: string,
+): WorkplaceType | undefined {
+  if (workplaceType) return workplaceType
+  return inferWorkplaceFromDescription(description ?? '')
+}
+
 export type Job = {
   id: string
   title: string
@@ -13,6 +83,12 @@ export type Job = {
   postedAt?: string
   /** Texto exatamente como no LinkedIn no momento da coleta (ex.: "há 8 horas"). */
   postedLabel?: string
+  /** Tag LinkedIn: híbrido / presencial / remoto. `null` = já consultado e sem tag. */
+  workplaceType?: WorkplaceType | null
+  /** true = workplaceType veio do Voyager (confiável); null antigo sem isso deve ser reconsultado. */
+  workplaceResolved?: boolean
+  /** Tags CLT / PJ quando a descrição menciona. */
+  contractTags?: ContractTag[]
 }
 
 export type SearchParams = {

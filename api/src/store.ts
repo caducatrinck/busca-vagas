@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import type { Job, SearchParams, SearchRunStats } from './types.js'
+import { parseContractTags, resolveWorkplaceType } from './types.js'
 import {
   backupStoreFile,
   readLatestBackup,
@@ -252,8 +253,23 @@ function resolveStatus(
 
 function normalizeJob(job: Partial<StoredJob> & Job): StoredJob {
   const status = resolveStatus(job)
+  const description = job.description ?? ''
+  const contractTags = description.trim()
+    ? parseContractTags(description)
+    : Array.isArray(job.contractTags)
+      ? job.contractTags
+      : []
+  const workplaceType =
+    resolveWorkplaceType(job.workplaceType, description) ?? job.workplaceType
+  const workplaceResolved =
+    Boolean(job.workplaceResolved) ||
+    Boolean(workplaceType && job.workplaceType === workplaceType)
   return {
     ...job,
+    description,
+    contractTags,
+    workplaceType,
+    workplaceResolved: workplaceResolved || undefined,
     status,
     applied: status === 'applied',
     firstSeenAt: job.firstSeenAt || new Date().toISOString(),
@@ -274,7 +290,7 @@ function createMonitor(partial?: Partial<Monitor>): Monitor {
       fetchDescriptions: Boolean(partial?.search?.fetchDescriptions),
     },
     pollingEnabled: Boolean(partial?.pollingEnabled),
-    intervalMinutes: Math.min(Math.max(partial?.intervalMinutes ?? 5, 1), 120),
+    intervalMinutes: Math.min(Math.max(partial?.intervalMinutes ?? 20, 1), 120),
     lastRunAt: partial?.lastRunAt ?? null,
     nextRunAt: partial?.nextRunAt ?? null,
     lastError: partial?.lastError ?? null,
@@ -363,7 +379,7 @@ function parseStoreRaw(raw: string): StoreData {
         name: parsed.poller.search.query.slice(0, 28) || 'Monitor',
         search: parsed.poller.search,
         pollingEnabled: Boolean(parsed.poller.enabled),
-        intervalMinutes: parsed.poller.intervalMinutes ?? 5,
+        intervalMinutes: parsed.poller.intervalMinutes ?? 20,
         lastRunAt: parsed.poller.lastRunAt ?? null,
         lastError: parsed.poller.lastError ?? null,
         newCountLastRun: parsed.poller.newCountLastRun ?? 0,
@@ -495,10 +511,12 @@ export async function getStore(): Promise<StoreData> {
 export async function getJobSearchHints(): Promise<{
   discardedIds: Set<string>
   knownDescriptions: Map<string, string>
+  knownWorkplaceTypes: Map<string, Job['workplaceType']>
 }> {
   const store = await ensureStore()
   const discardedIds = new Set<string>()
   const knownDescriptions = new Map<string, string>()
+  const knownWorkplaceTypes = new Map<string, Job['workplaceType']>()
 
   for (const job of Object.values(store.jobs)) {
     const normalized = normalizeJob(job)
@@ -510,9 +528,12 @@ export async function getJobSearchHints(): Promise<{
     if (description) {
       knownDescriptions.set(normalized.id, description)
     }
+    if (normalized.workplaceType) {
+      knownWorkplaceTypes.set(normalized.id, normalized.workplaceType)
+    }
   }
 
-  return { discardedIds, knownDescriptions }
+  return { discardedIds, knownDescriptions, knownWorkplaceTypes }
 }
 
 export async function listJobs(options?: {
@@ -562,6 +583,12 @@ export async function upsertSearchResults(
         ...existing,
         ...job,
         description: job.description || existing.description,
+        workplaceType:
+          job.workplaceType !== undefined
+            ? job.workplaceType
+            : existing.workplaceType,
+        workplaceResolved:
+          job.workplaceResolved || existing.workplaceResolved,
         postedAt: preferPostedAt(job.postedAt, existing.postedAt),
         postedLabel: job.postedLabel?.trim() || existing.postedLabel,
         status,
@@ -570,17 +597,17 @@ export async function upsertSearchResults(
         lastSeenAt: now,
         monitorIds: [...monitorIds],
       }
-      store.jobs[job.id] = merged
-      result.push(merged)
+      store.jobs[job.id] = normalizeJob(merged)
+      result.push(store.jobs[job.id])
     } else {
-      const created: StoredJob = {
+      const created = normalizeJob({
         ...job,
         status: 'viewed',
         applied: false,
         firstSeenAt: now,
         lastSeenAt: now,
         monitorIds: monitorId ? [monitorId] : [],
-      }
+      })
       store.jobs[job.id] = created
       newJobs.push(created)
       result.push(created)

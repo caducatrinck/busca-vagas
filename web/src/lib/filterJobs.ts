@@ -1,4 +1,10 @@
 import type { Job, JobFilters } from './types'
+import {
+  WORKPLACE_TYPE_LABELS,
+  parseContractTags,
+  resolveWorkplaceType,
+  type WorkplaceType,
+} from '../shared/domain'
 import { detectLanguage } from './detectLanguage'
 
 export function normalizeForMatch(text: string): string {
@@ -25,6 +31,32 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
 
 /** Tokens que precisam de palavra inteira no filtro rápido da lista. */
 const QUICK_FILTER_WHOLE_WORD = new Set(['java', 'javascript'])
+
+const WORKPLACE_SEARCH_ALIASES: Record<WorkplaceType, string> = {
+  hybrid: 'hibrido hybrid',
+  onsite: 'presencial on-site onsite',
+  remote: 'remoto remote',
+}
+
+/** Texto da tag de modelo de trabalho para busca/filtro. */
+export function workplaceSearchText(
+  job: Pick<Job, 'workplaceType' | 'description'>,
+): string {
+  const t = resolveWorkplaceType(job.workplaceType, job.description)
+  if (!t) return ''
+  return `${WORKPLACE_TYPE_LABELS[t]} ${WORKPLACE_SEARCH_ALIASES[t]}`
+}
+
+/** Título + tags (remoto/presencial/híbrido/CLT/PJ) para filtros de título. */
+export function titleSearchText(
+  job: Pick<Job, 'title' | 'workplaceType' | 'contractTags' | 'description'>,
+): string {
+  const contracts =
+    job.contractTags?.length
+      ? job.contractTags.join(' ')
+      : parseContractTags(job.description ?? '').join(' ')
+  return `${job.title ?? ''} ${workplaceSearchText(job)} ${contracts}`.trim()
+}
 
 function stripQuickFilterQuotes(token: string): string {
   return token.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
@@ -92,13 +124,15 @@ export function filterJobs(
   const requireQuery = options.requireQueryInTitle?.trim() ?? ''
 
   return jobs.filter((job) => {
-    const title = job.title ?? ''
+    const titleHaystack = titleSearchText(job)
     const description = job.description ?? ''
 
-    if (requireQuery && !titleMatchesQuery(title, requireQuery)) return false
+    if (requireQuery && !titleMatchesQuery(titleHaystack, requireQuery)) {
+      return false
+    }
 
-    if (containsAny(title, filters.excludeTitle)) return false
-    if (!containsRequired(title, filters.includeTitle)) return false
+    if (containsAny(titleHaystack, filters.excludeTitle)) return false
+    if (!containsRequired(titleHaystack, filters.includeTitle)) return false
 
     if (useDescription) {
       if (containsAny(description, filters.excludeDescription)) return false
@@ -107,7 +141,9 @@ export function filterJobs(
 
     if (wanted === 'pt' || wanted === 'en') {
       const sample =
-        description.trim().length >= 24 ? description : `${title}\n${description}`
+        description.trim().length >= 24
+          ? description
+          : `${job.title ?? ''}\n${description}`
       const lang = detectLanguage(sample)
       if (lang === 'unknown') return sample.trim().length < 24
       if (lang !== wanted) return false

@@ -58,6 +58,7 @@ export function registerSearchRoutes(
         {
           discardedIds: hints.discardedIds,
           knownDescriptions: hints.knownDescriptions,
+          knownWorkplaceTypes: hints.knownWorkplaceTypes,
         },
       )
       rateLimit = searchRateLimiter.recordSearch()

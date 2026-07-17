@@ -7,7 +7,7 @@ import {
   type JobStatus,
   type SearchProgress,
 } from '../lib/types'
-import { matchesQuickFilter } from '../lib/filterJobs'
+import { matchesQuickFilter, titleSearchText } from '../lib/filterJobs'
 import { jobRecencyMs } from '../lib/formatPostedAt'
 import { jobStatus } from '../lib/jobStatus'
 import { isRateLimitError } from '../lib/rateLimit'
@@ -196,7 +196,7 @@ export function JobList({
     const filtered = showTopFilters
       ? safeJobs.filter(
           (job) =>
-            matchesQuickFilter(job.title ?? '', titleQuery) &&
+            matchesQuickFilter(titleSearchText(job), titleQuery) &&
             matchesQuickFilter(job.description ?? '', descriptionQuery),
         )
       : safeJobs
