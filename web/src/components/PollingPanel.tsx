@@ -147,7 +147,7 @@ export function PollingPanel({
           return (
             <div
               key={monitor.id}
-              className={`monitor-tabs__item${monitor.id === activeId ? ' monitor-tabs__item--active' : ''}${running ? ' monitor-tabs__item--running' : ''}`}
+              className={`monitor-tabs__item${monitor.id === activeId ? ' monitor-tabs__item--active' : ''}${monitor.pollingEnabled ? ' monitor-tabs__item--pooling' : ''}${running ? ' monitor-tabs__item--running' : ''}`}
             >
               <button
                 type="button"

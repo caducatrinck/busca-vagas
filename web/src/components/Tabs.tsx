@@ -92,11 +92,14 @@ export function Tabs({
   onMarkAllNotificationsRead,
 }: Props) {
   const activeMonitors = monitors.filter((m) => m.pollingEnabled).length
+  const runningMonitors = monitors.filter((m) => m.ticking).length
   const monitorMeta = setupRequired
     ? 'Bloqueado'
     : monitors.length === 0
       ? 'Criar busca'
-      : activeMonitors > 0
+      : runningMonitors > 0
+        ? `${runningMonitors} buscando`
+        : activeMonitors > 0
         ? `${activeMonitors} pooling`
         : `${monitors.length} busca${monitors.length === 1 ? '' : 's'}`
 
@@ -165,13 +168,20 @@ export function Tabs({
           aria-selected={tab === 'monitor'}
           aria-disabled={setupRequired}
           disabled={setupRequired}
-          className={`app-nav__tab${tab === 'monitor' ? ' app-nav__tab--active' : ''}`}
+          className={`app-nav__tab${tab === 'monitor' ? ' app-nav__tab--active' : ''}${activeMonitors > 0 && !setupRequired ? ' app-nav__tab--pooling' : ''}${runningMonitors > 0 && !setupRequired ? ' app-nav__tab--running' : ''}`}
           onClick={() => onChange('monitor')}
         >
           <span className="app-nav__label">
             Monitor
             {activeMonitors > 0 && !setupRequired ? (
-              <span className="app-nav__live" title="Pooling ativo" />
+              <span
+                className={`app-nav__live${runningMonitors > 0 ? ' app-nav__live--running' : ''}`}
+                title={
+                  runningMonitors > 0
+                    ? 'Buscando vagas agora'
+                    : 'Pooling ativo'
+                }
+              />
             ) : null}
             {monitorBadge ? (
               <span className="app-nav__alert-badge" title="Vagas novas no pooling">
