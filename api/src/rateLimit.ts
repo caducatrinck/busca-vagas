@@ -6,12 +6,9 @@ import {
 } from './store.js'
 
 export type RateLimitConfig = {
-  /** Intervalo mínimo entre buscas (anti-spam local). 0 = desligado. */
+  /** intervalo mínimo entre buscas; 0 = off */
   minIntervalMs: number
-  /**
-   * Limites opcionais de segurança. 0 = desligados.
-   * O bloqueio principal vem de erros reais do LinkedIn (blockedUntil).
-   */
+  /** tetos locais; 0 = off. o bloqueio de verdade vem do LinkedIn */
   maxPerHour: number
   maxPerDay: number
 }
@@ -45,9 +42,9 @@ const DEFAULT_LINKEDIN_999_MS = 30 * 60_000
 
 export function getRateLimitConfig(): RateLimitConfig {
   return {
-    minIntervalMs: 5_000,
-    maxPerHour: 0,
-    maxPerDay: 0,
+    minIntervalMs: 30_000,
+    maxPerHour: 30,
+    maxPerDay: 500,
   }
 }
 
@@ -124,7 +121,7 @@ export class SearchRateLimiter {
   }
 
   /**
-   * Registra bloqueio a partir de resposta real do LinkedIn (429/999/Retry-After).
+   * bloqueio a partir de resposta real do LinkedIn (429/999/Retry-After)
    */
   registerLinkedInBlock(input: {
     retryAfterMs?: number
@@ -157,7 +154,7 @@ export class SearchRateLimiter {
     return this.snapshot(now)
   }
 
-  /** Interpreta erro lançado pelo client LinkedIn e atualiza o bloqueio se for rate/anti-bot. */
+  /** se o erro for rate/anti-bot do LinkedIn, atualiza o bloqueio */
   noteLinkedInError(err: unknown, now = Date.now()): boolean {
     if (!(err instanceof Error)) return false
     const status = (err as Error & { linkedInStatus?: number }).linkedInStatus
@@ -229,10 +226,7 @@ export class SearchRateLimiter {
       const waitSec = Math.max(1, Math.ceil((cooldownUntil - now) / 1000))
       candidates.push({
         until: cooldownUntil,
-        reason:
-          waitSec === 1
-            ? 'Pausa de 1s entre buscas (anti-spam local).'
-            : `Pausa de ${waitSec}s entre buscas (anti-spam local).`,
+        reason: `Aguarde ${waitSec}s entre buscas`,
         source: 'cooldown',
       })
     }
@@ -281,6 +275,8 @@ export class SearchRateLimiter {
     if (!snap.allowed) {
       const err = new Error(snap.reason || 'Rate limit excedido')
       ;(err as Error & { retryAfterMs?: number }).retryAfterMs = snap.retryAfterMs
+      ;(err as Error & { rateLimitSource?: string | null }).rateLimitSource =
+        snap.source
       throw err
     }
     return snap

@@ -56,9 +56,9 @@ export function useAppSettings(params: {
           linkedinLiAtHint: '',
           linkedinJsessionIdSet: false,
           linkedinMaxPages: 1000,
-          searchCooldownMs: 5_000,
-          maxSearchesPerHour: 0,
-          maxSearchesPerDay: 0,
+          searchCooldownMs: 30_000,
+          maxSearchesPerHour: 30,
+          maxSearchesPerDay: 500,
           jobDetailConcurrency: 5,
         })
         setTab('settings')
@@ -107,7 +107,16 @@ export function useAppSettings(params: {
       type: 'application/json',
     })
     const url = URL.createObjectURL(blob)
-    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const stamp = [
+      now.getFullYear(),
+      pad(now.getMonth() + 1),
+      pad(now.getDate()),
+      pad(now.getHours()),
+      pad(now.getMinutes()),
+      pad(now.getSeconds()),
+    ].join('-')
     const a = document.createElement('a')
     a.href = url
     a.download = `busca-vagas-backup-${stamp}.json`

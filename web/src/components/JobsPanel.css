@@ -68,28 +68,18 @@
 
 .jobs-clear {
   display: grid;
-  gap: 0.4rem;
+  gap: var(--space-2);
 }
 
-.jobs-clear__btn {
-  appearance: none;
-  border: 1px solid color-mix(in srgb, var(--exclude) 35%, var(--line));
-  background: color-mix(in srgb, var(--exclude-soft) 65%, transparent);
-  color: var(--exclude);
-  font: inherit;
+.jobs-clear__btn.ui-btn {
+  width: 100%;
   font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.5rem 0.75rem;
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: center;
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger-soft) 65%, transparent);
 }
 
-.jobs-clear__btn:hover:not(:disabled) {
-  background: var(--exclude-soft);
-}
-
-.jobs-clear__btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.jobs-clear__btn.ui-btn:hover:not(:disabled) {
+  transform: none;
+  background: var(--danger-soft);
 }

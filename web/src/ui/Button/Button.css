@@ -1,0 +1,75 @@
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: var(--font-bold);
+  line-height: var(--leading-normal);
+  cursor: pointer;
+  transition:
+    transform var(--ease),
+    background var(--ease),
+    color var(--ease),
+    opacity var(--ease);
+}
+
+.ui-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ui-btn--full {
+  width: 100%;
+}
+
+.ui-btn--md {
+  padding: var(--space-5) var(--space-6);
+  font-size: var(--text-md);
+}
+
+.ui-btn--sm {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.ui-btn--primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.ui-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent) 82%, #000);
+}
+
+.ui-btn--danger {
+  background: var(--danger);
+  color: var(--danger-contrast);
+}
+
+.ui-btn--danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--danger) 82%, #000);
+}
+
+.ui-btn--soft {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ui-btn--soft:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 18%, var(--accent-soft));
+}
+
+.ui-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.ui-btn--ghost:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}

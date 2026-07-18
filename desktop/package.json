@@ -1,0 +1,68 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Busca Vagas — app desktop (Electron)",
+  "main": "main.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test updaterLogic.test.mjs",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win portable",
+    "dist:linux": "electron-builder --linux AppImage"
+  },
+  "build": {
+    "appId": "com.caducatrinck.busca-vagas",
+    "productName": "Busca Vagas",
+    "electronVersion": "37.10.3",
+    "copyright": "Copyright © Busca Vagas",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.mjs",
+      "updater.mjs",
+      "updaterLogic.mjs",
+      "preload.cjs",
+      "trayBadge.mjs",
+      "splash.html",
+      "package.json",
+      "build/icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "app-resources",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "BuscaVagas-${version}-win-x64-portable.${ext}"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office",
+      "icon": "build/icon.png",
+      "artifactName": "BuscaVagas-${version}-linux-x64.${ext}"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "build/icon.png",
+      "artifactName": "BuscaVagas-${version}-mac.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "37.10.3",
+    "electron-builder": "^26.0.12"
+  }
+}

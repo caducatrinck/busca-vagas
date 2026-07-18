@@ -1,24 +1,70 @@
 import { useRef } from 'react'
 import { DataWarningBanner } from './components/DataWarningBanner'
+import { LinkedInSessionBanner } from './components/LinkedInSessionBanner'
+import { UpdateBanner } from './components/UpdateBanner'
 import { JobList } from './components/JobList'
 import { JobsPanel } from './components/JobsPanel'
-import { PollingPanel } from './components/PollingPanel'
+import { PollingPanel } from './features/monitor'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Tabs } from './components/Tabs'
 import { useAppSettings } from './hooks/useAppSettings'
+import { useDesktopUpdater } from './hooks/useDesktopUpdater'
+import { useLinkedInSession } from './hooks/useLinkedInSession'
 import { useMonitorPolling } from './hooks/useMonitorPolling'
-import { JOBS_TITLES, useMonitors } from './hooks/useMonitors'
+import { useMonitors } from './hooks/useMonitors'
 import { useNotifications } from './hooks/useNotifications'
 import { usePersistedFilters } from './hooks/usePersistedFilters'
 import { useSearchRun } from './hooks/useSearchRun'
 import { useTheme } from './hooks/useTheme'
+import { useI18n } from './i18n'
+import type { MessageKey } from './i18n'
 import { runKey } from './lib/monitorHelpers'
 import { ensureNotificationPermission } from './lib/notifications'
 import type { AppNotification } from './lib/notificationsModel'
-import type { Monitor } from './lib/types'
+import type { JobStatus, Monitor } from './lib/types'
 import './App.css'
 
+const JOBS_COPY_KEYS: Record<
+  JobStatus,
+  { title: MessageKey; empty: MessageKey; hint: MessageKey }
+> = {
+  viewed: {
+    title: 'jobsTitle.viewed',
+    empty: 'jobsEmpty.viewed',
+    hint: 'jobsHint.viewed',
+  },
+  applied: {
+    title: 'jobsTitle.applied',
+    empty: 'jobsEmpty.applied',
+    hint: 'jobsHint.applied',
+  },
+  discarded: {
+    title: 'jobsTitle.discarded',
+    empty: 'jobsEmpty.discarded',
+    hint: 'jobsHint.discarded',
+  },
+}
+
+function monitorListEmptyHint(
+  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
+  monitor: Monitor | null,
+  query: string,
+  rawCount: number,
+  filteredCount: number,
+): string {
+  if (rawCount > 0 && filteredCount === 0) {
+    const q = query.trim()
+    return q
+      ? t('monitor.emptyFilteredHint', { n: rawCount, q })
+      : t('monitor.emptyFilteredHintNoQuery', { n: rawCount })
+  }
+  const reason = monitor?.lastRunStats?.emptyReason?.trim()
+  if (reason) return reason
+  return t('monitor.emptyHint')
+}
+
 function App() {
+  const { t } = useI18n()
   const { filters, replaceFilters, setLanguage } = usePersistedFilters()
   const { theme, toggleTheme, setTheme } = useTheme()
 
@@ -35,6 +81,9 @@ function App() {
     setTheme,
     clearNotifications: notifications.clearNotifications,
   })
+
+  const linkedInSession = useLinkedInSession(!appSettings.setupRequired)
+  const desktopUpdater = useDesktopUpdater()
 
   const activeMonitorIdRef = useRef<string | null>(null)
   activeMonitorIdRef.current = monitors.activeMonitorId
@@ -77,6 +126,14 @@ function App() {
     setRateLimit: polling.setRateLimit,
     setError: monitors.setError,
     clearPendingDraftSave: monitors.clearPendingDraftSave,
+    onPoolingWillEnable: async () => {
+      for (const m of monitors.monitors) {
+        const key = runKey(m)
+        if (key) notifications.notifiedRunsRef.current.add(key)
+      }
+      notifications.seededNotifyRef.current = true
+      await ensureNotificationPermission()
+    },
   })
 
   function handleSelectMonitor(id: string) {
@@ -98,15 +155,9 @@ function App() {
     monitors.setJobsSubTab(value)
   }
 
-  async function handleTogglePolling(enabled: boolean, intervalMinutes: number) {
-    await monitors.handleTogglePolling(enabled, intervalMinutes, async () => {
-      for (const m of monitors.monitors) {
-        const key = runKey(m)
-        if (key) notifications.notifiedRunsRef.current.add(key)
-      }
-      notifications.seededNotifyRef.current = true
-      await ensureNotificationPermission()
-    })
+  async function handlePausePooling() {
+    const minutes = monitors.activeMonitor?.intervalMinutes ?? 20
+    await monitors.handleTogglePolling(false, minutes)
   }
 
   function clearNotifIfAction(status: 'applied' | 'discarded' | 'viewed') {
@@ -135,12 +186,48 @@ function App() {
     await monitors.handleDiscardAll(jobs)
   }
 
+  const jobsCopy = JOBS_COPY_KEYS[monitors.jobsSubTab]
+
   return (
     <div className="app-shell">
       <DataWarningBanner
         onExport={appSettings.handleExportData}
         onImportFile={appSettings.handleImportData}
       />
+      {linkedInSession.needsAttention && linkedInSession.session ? (
+        <LinkedInSessionBanner
+          session={linkedInSession.session}
+          checking={linkedInSession.checking}
+          onGoSettings={() => appSettings.setTab('settings')}
+          onRecheck={() => {
+            void linkedInSession.refresh(true)
+          }}
+        />
+      ) : null}
+      {desktopUpdater.enabled ? (
+        <UpdateBanner
+          state={desktopUpdater.state}
+          onAccept={() => {
+            void desktopUpdater.download()
+          }}
+          onDismiss={() => {
+            void desktopUpdater.dismiss()
+          }}
+          onOpen={() => {
+            void desktopUpdater.openDownloaded()
+          }}
+          onRelaunch={() => {
+            void desktopUpdater.relaunch()
+          }}
+          onRetry={() => {
+            if (desktopUpdater.state.downloadUrl) {
+              void desktopUpdater.download()
+            } else {
+              void desktopUpdater.retryCheck()
+            }
+          }}
+        />
+      ) : null}
       <div className="app">
       <div className="app__sidebar">
         <Tabs
@@ -179,7 +266,7 @@ function App() {
             onClose={monitors.handleCloseMonitor}
             onDraftChange={monitors.handleMonitorDraftChange}
             onLanguageChange={monitors.handleMonitorDescriptionLanguage}
-            onTogglePolling={handleTogglePolling}
+            onPausePooling={handlePausePooling}
             onIntervalChange={monitors.handleIntervalChange}
             onRunNow={searchRun.handleRunMonitorNow}
             onAddWord={monitors.handleMonitorDescriptionAddWord}
@@ -195,7 +282,10 @@ function App() {
             setupRequired={appSettings.setupRequired}
             onSaved={(next) => {
               appSettings.setAppSettings(next)
-              if (next.ready) void monitors.loadMonitors(monitors.activeMonitorId)
+              if (next.ready) {
+                void monitors.loadMonitors(monitors.activeMonitorId)
+                void linkedInSession.refresh(true)
+              }
             }}
           />
         ) : null}
@@ -210,9 +300,9 @@ function App() {
             showDescriptionFilters={false}
             showTopFilters
             showLanguageFilter
-            title={JOBS_TITLES[monitors.jobsSubTab].title}
-            emptyTitle={JOBS_TITLES[monitors.jobsSubTab].empty}
-            emptyHint={JOBS_TITLES[monitors.jobsSubTab].hint}
+            title={t(jobsCopy.title)}
+            emptyTitle={t(jobsCopy.empty)}
+            emptyHint={t(jobsCopy.hint)}
             onStatusChange={handleStatusChange}
             onDiscardAll={handleDiscardAll}
             onLanguageChange={setLanguage}
@@ -231,11 +321,28 @@ function App() {
             showDescriptionFilters={monitors.monitorDraft.fetchDescriptions}
             title={
               monitors.activeMonitor
-                ? `Monitor: ${monitors.activeMonitor.search.query || monitors.activeMonitor.name}`
-                : 'Monitor'
+                ? t('monitor.title', {
+                    name:
+                      monitors.activeMonitor.search.query ||
+                      monitors.activeMonitor.name,
+                  })
+                : t('nav.monitor')
             }
-            emptyTitle="Sem vagas neste monitor"
-            emptyHint="Crie uma aba com +, configure a busca e marque pooling ou clique em Buscar agora."
+            emptyTitle={
+              monitors.monitorJobs.length > 0 &&
+              monitors.monitorFiltered.length === 0
+                ? t('monitor.emptyFilteredTitle')
+                : monitors.activeMonitor?.lastRunStats?.emptyReason
+                  ? t('monitor.emptySearchTitle')
+                  : t('monitor.emptyTitle')
+            }
+            emptyHint={monitorListEmptyHint(
+              t,
+              monitors.activeMonitor,
+              monitors.monitorDraft.query,
+              monitors.monitorJobs.length,
+              monitors.monitorFiltered.length,
+            )}
             onCancelSearch={searchRun.handleCancelSearch}
             onStatusChange={handleStatusChange}
           />

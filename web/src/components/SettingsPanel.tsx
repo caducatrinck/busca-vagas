@@ -5,6 +5,8 @@ import {
   type PublicAppSettings,
   type SettingsPatch,
 } from '../lib/api'
+import { useI18n } from '../i18n'
+import { Alert, Button, Field, NumberInput, TextInput } from '../ui'
 import './SettingsPanel.css'
 
 const COOKIE_MASK = '********'
@@ -18,7 +20,7 @@ type FormState = {
   linkedinLiAt: string
   linkedinJsessionId: string
   linkedinMaxPages: number
-  searchCooldownMs: number
+  searchCooldownSec: number
   maxSearchesPerHour: number
   maxSearchesPerDay: number
   jobDetailConcurrency: number
@@ -29,7 +31,7 @@ function formFromSettings(s: PublicAppSettings): FormState {
     linkedinLiAt: s.linkedinLiAtSet ? COOKIE_MASK : '',
     linkedinJsessionId: s.linkedinJsessionIdSet ? COOKIE_MASK : '',
     linkedinMaxPages: s.linkedinMaxPages,
-    searchCooldownMs: s.searchCooldownMs,
+    searchCooldownSec: Math.round(s.searchCooldownMs / 1000),
     maxSearchesPerHour: s.maxSearchesPerHour,
     maxSearchesPerDay: s.maxSearchesPerDay,
     jobDetailConcurrency: s.jobDetailConcurrency,
@@ -39,20 +41,22 @@ function formFromSettings(s: PublicAppSettings): FormState {
 function cookiePatchValue(
   value: string,
   alreadySet: boolean,
-): string | undefined {
+): 'keep' | 'clear' | { set: string } {
   const trimmed = value.trim()
-  if (!trimmed) return undefined
-  if (alreadySet && trimmed === COOKIE_MASK) return undefined
-  return trimmed
+  if (alreadySet && trimmed === COOKIE_MASK) return 'keep'
+  if (!trimmed) return 'clear'
+  return { set: trimmed }
 }
 
 export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
+  const { t } = useI18n()
   const [current, setCurrent] = useState<PublicAppSettings | null>(null)
   const [form, setForm] = useState<FormState | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [okMsg, setOkMsg] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +79,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -90,21 +94,17 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         current.linkedinJsessionIdSet,
       )
 
-      if (!current.linkedinLiAtSet && !liAt) {
-        setError('Cole o cookie li_at para continuar.')
-        setSaving(false)
-        return
-      }
-
       const patch: SettingsPatch = {
         linkedinMaxPages: form.linkedinMaxPages,
-        searchCooldownMs: form.searchCooldownMs,
+        searchCooldownMs: Math.max(0, Math.round(form.searchCooldownSec * 1000)),
         maxSearchesPerHour: form.maxSearchesPerHour,
         maxSearchesPerDay: form.maxSearchesPerDay,
         jobDetailConcurrency: form.jobDetailConcurrency,
       }
-      if (liAt) patch.linkedinLiAt = liAt
-      if (jsession) patch.linkedinJsessionId = jsession
+      if (liAt === 'clear') patch.clearLinkedinLiAt = true
+      else if (typeof liAt === 'object') patch.linkedinLiAt = liAt.set
+      if (jsession === 'clear') patch.clearLinkedinJsessionId = true
+      else if (typeof jsession === 'object') patch.linkedinJsessionId = jsession.set
 
       const next = await saveSettings(patch)
       setCurrent(next)
@@ -112,7 +112,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       setOkMsg(
         next.ready
           ? 'Configurações salvas — app liberado'
-          : 'Salvo. Ainda falta o cookie li_at para liberar o app.',
+          : 'Salvo. Sem cookie li_at — o app fica bloqueado até você colar um.',
       )
       onSaved?.(next)
     } catch (err) {
@@ -139,11 +139,29 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     setForm({ ...form, [field]: next })
   }
 
-  if (loading || !form || !current) {
+  if (loading) {
     return (
       <section className="settings-panel">
-        <p className="settings-panel__lead">Carregando configurações…</p>
-        {error ? <p className="settings-panel__error">{error}</p> : null}
+        <p className="settings-panel__lead">{t('list.loading')}</p>
+      </section>
+    )
+  }
+
+  if (!form || !current) {
+    return (
+      <section className="settings-panel">
+        <header className="settings-panel__header">
+          <p className="settings-panel__mark">{t('nav.settings')}</p>
+          <h1>Não foi possível carregar</h1>
+        </header>
+        <Alert tone="danger">{error || 'API indisponível. Confira se o serviço está no ar.'}</Alert>
+        <p className="settings-panel__lead">
+          Em desenvolvimento a API precisa estar em{' '}
+          <code>http://127.0.0.1:8787</code>.
+        </p>
+        <Button variant="ghost" onClick={() => setReloadKey((n) => n + 1)}>
+          Tentar de novo
+        </Button>
       </section>
     )
   }
@@ -151,22 +169,22 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   return (
     <section className="settings-panel">
       <header className="settings-panel__header">
-        <p className="settings-panel__mark">Configurações</p>
-        <h1>{setupRequired ? 'Configure para continuar' : 'Cookies e limites'}</h1>
+        <p className="settings-panel__mark">{t('nav.settings')}</p>
+        <h1>
+          {setupRequired ? t('settings.setupTitle') : t('settings.title')}
+        </h1>
         {setupRequired ? (
           <p className="settings-panel__banner" role="alert">
-            O app está bloqueado até você salvar o cookie <code>li_at</code> do
-            LinkedIn. Sem ele não é possível buscar vagas.
+            {t('settings.setupLead')}
           </p>
         ) : null}
       </header>
 
       <aside className="settings-guide" aria-labelledby="settings-guide-title">
         <h2 id="settings-guide-title">Como pegar os cookies</h2>
+        <p className="settings-guide__howto">{t('settings.howto')}</p>
         <ol>
-          <li>
-            Abra o LinkedIn no navegador e faça login na sua conta.
-          </li>
+          <li>Abra o LinkedIn no navegador e faça login na sua conta.</li>
           <li>
             Pressione <kbd>F12</kbd> (ou clique com o botão direito → Inspecionar)
             para abrir as DevTools.
@@ -183,8 +201,8 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             <code>JSESSIONID</code> (sem as aspas).
           </li>
           <li>
-            Cole abaixo e salve. Cookies expiram — se a busca começar a
-            falhar com 401/403, atualize o <code>li_at</code>.
+            Cole abaixo e salve. Cookies expiram — se a busca começar a falhar
+            com 401/403, atualize o <code>li_at</code>.
           </li>
         </ol>
         <p className="settings-guide__note">
@@ -197,18 +215,11 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         <fieldset>
           <legend>LinkedIn</legend>
 
-          <label>
-            Cookie li_at (obrigatório)
-            <span className="settings-panel__hint">
-              {current.linkedinLiAtSet
-                ? 'Preenchido — cole um novo valor só se quiser trocar'
-                : 'Cole o valor do cookie'}
-            </span>
-            <input
+          <Field label={t('settings.liAt')}>
+            <TextInput
               type="password"
               autoComplete="off"
               spellCheck={false}
-              required={!current.linkedinLiAtSet}
               placeholder="Cole o li_at"
               value={form.linkedinLiAt}
               onFocus={(e) => {
@@ -216,16 +227,10 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
               }}
               onChange={(e) => onCookieChange('linkedinLiAt', e.target.value)}
             />
-          </label>
+          </Field>
 
-          <label>
-            Cookie JSESSIONID
-            <span className="settings-panel__hint">
-              {current.linkedinJsessionIdSet
-                ? 'Preenchido — cole um novo valor só se quiser trocar'
-                : 'Opcional'}
-            </span>
-            <input
+          <Field label={t('settings.jsession')}>
+            <TextInput
               type="password"
               autoComplete="off"
               spellCheck={false}
@@ -238,118 +243,80 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 onCookieChange('linkedinJsessionId', e.target.value)
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Máx. páginas por busca
-            <span className="settings-panel__hint">
-              ~10 vagas por página (guest). Padrão 1000 ≈ sem teto prático.
-            </span>
-            <input
-              type="number"
+          <Field label={t('settings.maxPages')}>
+            <NumberInput
               min={1}
               max={5000}
               value={form.linkedinMaxPages}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  linkedinMaxPages: Number(e.target.value) || 1,
-                })
+              emptyValue={1}
+              onValueChange={(linkedinMaxPages) =>
+                setForm({ ...form, linkedinMaxPages })
               }
             />
-          </label>
+          </Field>
         </fieldset>
 
         <fieldset>
           <legend>Rate limit</legend>
-          <p className="settings-panel__hint">
-            O bloqueio principal vem de erros reais do LinkedIn (HTTP 429 /
-            Retry-After). Os tetos abaixo são opcionais — use <strong>0</strong>{' '}
-            para desligar.
-          </p>
 
-          <label>
-            Intervalo mínimo entre buscas (ms)
-            <span className="settings-panel__hint">
-              Anti-spam local. Ex.: 5000 = 5s. 0 = desligado
-            </span>
-            <input
-              type="number"
+          <Field label={t('settings.cooldown')}>
+            <NumberInput
               min={0}
-              max={600000}
-              step={1000}
-              value={form.searchCooldownMs}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  searchCooldownMs: Number(e.target.value) || 0,
-                })
+              max={600}
+              step={1}
+              value={form.searchCooldownSec}
+              emptyValue={0}
+              onValueChange={(searchCooldownSec) =>
+                setForm({ ...form, searchCooldownSec })
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Máx. buscas por hora (opcional)
-            <span className="settings-panel__hint">
-              Teto local de segurança. 0 = só responde ao LinkedIn
-            </span>
-            <input
-              type="number"
+          <Field label={t('settings.maxHour')}>
+            <NumberInput
               min={0}
               max={500}
               value={form.maxSearchesPerHour}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  maxSearchesPerHour: Math.max(0, Number(e.target.value) || 0),
-                })
+              emptyValue={0}
+              onValueChange={(maxSearchesPerHour) =>
+                setForm({ ...form, maxSearchesPerHour })
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Máx. buscas por dia (opcional)
-            <span className="settings-panel__hint">0 = desligado</span>
-            <input
-              type="number"
+          <Field label={t('settings.maxDay')}>
+            <NumberInput
               min={0}
               max={2000}
               value={form.maxSearchesPerDay}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  maxSearchesPerDay: Math.max(0, Number(e.target.value) || 0),
-                })
+              emptyValue={0}
+              onValueChange={(maxSearchesPerDay) =>
+                setForm({ ...form, maxSearchesPerDay })
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Concorrência de descrições
-            <span className="settings-panel__hint">
-              Quantas páginas de detalhe buscar em paralelo
-            </span>
-            <input
-              type="number"
+          <Field label={t('settings.concurrency')}>
+            <NumberInput
               min={1}
               max={20}
               value={form.jobDetailConcurrency}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  jobDetailConcurrency: Number(e.target.value) || 1,
-                })
+              emptyValue={1}
+              onValueChange={(jobDetailConcurrency) =>
+                setForm({ ...form, jobDetailConcurrency })
               }
             />
-          </label>
+          </Field>
         </fieldset>
 
-        {error ? <p className="settings-panel__error">{error}</p> : null}
+        {error ? <Alert tone="danger">{error}</Alert> : null}
         {okMsg ? <p className="settings-panel__ok">{okMsg}</p> : null}
 
-        <button type="submit" disabled={saving}>
-          {saving ? 'Salvando…' : 'Salvar configurações'}
-        </button>
+        <Button type="submit" disabled={saving}>
+          {saving ? t('settings.saving') : t('settings.save')}
+        </Button>
       </form>
     </section>
   )

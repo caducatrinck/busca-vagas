@@ -57,7 +57,7 @@ export function useMonitorPolling(params: {
     if (rateLimit?.allowed === false) {
       const id = window.setInterval(() => {
         void fetchRateLimit().then(setRateLimit)
-      }, 15_000)
+      }, 1_000)
       return () => window.clearInterval(id)
     }
     void fetchRateLimit().then(setRateLimit)

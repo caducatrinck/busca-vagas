@@ -2,6 +2,10 @@ import type { FastifyInstance } from 'fastify'
 import type { StoreRepository } from '../../application/ports.js'
 import { setMonitorPolling, syncSchedulers } from '../../poller.js'
 import { searchRateLimiter } from '../../rateLimit.js'
+import {
+  getLinkedInSessionStatus,
+  probeLinkedInSession,
+} from '../../linkedinSession.js'
 import type { AppSettings, JobFilters, StoreData, ThemeMode } from '../../store.js'
 
 export function registerSettingsRoutes(
@@ -11,6 +15,12 @@ export function registerSettingsRoutes(
   const { repo } = deps
 
   app.get('/rate-limit', async () => searchRateLimiter.snapshot())
+
+  app.get('/linkedin/session', async () => getLinkedInSessionStatus())
+
+  app.post('/linkedin/session/check', async () =>
+    probeLinkedInSession({ force: true }),
+  )
 
   app.get('/settings', async () => {
     const settings = await repo.getAppSettings()
@@ -35,6 +45,14 @@ export function registerSettingsRoutes(
       for (const m of monitors) {
         if (m.pollingEnabled) await setMonitorPolling(m.id, false)
       }
+    } else if (
+      typeof body.linkedinLiAt === 'string' ||
+      typeof body.linkedinJsessionId === 'string' ||
+      body.clearLinkedinLiAt ||
+      body.clearLinkedinJsessionId
+    ) {
+      // cookie mudou — revalida sessão
+      void probeLinkedInSession({ force: true })
     }
     return repo.toPublicSettings(settings)
   })
@@ -45,12 +63,14 @@ export function registerSettingsRoutes(
     Body: {
       filters?: JobFilters
       theme?: ThemeMode
+      locale?: 'pt' | 'en'
     }
   }>('/prefs', async (request) => {
     const body = request.body ?? {}
     return repo.updateUiPrefs({
       filters: body.filters,
       theme: body.theme,
+      locale: body.locale,
     })
   })
 

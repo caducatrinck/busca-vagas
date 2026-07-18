@@ -1,0 +1,97 @@
+.ui-select {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.ui-select--full {
+  display: flex;
+  width: 100%;
+}
+
+.ui-select__trigger {
+  min-width: 8.2rem;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+
+  background: var(--panel-solid);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-normal);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+
+  cursor: pointer;
+}
+
+.ui-select--full .ui-select__trigger {
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-select__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ui-select__trigger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+
+.ui-select__trigger:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.ui-select__caret {
+  width: 0.45rem;
+  height: 0.45rem;
+  transform: rotate(45deg);
+  border-right: 2px solid var(--ink-soft);
+  border-bottom: 2px solid var(--ink-soft);
+  margin-top: -2px;
+  flex: 0 0 auto;
+}
+
+.ui-select__menu {
+  position: absolute;
+  z-index: 80;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-solid);
+  box-shadow: var(--shadow);
+  padding: 0.15rem;
+  overflow: hidden;
+}
+
+.ui-select__option {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: var(--font-medium);
+  line-height: var(--leading-snug);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-select__option:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ui-select__option--selected {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}

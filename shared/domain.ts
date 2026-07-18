@@ -1,8 +1,9 @@
-export type PostedWithin = '24h' | 'week' | 'month'
+export type PostedWithin = '30m' | '1h' | '10h' | '24h' | 'week' | 'month'
+
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
-/** Modelo de trabalho: híbrido, presencial ou remoto. */
+/** híbrido / presencial / remoto */
 export type WorkplaceType = 'hybrid' | 'onsite' | 'remote'
 
 export const WORKPLACE_TYPE_LABELS: Record<WorkplaceType, string> = {
@@ -11,10 +12,10 @@ export const WORKPLACE_TYPE_LABELS: Record<WorkplaceType, string> = {
   remote: 'Remoto',
 }
 
-/** Tipo de contrato detectado na descrição. */
+/** CLT ou PJ puxado da descrição */
 export type ContractTag = 'CLT' | 'PJ'
 
-/** Detecta CLT / PJ como palavra inteira na descrição. */
+/** CLT/PJ como palavra inteira */
 export function parseContractTags(text: string): ContractTag[] {
   const hay = text
     .normalize('NFD')
@@ -29,8 +30,8 @@ export function parseContractTags(text: string): ContractTag[] {
 }
 
 /**
- * Fallback na descrição quando o LinkedIn não trouxe a tag oficial.
- * Ordem: híbrido > remoto > presencial (evita ambiguidade).
+ * chute pela descrição quando o LinkedIn não mandou a tag.
+ * ordem: híbrido > remoto > presencial
  */
 export function inferWorkplaceFromDescription(
   text: string,
@@ -63,7 +64,7 @@ export function inferWorkplaceFromDescription(
   return undefined
 }
 
-/** Prefere a tag oficial do LinkedIn; senão infere da descrição. */
+/** tag oficial primeiro; senão tenta a descrição */
 export function resolveWorkplaceType(
   workplaceType: WorkplaceType | null | undefined,
   description?: string,
@@ -79,15 +80,15 @@ export type Job = {
   location: string
   description: string
   url: string
-  /** Instantâneo absoluto (ISO) quando possível — para ordenar e atualizar o rótulo. */
+  /** ISO absoluto quando der pra ter (ordenar / atualizar rótulo) */
   postedAt?: string
-  /** Texto exatamente como no LinkedIn no momento da coleta (ex.: "há 8 horas"). */
+  /** texto cru do LinkedIn na coleta ("há 8 horas") */
   postedLabel?: string
-  /** Tag LinkedIn: híbrido / presencial / remoto. `null` = já consultado e sem tag. */
+  /** tag LinkedIn; null = já olhou e não tinha */
   workplaceType?: WorkplaceType | null
-  /** true = workplaceType veio do Voyager (confiável); null antigo sem isso deve ser reconsultado. */
+  /** veio do Voyager; store antigo sem isso = reconsultar */
   workplaceResolved?: boolean
-  /** Tags CLT / PJ quando a descrição menciona. */
+  /** CLT/PJ se a descrição falar */
   contractTags?: ContractTag[]
 }
 

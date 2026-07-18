@@ -1,7 +1,7 @@
 .filter-tags {
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
   background: color-mix(in srgb, var(--panel-solid) 85%, transparent);
 }
 
@@ -11,60 +11,57 @@
 }
 
 .filter-tags__head p {
-  margin: 0.25rem 0 0.65rem;
-  font-size: 0.75rem;
+  margin: var(--space-1) 0 var(--space-4);
+  font-size: var(--text-xs);
   color: var(--ink-soft);
 }
 
 .filter-tags__form {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 0.4rem;
+  gap: var(--space-2);
+  align-items: stretch;
 }
 
-.filter-tags__form input {
-  border: 1px solid var(--line);
+.filter-tags__form .ui-input {
+  padding: var(--space-3) 0.65rem;
   border-radius: 10px;
-  padding: 0.5rem 0.65rem;
-  background: var(--panel-solid);
   min-width: 0;
 }
 
-.filter-tags__form input:focus {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.filter-tags__form button {
-  border: 0;
-  border-radius: 10px;
+.filter-tags__add.ui-btn {
   width: 2.2rem;
+  min-width: 2.2rem;
+  padding: 0;
+  border-radius: 10px;
   background: var(--ink);
   color: #fff;
-  cursor: pointer;
-  font-weight: 700;
+}
+
+.filter-tags__add.ui-btn:hover:not(:disabled) {
+  transform: none;
+  background: color-mix(in srgb, var(--ink) 85%, #000);
 }
 
 .filter-tags__list {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.65rem 0 0;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
   padding: 0;
 }
 
 .filter-tags__list button {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-2);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.28rem 0.65rem;
   cursor: pointer;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }
 
 .filter-tags--include .filter-tags__list button {
@@ -78,5 +75,5 @@
 }
 
 .filter-tags__list button span {
-  opacity: 0.7;
+  opacity: 0.75;
 }

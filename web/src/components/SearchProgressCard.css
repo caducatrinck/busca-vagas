@@ -218,28 +218,17 @@
   color: var(--ink-soft);
 }
 
-.search-progress__cancel {
+.search-progress__cancel.ui-btn {
   flex-shrink: 0;
-  appearance: none;
-  border: 1px solid color-mix(in srgb, var(--exclude) 35%, var(--line));
-  background: color-mix(in srgb, var(--exclude-soft) 70%, transparent);
-  color: var(--exclude);
   font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.4rem 0.75rem;
-  border-radius: 10px;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line));
+  background: color-mix(in srgb, var(--danger-soft) 70%, transparent);
+  color: var(--danger);
 }
 
-.search-progress__cancel:hover {
-  background: var(--exclude-soft);
-}
-
-.search-progress__cancel:active {
-  transform: scale(0.98);
+.search-progress__cancel.ui-btn:hover:not(:disabled) {
+  transform: none;
+  background: var(--danger-soft);
 }
 
 @keyframes search-progress-in {

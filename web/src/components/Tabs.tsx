@@ -1,6 +1,8 @@
 import type { AppTab, JobStatus, Monitor } from '../lib/types'
 import { formatBadgeCount } from '../lib/notificationsModel'
 import type { ThemeMode } from '../hooks/useTheme'
+import { useI18n } from '../i18n'
+import { Button, cx } from '../ui'
 import './Tabs.css'
 
 type Props = {
@@ -77,24 +79,21 @@ export function Tabs({
   onToggleTheme,
   onChange,
 }: Props) {
+  const { t, locale, toggleLocale } = useI18n()
   const activeMonitors = monitors.filter((m) => m.pollingEnabled).length
   const runningMonitors = monitors.filter((m) => m.ticking).length
-  const monitorMeta = setupRequired
-    ? 'Bloqueado'
-    : monitors.length === 0
-      ? 'Criar busca'
-      : runningMonitors > 0
-        ? `${runningMonitors} buscando`
-        : activeMonitors > 0
-          ? `${activeMonitors} pooling`
-          : `${monitors.length} busca${monitors.length === 1 ? '' : 's'}`
-
   const pendingCount = statusCounts.viewed
+
+  const monitorMeta = setupRequired
+    ? '—'
+    : activeMonitors > 0
+      ? t('nav.monitorsActive', { n: activeMonitors })
+      : t('nav.monitorsNone')
   const jobsMeta = setupRequired
-    ? 'Bloqueado'
-    : jobsCount === 0
-      ? 'Banco local'
-      : `${jobsCount} no total`
+    ? '—'
+    : jobsCount > 0
+      ? t('nav.jobsCount', { n: jobsCount })
+      : t('nav.jobsEmpty')
 
   const jobsNotifBadge = setupRequired ? null : formatBadgeCount(unreadTotal)
   const pendingBadge =
@@ -106,41 +105,57 @@ export function Tabs({
     <header className="app-nav">
       <div className="app-nav__brand">
         <div className="app-nav__brand-text">
-          <p className="app-nav__mark">Busca Vagas</p>
+          <p className="app-nav__mark">{t('app.name')}</p>
         </div>
         <div className="app-nav__actions">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="app-nav__icon-btn app-nav__lang-btn"
+            aria-label={locale === 'pt' ? t('nav.lang.toEn') : t('nav.lang.toPt')}
+            title={locale === 'pt' ? t('nav.lang.toEn') : t('nav.lang.toPt')}
+            onClick={toggleLocale}
+          >
+            {locale === 'pt' ? 'EN' : 'PT'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className="app-nav__icon-btn"
             aria-label={
-              theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'
+              theme === 'dark' ? t('nav.theme.toLight') : t('nav.theme.toDark')
             }
-            title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            title={theme === 'dark' ? t('nav.theme.light') : t('nav.theme.dark')}
             onClick={onToggleTheme}
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-          </button>
-          <button
-            type="button"
-            className={`app-nav__icon-btn app-nav__settings${setupRequired ? ' app-nav__settings--need' : ''}${tab === 'settings' ? ' app-nav__icon-btn--active' : ''}`}
-            aria-label="Configurações"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cx(
+              'app-nav__icon-btn',
+              'app-nav__settings',
+              setupRequired && 'app-nav__settings--need',
+              tab === 'settings' && 'app-nav__icon-btn--active',
+            )}
+            aria-label={t('nav.settings')}
             aria-pressed={tab === 'settings'}
-            title="Configurações"
+            title={t('nav.settings')}
             onClick={() => onChange('settings')}
           >
             <GearIcon />
-          </button>
+          </Button>
         </div>
       </div>
 
       {setupRequired ? (
         <p className="app-nav__lock" role="status">
-          Informe o cookie <code>li_at</code> em Configurações para liberar o
-          app.
+          {t('nav.lockCookie')}
         </p>
       ) : null}
 
-      <nav className="app-nav__switch" aria-label="Seções">
+      <nav className="app-nav__switch" aria-label={t('nav.sections')}>
         <button
           type="button"
           role="tab"
@@ -151,14 +166,14 @@ export function Tabs({
           onClick={() => onChange('monitor')}
         >
           <span className="app-nav__label">
-            Monitor
+            {t('nav.monitor')}
             {activeMonitors > 0 && !setupRequired ? (
               <span
                 className={`app-nav__live${runningMonitors > 0 ? ' app-nav__live--running' : ''}`}
                 title={
                   runningMonitors > 0
-                    ? 'Buscando vagas agora'
-                    : 'Pooling ativo'
+                    ? t('nav.searchingNow')
+                    : t('nav.poolingActive')
                 }
               />
             ) : null}
@@ -175,17 +190,17 @@ export function Tabs({
           onClick={() => onChange('jobs')}
         >
           <span className="app-nav__label">
-            Vagas
+            {t('nav.jobs')}
             {jobsNotifBadge ? (
               <span
                 className="app-nav__alert-badge"
-                title="Vagas novas no pooling"
-                aria-label={`${unreadTotal} notificações não lidas`}
+                title={t('nav.newJobsPooling')}
+                aria-label={`${unreadTotal}`}
               >
                 {jobsNotifBadge}
               </span>
             ) : pendingBadge ? (
-              <span className="app-nav__count" title="Pendentes">
+              <span className="app-nav__count" title={t('nav.pending')}>
                 {pendingBadge}
               </span>
             ) : null}

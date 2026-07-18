@@ -6,8 +6,9 @@
   <a href="#english"><strong>🇺🇸 English</strong></a>
 </p>
 
-Guia para quem **nunca instalou Git nem Node** — como se o computador tivesse acabado de ser formatado.  
-Para o resumo técnico, veja o [README](./README.md).
+Guia para quem **nunca instalou Git nem Node** e quer rodar o código (contribuição / desenvolvimento).  
+
+Só quer **baixar o .exe / AppImage**? Use o [README](./README.md) e os [Releases](https://github.com/caducatrinck/busca-vagas/releases/latest) — não precisa deste guia.
 
 ---
 

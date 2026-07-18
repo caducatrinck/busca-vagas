@@ -1,0 +1,28 @@
+.ui-input {
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  border-radius: var(--radius-md);
+  padding: 0.7rem 0.85rem;
+  color: var(--ink);
+  font: inherit;
+  font-weight: var(--font-regular);
+}
+
+.ui-input--full {
+  width: 100%;
+}
+
+.ui-input:focus {
+  outline: var(--focus-ring);
+  border-color: var(--accent);
+}
+
+.ui-input:disabled {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--panel-solid) 70%, var(--bg));
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+  cursor: not-allowed;
+  opacity: 1;
+  -webkit-text-fill-color: var(--ink-soft);
+}

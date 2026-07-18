@@ -24,7 +24,7 @@ describe('SearchRateLimiter', () => {
     const snap = limiter.snapshot(t0 + 5_000)
     assert.equal(snap.allowed, false)
     assert.equal(snap.source, 'cooldown')
-    assert.match(snap.reason ?? '', /anti-spam local/i)
+    assert.match(snap.reason ?? '', /Aguarde \d+s entre buscas/i)
   })
 
   it('não bloqueia por cota horária quando maxPerHour=0', () => {

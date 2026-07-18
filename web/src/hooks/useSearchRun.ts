@@ -13,6 +13,7 @@ import {
   type RateLimitInfo,
 } from '../lib/api'
 import { LONG_SEARCH_CHIME_MS, mergeJobs } from '../lib/monitorHelpers'
+import { formatRateLimitSummary } from '../lib/rateLimit'
 import { playSearchCompleteChime } from '../lib/sound'
 import type { Job, Monitor, SearchForm, SearchProgress } from '../lib/types'
 
@@ -27,6 +28,8 @@ export function useSearchRun(params: {
   setRateLimit: Dispatch<SetStateAction<RateLimitInfo | null>>
   setError: Dispatch<SetStateAction<string | null>>
   clearPendingDraftSave: () => void
+  /** ao ligar o pooling (ex. pedir notificação) */
+  onPoolingWillEnable?: () => void | Promise<void>
 }) {
   const {
     activeMonitorId,
@@ -39,6 +42,7 @@ export function useSearchRun(params: {
     setRateLimit,
     setError,
     clearPendingDraftSave,
+    onPoolingWillEnable,
   } = params
 
   const [searchProgress, setSearchProgress] = useState<SearchProgress | null>(
@@ -76,7 +80,12 @@ export function useSearchRun(params: {
     const limit = await fetchRateLimit()
     setRateLimit(limit)
     if (limit && !limit.allowed) {
-      setError(limit.reason || 'Limite de buscas atingido')
+      // cooldown: só o contador embaixo do botão; não joga erro na lista
+      if (limit.source !== 'cooldown') {
+        setError(formatRateLimitSummary(limit) || 'Limite de buscas atingido')
+      } else {
+        setError(null)
+      }
       return
     }
     clearPendingDraftSave()
@@ -97,9 +106,18 @@ export function useSearchRun(params: {
       etaSeconds: null,
     })
     try {
+      const intervalMinutes = Math.min(
+        Math.max(activeMonitor?.intervalMinutes ?? 20, 1),
+        120,
+      )
+      if (!activeMonitor?.pollingEnabled) {
+        await onPoolingWillEnable?.()
+      }
       await updateMonitor(activeMonitorId, {
         search: monitorDraft,
         name: monitorDraft.query.trim().slice(0, 28) || 'Monitor',
+        pollingEnabled: true,
+        intervalMinutes,
       })
       const result = await runMonitorWithProgress(activeMonitorId, {
         signal: ac.signal,

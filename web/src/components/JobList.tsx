@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useState } from 'react'
 import {
   type DescriptionLanguage,
   type Job,
@@ -12,7 +11,9 @@ import { jobRecencyMs } from '../lib/formatPostedAt'
 import { jobStatus } from '../lib/jobStatus'
 import { isRateLimitError } from '../lib/rateLimit'
 import { JobCard } from './JobCard'
+import { LanguageDropdown } from './LanguageDropdown'
 import { SearchProgressCard } from './SearchProgressCard'
+import { Button, TextInput } from '../ui'
 import './JobList.css'
 
 type Props = {
@@ -38,131 +39,6 @@ type Props = {
 }
 
 const EMPTY_JOBS: Job[] = []
-
-const LANGUAGE_OPTIONS: Array<{ value: DescriptionLanguage; label: string }> =
-  [
-    { value: '', label: 'Qualquer' },
-    { value: 'pt', label: 'Português' },
-    { value: 'en', label: 'Inglês' },
-  ]
-
-function LanguageDropdown(props: {
-  value: DescriptionLanguage
-  onChange: (value: DescriptionLanguage) => void
-}) {
-  const { value, onChange } = props
-  const [open, setOpen] = useState(false)
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0 })
-
-  const triggerRef = useRef<HTMLButtonElement | null>(null)
-  const menuRef = useRef<HTMLDivElement | null>(null)
-
-  const selectedLabel = useMemo(() => {
-    return LANGUAGE_OPTIONS.find((o) => o.value === value)?.label ?? 'Qualquer'
-  }, [value])
-
-  useEffect(() => {
-    if (!open) return
-
-    function updatePos() {
-      const el = triggerRef.current
-      if (!el) return
-      const r = el.getBoundingClientRect()
-      setMenuPos({
-        top: r.bottom + 6,
-        left: r.left,
-        width: r.width,
-      })
-    }
-
-    updatePos()
-    window.addEventListener('resize', updatePos)
-    window.addEventListener('scroll', updatePos, true)
-
-    return () => {
-      window.removeEventListener('resize', updatePos)
-      window.removeEventListener('scroll', updatePos, true)
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-
-    function onPointerDown(e: PointerEvent) {
-      const target = e.target as Node | null
-      if (!target) return
-      if (triggerRef.current?.contains(target)) return
-      if (menuRef.current?.contains(target)) return
-      setOpen(false)
-    }
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  return (
-    <div className="job-list__language-dropdown">
-      <button
-        ref={triggerRef}
-        type="button"
-        className="job-list__language-trigger"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="job-list__language-trigger-text">{selectedLabel}</span>
-        <span className="job-list__language-trigger-caret" aria-hidden />
-      </button>
-
-      {open
-        ? createPortal(
-            <div
-              ref={menuRef}
-              className="job-list__language-menu"
-              role="listbox"
-              aria-label="Filtrar por idioma"
-              style={{
-                top: menuPos.top,
-                left: menuPos.left,
-                width: menuPos.width,
-              }}
-            >
-              {LANGUAGE_OPTIONS.map((opt) => {
-                const selected = opt.value === value
-                return (
-                  <button
-                    key={opt.value || 'any'}
-                    type="button"
-                    className={`job-list__language-option${
-                      selected ? ' job-list__language-option--selected' : ''
-                    }`}
-                    role="option"
-                    aria-selected={selected}
-                    onClick={() => {
-                      onChange(opt.value)
-                      setOpen(false)
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                )
-              })}
-            </div>,
-            document.body,
-          )
-        : null}
-    </div>
-  )
-}
 
 export function JobList({
   jobs,
@@ -314,7 +190,7 @@ export function JobList({
         {showTopFilters ? (
           <div className="job-list__toolbar">
             <label className="job-list__search">
-              <input
+              <TextInput
                 type="search"
                 value={titleQuery}
                 onChange={(e) => setTitleQuery(e.target.value)}
@@ -324,7 +200,7 @@ export function JobList({
               />
             </label>
             <label className="job-list__search">
-              <input
+              <TextInput
                 type="search"
                 value={descriptionQuery}
                 onChange={(e) => setDescriptionQuery(e.target.value)}
@@ -342,8 +218,9 @@ export function JobList({
                 />
               </label>
             ) : null}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               className="job-list__sort"
               onClick={() => setNewestFirst((v) => !v)}
               aria-label={
@@ -358,10 +235,11 @@ export function JobList({
               }
             >
               {newestFirst ? '↓' : '↑'}
-            </button>
+            </Button>
             {onDiscardAll ? (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="sm"
                 className="job-list__discard-all"
                 disabled={discardCount === 0 || discarding || searching}
                 onClick={() => setConfirmDiscard(true)}
@@ -369,7 +247,7 @@ export function JobList({
                 {discarding
                   ? 'Descartando…'
                   : `Descartar todas${discardCount > 0 ? ` (${discardCount})` : ''}`}
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}
@@ -390,9 +268,7 @@ export function JobList({
                 ? `${totalCount} vaga(s) ocultadas pelos filtros.`
                 : showTopFilters
                   ? 'Ajuste o título/descrição ou limpe os filtros acima.'
-                  : safeJobs.length === 0 && totalCount > 0
-                    ? 'Nenhuma vaga para exibir no momento.'
-                    : emptyHint}
+                  : emptyHint}
             </p>
           </div>
         ) : (
@@ -433,20 +309,15 @@ export function JobList({
               Monitor e vão para a aba Descartadas.
             </p>
             <div className="job-list__modal-actions">
-              <button
-                type="button"
-                className="job-list__modal-cancel"
+              <Button
+                variant="ghost"
                 onClick={() => setConfirmDiscard(false)}
               >
                 Cancelar
-              </button>
-              <button
-                type="button"
-                className="job-list__modal-confirm"
-                onClick={() => void confirmDiscardAll()}
-              >
+              </Button>
+              <Button variant="danger" onClick={() => void confirmDiscardAll()}>
                 Sim, descartar
-              </button>
+              </Button>
             </div>
           </div>
         </div>

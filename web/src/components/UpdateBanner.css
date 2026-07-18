@@ -1,0 +1,48 @@
+.update-banner {
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft, #e8f5ef) 75%, var(--panel-solid));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+
+.update-banner__title {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.update-banner__body {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.update-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.update-banner__bar {
+  margin-top: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 70%, transparent);
+  overflow: hidden;
+}
+
+.update-banner__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+html[data-theme='dark'] .update-banner {
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-solid));
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}

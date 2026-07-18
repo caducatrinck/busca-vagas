@@ -2,11 +2,13 @@ import type { Job, JobFilters, JobStatus } from '../lib/types'
 import { jobStatus } from '../lib/jobStatus'
 import { matchedWords, titleSearchText } from '../lib/filterJobs'
 import { formatPostedAt } from '../lib/formatPostedAt'
+import { useI18n } from '../i18n'
 import {
   WORKPLACE_TYPE_LABELS,
   parseContractTags,
   resolveWorkplaceType,
 } from '../shared/domain'
+import { Button } from '../ui'
 import './JobCard.css'
 
 type Props = {
@@ -22,6 +24,7 @@ export function JobCard({
   showDescriptionFilters = true,
   onStatusChange,
 }: Props) {
+  const { t } = useI18n()
   const status = jobStatus(job)
   const titleHaystack = titleSearchText(job)
   const titleHits = [
@@ -62,7 +65,9 @@ export function JobCard({
       <div className="job-card__top">
         <h2>{job.title}</h2>
         <div className="job-card__meta">
-          {job.isNew ? <span className="job-card__new">Nova</span> : null}
+          {job.isNew ? (
+            <span className="job-card__new">{t('card.new')}</span>
+          ) : null}
           {job.isNew === false ? (
             <span
               className="job-card__seen"
@@ -108,24 +113,26 @@ export function JobCard({
                 onStatusChange?.(job, e.target.checked ? 'applied' : 'viewed')
               }
             />
-            <span>Já apliquei</span>
+            <span>{t('card.apply')}</span>
           </label>
           {status === 'discarded' ? (
-            <button
-              type="button"
-              className="job-card__action-btn job-card__action-btn--restore"
+            <Button
+              size="sm"
+              variant="soft"
+              className="job-card__action-btn"
               onClick={() => onStatusChange?.(job, 'viewed')}
             >
-              Restaurar
-            </button>
+              {t('card.restore')}
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
+              size="sm"
+              variant="danger"
               className="job-card__action-btn job-card__action-btn--discard"
               onClick={() => onStatusChange?.(job, 'discarded')}
             >
-              Descartar
-            </button>
+              {t('card.discard')}
+            </Button>
           )}
         </div>
         <a
@@ -134,7 +141,7 @@ export function JobCard({
           target="_blank"
           rel="noreferrer"
         >
-          Abrir no LinkedIn
+          {t('card.open')}
         </a>
       </div>
     </article>

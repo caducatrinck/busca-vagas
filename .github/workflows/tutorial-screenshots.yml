@@ -1,0 +1,54 @@
+name: Tutorial screenshots
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'api/src/**'
+      - 'e2e/**'
+      - 'docs/tutorial/**'
+      - '.github/workflows/tutorial-screenshots.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tutorial-screenshots
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install monorepo
+        run: npm ci
+
+      - name: Install e2e
+        run: npm install --prefix e2e
+
+      - name: Install Chromium
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate screenshots
+        working-directory: e2e
+        run: npx playwright test -c playwright.config.ts
+
+      - name: Commit updated screenshots
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'docs: atualiza prints do tutorial'
+          file_pattern: docs/tutorial/screenshots/*.png
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com

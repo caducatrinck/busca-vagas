@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
+import { Button, cx } from '../ui'
 import './DataWarningBanner.css'
+
+const GITHUB_URL = 'https://github.com/caducatrinck'
 
 type Props = {
   onExport: () => Promise<void>
@@ -13,6 +17,7 @@ type Feedback = {
 }
 
 export function DataWarningBanner({ onExport, onImportFile }: Props) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const clearTimer = useRef<number | null>(null)
   const [busy, setBusy] = useState<'export' | 'import' | null>(null)
@@ -38,12 +43,12 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
     setFeedback(null)
     try {
       await onExport()
-      showFeedback({ action: 'export', kind: 'ok', text: 'Baixado' })
+      showFeedback({ action: 'export', kind: 'ok', text: t('data.exported') })
     } catch (err) {
       showFeedback({
         action: 'export',
         kind: 'error',
-        text: err instanceof Error ? err.message : 'Falhou',
+        text: err instanceof Error ? err.message : t('data.failed'),
       })
     } finally {
       setBusy(null)
@@ -52,21 +57,19 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
 
   async function handleImport(file: File | undefined) {
     if (!file) return
-    const ok = window.confirm(
-      'Importar vai substituir vagas e monitores atuais pelos do arquivo. Continuar?',
-    )
+    const ok = window.confirm(t('data.importConfirm'))
     if (!ok) return
 
     setBusy('import')
     setFeedback(null)
     try {
       await onImportFile(file)
-      showFeedback({ action: 'import', kind: 'ok', text: 'Importado' })
+      showFeedback({ action: 'import', kind: 'ok', text: t('data.imported') })
     } catch (err) {
       showFeedback({
         action: 'import',
         kind: 'error',
-        text: err instanceof Error ? err.message : 'Falhou',
+        text: err instanceof Error ? err.message : t('data.failed'),
       })
     } finally {
       setBusy(null)
@@ -84,75 +87,74 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
     return idle
   }
 
+  function feedbackClass(action: 'export' | 'import') {
+    if (feedback?.action !== action) return undefined
+    return feedback.kind === 'ok'
+      ? 'data-banner__btn--ok'
+      : 'data-banner__btn--err'
+  }
+
   return (
-    <aside className="data-banner" role="note">
-      <div className="data-banner__text">
-        <p className="data-banner__title">Sem banco de dados</p>
-        <p className="data-banner__body">
-          Tudo fica em <strong>JSON local</strong> (
-          <code>api/data/store.json</code>
-          ): vagas, monitores, cookies, filtros e tema. A cada mudança o app
-          guarda até 10 backups em <code>api/data/backups/</code>. Se apagar a
-          pasta/volume, <strong>você perde tudo</strong> — exporte um backup
-          com frequência.
+    <div className="app-top">
+      <div className="app-top__bar">
+        <p className="app-top__credit">
+          created by{' '}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="app-top__credit-link"
+          >
+            caducatrinck
+          </a>
         </p>
+        <div className="app-top__actions">
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cx('data-banner__btn', feedbackClass('export'))}
+            disabled={busy !== null}
+            title={
+              feedback?.action === 'export' && feedback.kind === 'error'
+                ? feedback.text
+                : t('data.export')
+            }
+            onClick={() => void handleExport()}
+          >
+            {buttonLabel('export', t('data.export'), `${t('data.export')}…`)}
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            className={cx(
+              'data-banner__btn',
+              'data-banner__btn--accent',
+              feedbackClass('import'),
+            )}
+            disabled={busy !== null}
+            title={
+              feedback?.action === 'import' && feedback.kind === 'error'
+                ? feedback.text
+                : t('data.import')
+            }
+            onClick={() => inputRef.current?.click()}
+          >
+            {buttonLabel('import', t('data.import'), `${t('data.import')}…`)}
+          </Button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => void handleImport(e.target.files?.[0])}
+          />
+        </div>
       </div>
-      <div className="data-banner__actions">
-        <button
-          type="button"
-          className={[
-            'data-banner__btn',
-            feedback?.action === 'export' && feedback.kind === 'ok'
-              ? 'data-banner__btn--ok'
-              : '',
-            feedback?.action === 'export' && feedback.kind === 'error'
-              ? 'data-banner__btn--err'
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          disabled={busy !== null}
-          title={
-            feedback?.action === 'export' && feedback.kind === 'error'
-              ? feedback.text
-              : undefined
-          }
-          onClick={() => void handleExport()}
-        >
-          {buttonLabel('export', 'Exportar', 'Exportando…')}
-        </button>
-        <button
-          type="button"
-          className={[
-            'data-banner__btn',
-            'data-banner__btn--accent',
-            feedback?.action === 'import' && feedback.kind === 'ok'
-              ? 'data-banner__btn--ok'
-              : '',
-            feedback?.action === 'import' && feedback.kind === 'error'
-              ? 'data-banner__btn--err'
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          disabled={busy !== null}
-          title={
-            feedback?.action === 'import' && feedback.kind === 'error'
-              ? feedback.text
-              : undefined
-          }
-          onClick={() => inputRef.current?.click()}
-        >
-          {buttonLabel('import', 'Importar', 'Importando…')}
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => void handleImport(e.target.files?.[0])}
-        />
-      </div>
-    </aside>
+
+      <aside className="linkedin-alert" role="note">
+        <p className="linkedin-alert__title">{t('data.linkedinTitle')}</p>
+        <p className="linkedin-alert__body">{t('data.linkedinBody')}</p>
+      </aside>
+    </div>
   )
 }

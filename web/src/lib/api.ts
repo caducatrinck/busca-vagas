@@ -9,7 +9,10 @@ import type {
   DescriptionFilters,
 } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8787'
+const rawApiUrl = import.meta.env.VITE_API_URL
+/** '' = mesma origem (desktop). sem env = API local */
+const API_URL =
+  rawApiUrl === '' ? '' : rawApiUrl || 'http://127.0.0.1:8787'
 
 export type RateLimitInfo = {
   allowed: boolean
@@ -34,6 +37,28 @@ export type RateLimitInfo = {
 
 async function parseJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T
+}
+
+export type LinkedInSessionStatus = {
+  ok: boolean
+  code: 'ok' | 'missing' | 'incomplete' | 'expired' | 'network' | 'unknown'
+  message: string
+  checkedAt: string | null
+  httpStatus: number | null
+}
+
+export async function fetchLinkedInSession(): Promise<LinkedInSessionStatus> {
+  const res = await fetch(`${API_URL}/linkedin/session`)
+  if (!res.ok) throw new Error('Falha ao ler status da sessão LinkedIn')
+  return parseJson(res)
+}
+
+export async function checkLinkedInSession(): Promise<LinkedInSessionStatus> {
+  const res = await fetch(`${API_URL}/linkedin/session/check`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error('Falha ao verificar sessão LinkedIn')
+  return parseJson(res)
 }
 
 function parseSseChunk(
@@ -270,6 +295,7 @@ export type DataBackup = {
 export type UiPrefs = {
   filters: JobFilters
   theme: 'light' | 'dark'
+  locale: 'pt' | 'en'
 }
 
 export async function fetchUiPrefs(): Promise<UiPrefs> {

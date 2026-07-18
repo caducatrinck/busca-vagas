@@ -1,0 +1,13 @@
+{
+  "name": "busca-vagas-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots": "node ./run-screenshots.mjs",
+    "screenshots:ui": "playwright test -c playwright.config.ts --ui",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}
