@@ -1,4 +1,5 @@
 import { searchLinkedInJobs } from '../linkedin.js'
+import { log } from '../logger.js'
 import { searchRateLimiter } from '../rateLimit.js'
 import {
   getAppSettings,
@@ -144,14 +145,27 @@ export async function runMonitor(
 
     try {
       const hints = await getJobSearchHints()
+      // Janela estreita do pooling só no tick automático.
+      // Busca manual (Buscar agora) usa o "Publicadas em" do formulário.
       const postedWithinSeconds =
-        mode === 'pooling' || monitor.pollingEnabled
+        mode === 'pooling'
           ? resolvePoolingWindow(
               monitor.intervalMinutes,
               monitor.lastRunAt,
               startedAt,
             )
           : undefined
+
+      log.info('monitor.run.start', {
+        monitorId: id,
+        mode,
+        query: monitor.search.query,
+        location: monitor.search.location,
+        postedWithin: monitor.search.postedWithin,
+        postedWithinSeconds: postedWithinSeconds ?? null,
+        fetchDescriptions: Boolean(monitor.search.fetchDescriptions),
+        discardedKnown: hints.discardedIds.size,
+      })
 
       const found = await searchLinkedInJobs(
         {
@@ -198,6 +212,15 @@ export async function runMonitor(
         cancelled: false,
         ...searchTelemetry,
       }
+      log.info('monitor.run.done', {
+        monitorId: id,
+        mode,
+        query: monitor.search.query,
+        jobCount: found.length,
+        newCount,
+        durationMs: stats.durationMs,
+        ...searchTelemetry,
+      })
       await updateMonitor(id, {
         lastRunAt: stats.finishedAt,
         lastError: null,
@@ -270,6 +293,12 @@ export async function runMonitor(
       }
 
       const message = err instanceof Error ? err.message : 'Erro na busca'
+      log.error('monitor.run.error', {
+        monitorId: id,
+        mode,
+        query: monitor.search.query,
+        error: message,
+      })
       const retryAfterMs =
         err instanceof Error
           ? (err as Error & { retryAfterMs?: number }).retryAfterMs

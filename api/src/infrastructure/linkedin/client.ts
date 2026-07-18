@@ -1,4 +1,9 @@
 import { randomDelay } from '../../rateLimit.js'
+import { log } from '../../logger.js'
+import {
+  markLinkedInSessionAuthFailure,
+  markLinkedInSessionOk,
+} from '../../linkedinSessionState.js'
 import { getAppSettings } from '../../store.js'
 import { SearchCancelledError } from '../../types.js'
 
@@ -120,6 +125,11 @@ export function throwLinkedInHttpError(res: Response): never {
     message = `LinkedIn rate limit (HTTP 429).${wait}${headersHint}`
   } else if (res.status === 401 || res.status === 403) {
     message = `LinkedIn bloqueou a requisição (HTTP ${res.status}). Atualize o cookie li_at ou aguarde.${headersHint}`
+    markLinkedInSessionAuthFailure(
+      res.status,
+      'Sessão LinkedIn expirada. Atualize li_at e JSESSIONID em Configurações.',
+    )
+    log.warn('linkedin.session.auth_http', { status: res.status })
   } else if (res.status === 999) {
     message = `LinkedIn respondeu HTTP 999 (anti-bot / bloqueio).${headersHint}`
   } else {
@@ -166,6 +176,11 @@ export async function linkedInFetch(
           console.warn(
             `[linkedin] HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
           )
+          log.warn('linkedin.http.429', {
+            attempt,
+            maxAttempts,
+            waitMs: wait,
+          })
           await randomDelay(wait, wait + 500)
           continue
         }
@@ -258,12 +273,18 @@ export async function linkedInVoyagerFetch(
           console.warn(
             `[linkedin] Voyager HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
           )
+          log.warn('linkedin.voyager.429', {
+            attempt,
+            maxAttempts,
+            waitMs: wait,
+          })
           await randomDelay(wait, wait + 500)
           continue
         }
         throwLinkedInHttpError(res)
       }
 
+      markLinkedInSessionOk()
       return res.json()
     } catch (err) {
       if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {

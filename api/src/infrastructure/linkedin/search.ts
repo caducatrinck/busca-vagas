@@ -1,4 +1,5 @@
 import { getScrapeDelayConfig, randomDelay } from '../../rateLimit.js'
+import { log } from '../../logger.js'
 import { getAppSettings } from '../../store.js'
 import type {
   Job,
@@ -109,6 +110,10 @@ async function fetchJobDetail(
         err instanceof Error ? err.message : err
       }`,
     )
+    log.warn('linkedin.voyager.fallback', {
+      jobId,
+      error: err instanceof Error ? err.message : String(err),
+    })
   }
 
   const html = await linkedInFetch(
@@ -312,6 +317,7 @@ export async function searchLinkedInJobs(
   let listingRequests = 0
   let listingPagesWithJobs = 0
   let emptyReason: string | undefined
+  let skippedDiscardedTotal = 0
 
   progress.emit({
     phase: 'listing',
@@ -321,6 +327,15 @@ export async function searchLinkedInJobs(
   })
 
   const { linkedinMaxPages: maxPages } = await getAppSettings()
+  const searchPathSample = buildSearchPath(params, 0)
+  log.info('linkedin.search.start', {
+    query,
+    location: params.location ?? null,
+    postedWithin: params.postedWithin ?? null,
+    postedWithinSeconds: params.postedWithinSeconds ?? null,
+    maxPages,
+    path: searchPathSample,
+  })
 
   try {
     for (let page = 0; page < maxPages; page++) {
@@ -334,33 +349,54 @@ export async function searchLinkedInJobs(
         if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
           throw new SearchCancelledError(jobs)
         }
+        log.error('linkedin.search.page_error', {
+          query,
+          page: page + 1,
+          error: err instanceof Error ? err.message : String(err),
+        })
         throw err
       }
       const batch = parseJobsFromSearchHtml(html)
 
-      console.log(
-        `[linkedin] listagem · query="${query}" · página=${page + 1} · cards=${batch.length} · bytes=${html.length}`,
-      )
-
-      if (batch.length === 0) {
-        emptyReason =
-          listingRequests > 0
-            ? 'LinkedIn respondeu, mas a listagem veio sem cards para essa janela.'
-            : undefined
-        break
-      }
-      listingPagesWithJobs += 1
-
+      let skippedDiscarded = 0
       let newOnPage = 0
       const pageJobs: Job[] = []
       for (const job of batch) {
         if (seen.has(job.id)) continue
         seen.add(job.id)
         newOnPage += 1
-        if (discardedIds.has(job.id)) continue
+        if (discardedIds.has(job.id)) {
+          skippedDiscarded += 1
+          continue
+        }
         jobs.push(job)
         pageJobs.push(job)
       }
+      skippedDiscardedTotal += skippedDiscarded
+
+      log.info('linkedin.search.page', {
+        query,
+        page: page + 1,
+        cards: batch.length,
+        bytes: html.length,
+        kept: pageJobs.length,
+        skippedDiscarded,
+        totalKept: jobs.length,
+      })
+
+      if (batch.length === 0) {
+        if (skippedDiscardedTotal > 0 && jobs.length === 0) {
+          emptyReason =
+            'Todas as vagas encontradas já estavam descartadas — limpe descartadas ou aguarde novas publicações.'
+        } else if (listingRequests > 0) {
+          emptyReason =
+            html.length < 80
+              ? 'LinkedIn respondeu vazio para essa janela de tempo (sem vagas recentes). Tente pausar o pooling e buscar com “Publicadas em” mais amplo (ex.: semana).'
+              : 'LinkedIn respondeu, mas a listagem veio sem cards para essa janela.'
+        }
+        break
+      }
+      listingPagesWithJobs += 1
 
       if (newOnPage === 0) break
 
@@ -400,6 +436,19 @@ export async function searchLinkedInJobs(
     })
 
     if (jobs.length === 0) {
+      if (!emptyReason && skippedDiscardedTotal > 0) {
+        emptyReason =
+          'Todas as vagas encontradas já estavam descartadas — limpe descartadas ou aguarde novas publicações.'
+      }
+
+      log.info('linkedin.search.empty', {
+        query,
+        listingRequests,
+        listingPagesWithJobs,
+        seen: seen.size,
+        skippedDiscardedTotal,
+        emptyReason: emptyReason ?? null,
+      })
 
       options.onTelemetry?.({
         linkedinResponded: listingRequests > 0,
@@ -410,6 +459,14 @@ export async function searchLinkedInJobs(
       await options.onListingComplete?.(jobs)
       return jobs
     }
+
+    log.info('linkedin.search.listed', {
+      query,
+      jobCount: jobs.length,
+      listingRequests,
+      listingPagesWithJobs,
+      skippedDiscardedTotal,
+    })
 
     options.onTelemetry?.({
       linkedinResponded: listingRequests > 0,

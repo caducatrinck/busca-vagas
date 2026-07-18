@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { RateLimitInfo } from '../../lib/api'
+import { useI18n } from '../../i18n'
 import { formatRateLimitSummary } from '../../lib/rateLimit'
 import type {
   DescriptionLanguage,
@@ -55,6 +56,7 @@ export function PollingPanel({
   onRemoveWord,
   rateLimit = null,
 }: Props) {
+  const { t } = useI18n()
   const busy = loading || searching
   const searchBlocked = rateLimit != null && !rateLimit.allowed
   const active = monitors.find((m) => m.id === activeId) ?? null
@@ -99,9 +101,7 @@ export function PollingPanel({
       />
 
       {!active ? (
-        <p className="search-panel__lead">
-          Clique em <strong>+</strong> para criar a primeira busca.
-        </p>
+        <p className="search-panel__lead">{t('monitor.emptyHint')}</p>
       ) : (
         <>
           <MonitorPollInterval

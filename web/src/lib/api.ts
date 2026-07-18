@@ -39,6 +39,28 @@ async function parseJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T
 }
 
+export type LinkedInSessionStatus = {
+  ok: boolean
+  code: 'ok' | 'missing' | 'incomplete' | 'expired' | 'network' | 'unknown'
+  message: string
+  checkedAt: string | null
+  httpStatus: number | null
+}
+
+export async function fetchLinkedInSession(): Promise<LinkedInSessionStatus> {
+  const res = await fetch(`${API_URL}/linkedin/session`)
+  if (!res.ok) throw new Error('Falha ao ler status da sessão LinkedIn')
+  return parseJson(res)
+}
+
+export async function checkLinkedInSession(): Promise<LinkedInSessionStatus> {
+  const res = await fetch(`${API_URL}/linkedin/session/check`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error('Falha ao verificar sessão LinkedIn')
+  return parseJson(res)
+}
+
 function parseSseChunk(
   chunk: string,
 ): { event: string; data: string } | null {
@@ -273,6 +295,7 @@ export type DataBackup = {
 export type UiPrefs = {
   filters: JobFilters
   theme: 'light' | 'dark'
+  locale: 'pt' | 'en'
 }
 
 export async function fetchUiPrefs(): Promise<UiPrefs> {

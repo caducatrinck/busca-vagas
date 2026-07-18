@@ -44,6 +44,12 @@
   overflow: visible;
 }
 
+.app-nav__lang-btn.ui-btn {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .app-nav__icon-btn.ui-btn {
   width: 2.35rem;
   height: 2.35rem;

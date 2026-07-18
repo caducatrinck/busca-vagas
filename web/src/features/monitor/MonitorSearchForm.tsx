@@ -1,7 +1,8 @@
+import { useMemo } from 'react'
 import { poolingWindowMinutes } from '../../../../shared/poolingWindow'
+import { useI18n } from '../../i18n'
 import type { Monitor, SearchForm } from '../../lib/types'
-import { Alert, Button, Field, Select, TextInput } from '../../ui'
-import { POSTED_WITHIN_OPTIONS } from './constants'
+import { Alert, Button, Field, Select, TextInput, type SelectOption } from '../../ui'
 
 type Props = {
   draft: SearchForm
@@ -26,42 +27,68 @@ export function MonitorSearchForm({
   onPausePooling,
   onRunNow,
 }: Props) {
+  const { t } = useI18n()
   const pooling = active.pollingEnabled
   const pauseMode = pooling && !searching
 
+  const postedOptions = useMemo<
+    Array<SelectOption<SearchForm['postedWithin']>>
+  >(
+    () => [
+      { value: '30m', label: t('search.posted.30m') },
+      { value: '1h', label: t('search.posted.1h') },
+      { value: '10h', label: t('search.posted.10h') },
+      { value: '24h', label: t('search.posted.24h') },
+      { value: 'week', label: t('search.posted.week') },
+      { value: 'month', label: t('search.posted.month') },
+    ],
+    [t],
+  )
+
   return (
     <div className="search-panel__form">
-      <Field label="Palavras de busca">
+      <Field label={t('search.query')}>
         <TextInput
           value={draft.query}
           onChange={(e) => onDraftChange({ ...draft, query: e.target.value })}
-          placeholder="Ex: React TypeScript"
+          placeholder={t('search.queryPh')}
         />
       </Field>
 
-      <Field label="Localização (opcional)">
+      <Field label={t('search.location')}>
         <TextInput
           value={draft.location}
           onChange={(e) =>
             onDraftChange({ ...draft, location: e.target.value })
           }
-          placeholder="Ex: Remoto, São Paulo"
+          placeholder={t('search.locationPh')}
         />
       </Field>
 
-      <Field label="Publicadas em">
-        {pooling ? (
+      <Field
+        label={t('search.posted')}
+        hint={
+          pooling && !searching ? t('search.postedPoolingHint') : undefined
+        }
+      >
+        {pooling && !searching ? (
           <TextInput
             disabled
-            value={`Últimos ${poolingWindowMinutes(active.intervalMinutes, active.lastRunAt, now)} min`}
-            aria-label="Publicadas em (definido pelo pooling)"
+            value={t('search.poolingWindow', {
+              n: poolingWindowMinutes(
+                active.intervalMinutes,
+                active.lastRunAt,
+                now,
+              ),
+            })}
+            aria-label={t('search.postedPoolingAria')}
           />
         ) : (
           <Select
             fullWidth
             value={draft.postedWithin}
-            options={POSTED_WITHIN_OPTIONS}
-            aria-label="Publicadas em"
+            options={postedOptions}
+            aria-label={t('search.posted')}
             onChange={(postedWithin) =>
               onDraftChange({ ...draft, postedWithin })
             }
@@ -77,19 +104,23 @@ export function MonitorSearchForm({
         }
         title={
           searching
-            ? 'Busca em andamento'
+            ? t('search.titleSearching')
             : pooling
-              ? 'Pausa o pooling automático'
+              ? t('search.titlePause')
               : rateLimitMsg
                 ? rateLimitMsg
-                : 'Busca agora e ativa o pooling automático'
+                : t('search.titleRun')
         }
         onClick={() => {
           if (pauseMode) onPausePooling()
           else onRunNow()
         }}
       >
-        {searching ? 'Buscando…' : pooling ? 'Pausar' : 'Buscar agora'}
+        {searching
+          ? t('search.searching')
+          : pooling
+            ? t('search.pause')
+            : t('search.run')}
       </Button>
 
       {rateLimitMsg && !pooling ? (

@@ -17,6 +17,8 @@ import {
   listMonitors,
   toPublicSettings,
 } from './store.js'
+import { log } from './logger.js'
+import { resolveDataDir, resolveLogsDir } from './paths.js'
 
 function resolveModuleDir(): string {
   try {
@@ -114,6 +116,7 @@ export async function startServer(
         const apiPrefixes = [
           '/health',
           '/settings',
+          '/linkedin',
           '/jobs',
           '/monitors',
           '/search',
@@ -138,12 +141,27 @@ export async function startServer(
   await restoreRateLimitFromDisk()
   await restoreSchedulersFromDisk()
   await app.listen({ port: PORT, host: HOST })
-  console.log(`API em http://${HOST}:${PORT}`)
-  if (staticDir) {
-    console.log(`UI estática em ${path.resolve(staticDir)}`)
-  }
-  console.log(
-    `Monitores ativos: ${(await listMonitors()).filter((m) => m.pollingEnabled).length}`,
+  log.info('api.started', {
+    host: HOST,
+    port: PORT,
+    dataDir: resolveDataDir(),
+    logsDir: resolveLogsDir(),
+    staticDir: staticDir || null,
+    monitorsPolling: (await listMonitors()).filter((m) => m.pollingEnabled)
+      .length,
+  })
+
+  // valida cookie em background (não bloqueia o boot)
+  void import('./linkedinSession.js').then(({ probeLinkedInSession }) =>
+    probeLinkedInSession({ force: true }),
+  )
+  setInterval(
+    () => {
+      void import('./linkedinSession.js').then(({ probeLinkedInSession }) =>
+        probeLinkedInSession({ force: false }),
+      )
+    },
+    30 * 60 * 1000,
   )
 
   return {

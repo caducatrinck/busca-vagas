@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
 import { BASE_TITLE, MAX_NOTIFICATIONS } from '../lib/monitorHelpers'
 import { notifyNewJobs } from '../lib/notifications'
 import {
@@ -9,6 +10,7 @@ import { playNewJobsAlert } from '../lib/sound'
 import type { Monitor } from '../lib/types'
 
 export function useNotifications() {
+  const { t } = useI18n()
   const [notifications, setNotifications] = useState<AppNotification[]>([])
 
   const notifiedRunsRef = useRef<Set<string>>(new Set())
@@ -22,13 +24,20 @@ export function useNotifications() {
   useEffect(() => {
     if (unreadTotal <= 0) {
       document.title = BASE_TITLE
-      return
+    } else {
+      document.title = `(${unreadTotal > 99 ? '99+' : unreadTotal}) ${BASE_TITLE}`
     }
-    document.title = `(${unreadTotal > 99 ? '99+' : unreadTotal}) ${BASE_TITLE}`
+    window.buscaVagasDesktop?.setTrayBadge(unreadTotal)
     return () => {
       document.title = BASE_TITLE
     }
   }, [unreadTotal])
+
+  useEffect(() => {
+    return () => {
+      window.buscaVagasDesktop?.setTrayBadge(0)
+    }
+  }, [])
 
   function announceNewJobs(
     monitor: Monitor,
@@ -51,9 +60,9 @@ export function useNotifications() {
     notifyNewJobs({
       title:
         count === 1
-          ? '1 vaga nova no pooling'
-          : `${count} vagas novas no pooling`,
-      body: `${name} — clique para abrir Pendentes`,
+          ? t('notify.one')
+          : t('notify.many', { n: count }),
+      body: t('notify.body', { name }),
       tag: `busca-vagas-${monitor.id}`,
       onClick: () => {
         onOpen(item)

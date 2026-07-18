@@ -6,280 +6,112 @@
   <a href="#english"><strong>🇺🇸 English</strong></a>
 </p>
 
-Nunca instalou Git/Node? Comece pelo guia **[Instalação do zero](./INSTALACAO-DO-ZERO.md)**.  
-Never installed Git/Node? Start with **[Setup from scratch](./INSTALACAO-DO-ZERO.md)**.
-
-Quer um **.exe** / AppImage sem instalar Node? Veja **[DESKTOP.md](./DESKTOP.md)** (branch desktop).  
-Want a portable desktop app? See **[DESKTOP.md](./DESKTOP.md)**.
+App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações).  
+Roda no seu PC — sem instalar Git nem Node.
 
 ---
 
 <a id="português"></a>
 
-# Português
+## Português
 
-App **local** (React + Fastify) para buscar vagas no LinkedIn, filtrar por título/descrição e acompanhar com pooling opcional.
+### Baixar e abrir
 
-- Sem banco externo: tudo em JSON na sua máquina  
-- Sem Chromium / Puppeteer: só `fetch` + `cheerio`  
-- O clone do repositório **não traz dados de ninguém** — cada instalação começa vazia  
+1. Abra a página de [**Releases**](https://github.com/caducatrinck/busca-vagas/releases/latest)
+2. Baixe o arquivo da sua plataforma:
+   - **Windows:** `BuscaVagas-*-win-x64-portable.exe`
+   - **Linux:** `BuscaVagas-*-linux-x64.AppImage`
+3. Abra o arquivo  
+   - No Linux: `chmod +x BuscaVagas-*-linux-x64.AppImage` e depois execute
+4. Siga as instruções **dentro do app** (Configurações → cookie do LinkedIn)
 
-**Não é necessário criar `.env`.** Porta e host já têm padrão (`8787` / `127.0.0.1`).
+Não precisa de instalação: o Windows é portable; o Linux é AppImage.
 
-Em ambos os casos você precisa de:
+### Como usar (resumo)
 
-1. Conta no LinkedIn  
-2. Cookie de sessão `li_at` ([como pegar](#como-pegar-o-li_at))  
+| Passo | O que fazer |
+|-------|-------------|
+| 1 | Configure o cookie nas **Configurações** (o app explica na tela) |
+| 2 | Aba **Monitor** → `+` → monte a busca |
+| 3 | **Buscar agora** (liga o pooling) |
+| 4 | Veja vagas em **Vagas**; o app pode notificar e ficar na bandeja |
 
-```bash
-git clone https://github.com/caducatrinck/busca-vagas.git
-cd busca-vagas
-```
+Tutorial com prints: **[docs/tutorial](./docs/tutorial/README.md)**
 
-Depois escolha **sem Docker** ou **com Docker** (abra a seção):
+![Configuração](./docs/tutorial/screenshots/01-configuracao.png)
 
-<details>
-<summary><strong>Sem Docker (npm)</strong> — Node.js 20+</summary>
+![Pooling ativo](./docs/tutorial/screenshots/04-pooling-ativo.png)
 
-<br>
+### Atualização
 
-```bash
-npm run up
-```
+Ao abrir, o app avisa se existir versão nova no GitHub. Você escolhe se quer baixar.
 
-Isso instala as dependências e sobe **API + Web**.
+### Dados
 
-| | URL |
-|--|-----|
-| UI | http://localhost:5173 |
-| API | http://127.0.0.1:8787 |
+Ficam só na sua máquina:
+- Windows: `%AppData%/Busca Vagas/data/`
+- Linux: `~/.config/Busca Vagas/data/`
 
-Já instalou antes? Use só `npm run dev`.
+Use **Exportar / Importar** no topo do app para backup.
 
-Terminais separados (opcional):
+### Aviso
 
-```bash
-npm run dev:api   # terminal 1
-npm run dev:web   # terminal 2
-```
+Uso pessoal/local. Scraping do LinkedIn pode conflitar com os [Termos de Uso](https://www.linkedin.com/legal/user-agreement). Use o **seu** cookie e a **sua** conta.
 
-Outros scripts:
+### Para quem desenvolve / faz PR
 
-```bash
-npm run build   # build web + api
-npm test        # testes
-```
+Guia de rodar com Node/Docker: **[docs/dev.md](./docs/dev.md)**  
+Instalação do zero (Git/Node): **[INSTALACAO-DO-ZERO.md](./INSTALACAO-DO-ZERO.md)**  
+Empacotar desktop / releases: **[DESKTOP.md](./DESKTOP.md)**
 
-**Dados:** `api/data/store.json` e backups em `api/data/backups/` (na pasta do projeto).
-
-</details>
-
-<details>
-<summary><strong>Com Docker</strong> — Docker + Compose</summary>
-
-<br>
-
-```bash
-docker compose up -d --build
-```
-
-| | URL |
-|--|-----|
-| UI | http://localhost:5173 |
-| API | http://localhost:8787 |
-
-Parar:
-
-```bash
-docker compose down
-```
-
-**Dados:** volume Docker `api-data` (não é a pasta `api/data` do host).
-
-</details>
-
-## Primeiro uso (obrigatório)
-
-1. Abra a UI. O app fica **bloqueado** até configurar o cookie.  
-2. Clique na engrenagem (**Configurações**).  
-3. Cole o cookie `li_at` (e, se existir, o `JSESSIONID`).  
-4. Salve.  
-
-### Como pegar o `li_at`
-
-1. Entre no [LinkedIn](https://www.linkedin.com) no navegador  
-2. Abra o DevTools (`F12`)  
-3. **Application** / **Storage** → **Cookies** → `https://www.linkedin.com`  
-4. Copie o valor de `li_at` (obrigatório)  
-5. Se existir `JSESSIONID`, copie **sem as aspas**  
-
-Se as buscas falharem com 401/403, o cookie expirou — atualize em Configurações.
-
-## Fluxo básico
-
-1. Aba **Monitor** → `+` para criar uma busca  
-2. Preencha a query (ex.: `Java remoto`)  
-3. **Buscar agora** ou ative **pooling**  
-4. Aba **Vagas** → pendentes / aplicadas / descartadas  
-
-Filtros de **descrição e idioma** são **por aba** do Monitor.
-
-## Persistência e backup
-
-| Sem Docker | Com Docker |
-|------------|------------|
-| `api/data/store.json` | volume `api-data` |
-| `api/data/backups/` (máx. 10) | backups dentro do volume |
-
-Nome dos backups: `DIA-3-MES-5-HORA15-43.json`  
-Use **Exportar / Importar** no banner do topo para backup manual.
-
-## Rate limit
-
-1. Intervalo mínimo entre buscas (padrão 30s; `0` = off)  
-2. Pausas reais do LinkedIn (**HTTP 429** / **999** + `Retry-After`)  
-3. Tetos por hora/dia (padrão `30` / `500`; `0` = off)  
-
-Status: `GET http://127.0.0.1:8787/rate-limit`
-
-## Aviso
-
-Scraping do LinkedIn pode violar os [Termos de Uso](https://www.linkedin.com/legal/user-agreement). Uso **pessoal / local**. Cada pessoa usa o **próprio** cookie e assume o risco da própria conta.
-
-[↑ Voltar ao topo](#busca-vagas) · [English ↓](#english)
+[↑ Topo](#busca-vagas) · [English ↓](#english)
 
 ---
 
 <a id="english"></a>
 
-# English
+## English
 
-**Busca Vagas** is a **local-only** LinkedIn job search helper (React + Fastify).
+Local LinkedIn job monitor (pooling, filters, notifications).  
+Runs on your PC — no Git or Node required.
 
-- No external database — everything is JSON on your machine  
-- No Chromium / Puppeteer — just `fetch` + `cheerio`  
-- An empty clone — **no one else’s data** in the repo  
+### Download and open
 
-**No `.env` required.** Defaults: port `8787`, host `127.0.0.1`.
+1. Open **[Releases](https://github.com/caducatrinck/busca-vagas/releases/latest)**
+2. Download for your OS:
+   - **Windows:** `BuscaVagas-*-win-x64-portable.exe`
+   - **Linux:** `BuscaVagas-*-linux-x64.AppImage`
+3. Open the file  
+   - On Linux: `chmod +x BuscaVagas-*-linux-x64.AppImage`, then run it
+4. Follow the steps **inside the app** (Settings → LinkedIn cookie)
 
-You always need:
+No installer needed: Windows portable / Linux AppImage.
 
-1. A LinkedIn account  
-2. Session cookie `li_at` ([how to get it](#how-to-get-li_at))  
+### How to use (short)
 
-```bash
-git clone https://github.com/caducatrinck/busca-vagas.git
-cd busca-vagas
-```
+| Step | What to do |
+|------|------------|
+| 1 | Set the cookie in **Settings** (the app explains on screen) |
+| 2 | **Monitor** tab → `+` → set up the search |
+| 3 | **Search now** (enables pooling) |
+| 4 | Check **Jobs**; the app can notify and stay in the tray |
 
-Then pick **without Docker** or **with Docker** (expand a section):
+Illustrated guide: **[docs/tutorial](./docs/tutorial/README.md)** (PT screenshots)
 
-<details>
-<summary><strong>Without Docker (npm)</strong> — Node.js 20+</summary>
+### Updates
 
-<br>
+On launch, the app can offer a newer GitHub release. You choose whether to download.
 
-```bash
-npm run up
-```
+### Data
 
-Installs dependencies and starts **API + Web**.
+Stored only on your machine (`%AppData%/Busca Vagas/data/` on Windows, `~/.config/Busca Vagas/data/` on Linux). Use **Export / Import** in the app for backups.
 
-| | URL |
-|--|-----|
-| UI | http://localhost:5173 |
-| API | http://127.0.0.1:8787 |
+### Disclaimer
 
-Already installed? Use `npm run dev` only.
+Personal/local use. Scraping may conflict with LinkedIn’s [User Agreement](https://www.linkedin.com/legal/user-agreement). Use **your** cookie and account.
 
-Separate terminals (optional):
+### For contributors
 
-```bash
-npm run dev:api   # terminal 1
-npm run dev:web   # terminal 2
-```
+Local Node/Docker: **[docs/dev.md](./docs/dev.md)** · From-scratch setup: **[INSTALACAO-DO-ZERO.md](./INSTALACAO-DO-ZERO.md)** · Desktop packaging: **[DESKTOP.md](./DESKTOP.md)**
 
-Other scripts:
-
-```bash
-npm run build   # build web + api
-npm test        # tests
-```
-
-**Data:** `api/data/store.json` and backups under `api/data/backups/` (in the project folder).
-
-</details>
-
-<details>
-<summary><strong>With Docker</strong> — Docker + Compose</summary>
-
-<br>
-
-```bash
-docker compose up -d --build
-```
-
-| | URL |
-|--|-----|
-| UI | http://localhost:5173 |
-| API | http://localhost:8787 |
-
-Stop:
-
-```bash
-docker compose down
-```
-
-**Data:** Docker volume `api-data` (not the host `api/data` folder).
-
-</details>
-
-## First run (required)
-
-1. Open the UI — the app stays **locked** until the cookie is set.  
-2. Click the gear (**Settings**).  
-3. Paste `li_at` (and `JSESSIONID` if present).  
-4. Save.  
-
-### How to get `li_at`
-
-1. Sign in to [LinkedIn](https://www.linkedin.com)  
-2. Open DevTools (`F12`)  
-3. **Application** / **Storage** → **Cookies** → `https://www.linkedin.com`  
-4. Copy `li_at` (required)  
-5. If `JSESSIONID` exists, copy it **without quotes**  
-
-If searches fail with 401/403, the cookie expired — update it in Settings.
-
-## Basic flow
-
-1. **Monitor** tab → `+` to create a search  
-2. Fill the query (e.g. `Java remote`)  
-3. **Search now** or enable **pooling**  
-4. **Jobs** tab → pending / applied / discarded  
-
-**Description and language** filters are **per Monitor tab**.
-
-## Persistence and backups
-
-| Without Docker | With Docker |
-|----------------|-------------|
-| `api/data/store.json` | volume `api-data` |
-| `api/data/backups/` (max 10) | backups inside the volume |
-
-Backup names: `DIA-3-MES-5-HORA15-43.json`  
-Use **Export / Import** in the top banner for manual backups.
-
-## Rate limit
-
-1. Minimum interval between searches (default 30s; `0` = off)  
-2. Real LinkedIn pauses (**HTTP 429** / **999** + `Retry-After`)  
-3. Hourly/daily caps (default `30` / `500`; `0` = off)  
-
-Status: `GET http://127.0.0.1:8787/rate-limit`
-
-## Disclaimer
-
-Scraping LinkedIn may violate the [User Agreement](https://www.linkedin.com/legal/user-agreement). **Personal / local use only.** Everyone uses their **own** cookie and account at their own risk.
-
-[↑ Back to top](#busca-vagas) · [Português ↑](#português)
+[↑ Top](#busca-vagas) · [Português ↑](#português)

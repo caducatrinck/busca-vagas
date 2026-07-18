@@ -70,9 +70,12 @@ export type DescriptionFilters = {
 
 export type ThemeMode = 'light' | 'dark'
 
+export type AppLocale = 'pt' | 'en'
+
 export type UiPrefs = {
   filters: JobFilters
   theme: ThemeMode
+  locale: AppLocale
 }
 
 export type StoreData = {
@@ -82,6 +85,7 @@ export type StoreData = {
   settings: AppSettings
   filters: JobFilters
   theme: ThemeMode
+  locale: AppLocale
 }
 
 export type PublicAppSettings = {

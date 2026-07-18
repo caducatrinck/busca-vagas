@@ -1,3 +1,4 @@
+import { log } from '../logger.js'
 import { getMonitor, getStore, listMonitors, updateMonitor, type Monitor } from '../store.js'
 import {
   clearAllTimers,
@@ -44,7 +45,7 @@ export function armTimer(id: string, desired: number) {
       void (async () => {
         const label =
           (await getMonitor(id))?.search.query?.trim() || id.slice(0, 8)
-        console.log(`[poller] iniciando busca automática · ${label}`)
+        log.info('poller.tick.start', { query: label, monitorId: id })
         let result: {
           newCount: number
           error?: string
@@ -56,11 +57,13 @@ export function armTimer(id: string, desired: number) {
         } catch {
           result = { newCount: 0, error: 'Falha inesperada no pooling' }
         }
-        console.log(
-          `[poller] fim · ${label} · novas=${result.newCount}` +
-            (result.error ? ` · erro=${result.error}` : '') +
-            (result.cancelled ? ' · cancelada' : ''),
-        )
+        log.info('poller.tick.done', {
+          query: label,
+          monitorId: id,
+          newCount: result.newCount,
+          error: result.error ?? null,
+          cancelled: Boolean(result.cancelled),
+        })
 
         const current = await getMonitor(id)
         if (!current?.pollingEnabled || !current.search.query?.trim()) {
@@ -150,9 +153,10 @@ export async function listMonitorStatuses(): Promise<MonitorStatus[]> {
       !isMonitorRunning(monitor.id) &&
       !timers.has(monitor.id)
     ) {
-      console.log(
-        `[poller] revivendo timer órfão · ${monitor.search.query} (${monitor.id.slice(0, 8)})`,
-      )
+      log.info('poller.timer.revive', {
+        query: monitor.search.query,
+        monitorId: monitor.id,
+      })
       scheduleMonitor(monitor)
     }
   }

@@ -83,6 +83,10 @@ export function normalizeTheme(raw?: unknown): ThemeMode {
   return raw === 'dark' ? 'dark' : 'light'
 }
 
+export function normalizeLocale(raw?: unknown): import('./types.js').AppLocale {
+  return raw === 'en' ? 'en' : 'pt'
+}
+
 export function defaultAppSettings(): AppSettings {
   return {
     linkedinLiAt: '',

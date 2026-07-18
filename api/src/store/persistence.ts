@@ -1,6 +1,7 @@
 import { mkdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { log } from '../logger.js'
+import { resolveDataDir } from '../paths.js'
 import type { SearchParams } from '../types.js'
 import {
   backupStoreFile,
@@ -25,27 +26,8 @@ import {
   normalizeRateLimit,
   normalizeSettings,
   normalizeTheme,
+  normalizeLocale,
 } from './defaults.js'
-
-function resolveModuleDir(): string {
-  try {
-    const meta = import.meta.url
-    if (meta && String(meta).startsWith('file:')) {
-      return path.dirname(fileURLToPath(meta))
-    }
-  } catch {
-    /* esbuild CJS: import.meta.url vazio */
-  }
-  return path.dirname(path.resolve(process.argv[1] || process.cwd()))
-}
-
-const moduleDir = resolveModuleDir()
-
-function resolveDataDir(): string {
-  const fromEnv = process.env.BUSCA_VAGAS_DATA_DIR?.trim()
-  if (fromEnv) return path.resolve(fromEnv)
-  return path.resolve(moduleDir, '../../data')
-}
 
 function dataPaths() {
   const DATA_DIR = resolveDataDir()
@@ -72,6 +54,7 @@ const DEFAULT_STORE: StoreData = {
   },
   filters: defaultJobFilters(),
   theme: 'light',
+  locale: 'pt',
 }
 void DEFAULT_STORE
 
@@ -140,6 +123,7 @@ function parseStoreRaw(raw: string): StoreData {
     ),
     filters: normalizeJobFilters((parsed as Partial<StoreData>).filters),
     theme: normalizeTheme((parsed as Partial<StoreData>).theme),
+    locale: normalizeLocale((parsed as Partial<StoreData>).locale),
   }
 }
 
@@ -151,6 +135,7 @@ function emptyStore(): StoreData {
     settings: migrateCookiesFromLegacyEnv(defaultAppSettings()),
     filters: defaultJobFilters(),
     theme: 'light',
+    locale: 'pt',
   }
 }
 
@@ -180,9 +165,11 @@ export async function ensureStore(): Promise<StoreData> {
     }
     if (fileRev == null || fileRev < RATE_LIMIT_DEFAULTS_REV) {
       await writeStoreAtomic(STORE_PATH, JSON.stringify(cache, null, 2))
-      console.log(
-        '[store] rate limit atualizado: 30s / 30 por hora / 500 por dia',
-      )
+      log.info('store.rate_limit_defaults_updated', {
+        cooldownMs: 30_000,
+        maxPerHour: 30,
+        maxPerDay: 500,
+      })
     }
     return cache
   } catch (err) {
@@ -193,27 +180,27 @@ export async function ensureStore(): Promise<StoreData> {
       (err as { code?: string }).code === 'ENOENT'
 
     if (!isMissing) {
-      console.error(
-        '[store] falha ao ler store.json — tentando backup automático',
-        err instanceof Error ? err.message : err,
-      )
+      log.error('store.read_failed', {
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
 
     const backup = await readLatestBackup(BACKUP_DIR)
     if (backup) {
       try {
         cache = parseStoreRaw(backup.raw)
-        console.warn(
-          `[store] recuperado do backup ${path.basename(backup.path)} (${jobCount(cache)} vagas)`,
-        )
+        log.warn('store.recovered_from_backup', {
+          backup: path.basename(backup.path),
+          jobs: jobCount(cache),
+        })
         // Restaura o arquivo principal a partir do backup (sem criar novo backup vazio)
         await writeStoreAtomic(STORE_PATH, JSON.stringify(cache, null, 2))
         return cache
       } catch (backupErr) {
-        console.error(
-          '[store] backup inválido',
-          backupErr instanceof Error ? backupErr.message : backupErr,
-        )
+        log.error('store.backup_invalid', {
+          error:
+            backupErr instanceof Error ? backupErr.message : String(backupErr),
+        })
       }
     }
 
@@ -225,9 +212,9 @@ export async function ensureStore(): Promise<StoreData> {
 
     // Arquivo existe mas está corrompido e não há backup: NÃO sobrescreve.
     // Mantém cache vazio em memória só para a API não cair; o disco fica intacto.
-    console.error(
-      '[store] store.json corrompido e sem backup válido — NÃO apaguei o arquivo. Corrija manualmente ou restaure de api/data/backups/',
-    )
+    log.error('store.corrupt_no_backup', {
+      path: STORE_PATH,
+    })
     cache = emptyStore()
     return cache
   }
@@ -249,9 +236,9 @@ export async function persist(
         const existingRaw = await readFile(STORE_PATH, 'utf8')
         const existing = parseStoreRaw(existingRaw)
         if (jobCount(existing) > 0) {
-          console.error(
-            `[store] recusou gravar store vazio sobre arquivo com ${jobCount(existing)} vaga(s)`,
-          )
+          log.error('store.refused_empty_overwrite', {
+            existingJobs: jobCount(existing),
+          })
           return
         }
       } catch {

@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n'
 import { NumberInput } from '../../ui'
 import { clampIntervalMinutes } from './constants'
 
@@ -16,11 +17,13 @@ export function MonitorPollInterval({
   onCommit,
   hideError,
 }: Props) {
+  const { t } = useI18n()
+
   return (
     <div className="search-panel__form monitor-poll">
       <div className="monitor-poll__row">
         <label className="monitor-poll__minutes">
-          <span>Intervalo</span>
+          <span>{t('poll.interval')}</span>
           <NumberInput
             min={1}
             max={120}
@@ -28,9 +31,8 @@ export function MonitorPollInterval({
             emptyValue={20}
             disabled={busy}
             onValueChange={(n) => onCommit(clampIntervalMinutes(n))}
-            aria-label="Intervalo do pooling em minutos"
+            aria-label={t('poll.intervalAria')}
           />
-          <span>min</span>
         </label>
       </div>
       {lastError && !hideError ? (

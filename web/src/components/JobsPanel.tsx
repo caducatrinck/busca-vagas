@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../i18n'
 import { formatBadgeCount } from '../lib/notificationsModel'
 import type { JobStatus } from '../lib/types'
 import { Button } from '../ui'
@@ -14,11 +15,7 @@ type Props = {
   onClearStatus: (status: 'applied' | 'discarded') => Promise<void>
 }
 
-const SUB_TABS: { id: JobStatus; label: string }[] = [
-  { id: 'viewed', label: 'Pendentes' },
-  { id: 'applied', label: 'Aplicadas' },
-  { id: 'discarded', label: 'Descartadas' },
-]
+const SUB_TAB_IDS: JobStatus[] = ['viewed', 'applied', 'discarded']
 
 export function JobsPanel({
   subTab,
@@ -28,16 +25,25 @@ export function JobsPanel({
   onRefresh,
   onClearStatus,
 }: Props) {
+  const { t } = useI18n()
   const [clearing, setClearing] = useState<'applied' | 'discarded' | null>(null)
   const notifBadge = formatBadgeCount(unreadTotal)
+
+  const subTabLabel = (id: JobStatus) =>
+    id === 'viewed'
+      ? t('jobs.pending')
+      : id === 'applied'
+        ? t('jobs.applied')
+        : t('jobs.discarded')
 
   async function handleClear(status: 'applied' | 'discarded') {
     const count = counts[status]
     if (count <= 0) return
 
-    const label = status === 'applied' ? 'aplicadas' : 'descartadas'
+    const label =
+      status === 'applied' ? t('jobs.labelApplied') : t('jobs.labelDiscarded')
     const ok = window.confirm(
-      `Remover permanentemente ${count} vaga${count === 1 ? '' : 's'} ${label} do JSON local? Essa ação não pode ser desfeita.`,
+      t('jobs.clearConfirm', { n: count, label }),
     )
     if (!ok) return
 
@@ -51,35 +57,33 @@ export function JobsPanel({
 
   return (
     <aside className="search-panel search-panel--compact">
-      <p className="search-panel__lead">
-        Histórico local: pendentes, aplicadas e descartadas.
-      </p>
+      <p className="search-panel__lead">{t('jobs.lead')}</p>
 
-      <div className="jobs-tabs" role="tablist" aria-label="Status das vagas">
-        {SUB_TABS.map((item) => {
-          const isPending = item.id === 'viewed'
+      <div className="jobs-tabs" role="tablist" aria-label={t('jobs.tabs')}>
+        {SUB_TAB_IDS.map((id) => {
+          const isPending = id === 'viewed'
           const showNotif = isPending && notifBadge
-          const showCount = !showNotif && counts[item.id] > 0
+          const showCount = !showNotif && counts[id] > 0
           return (
             <button
-              key={item.id}
+              key={id}
               type="button"
               role="tab"
-              aria-selected={subTab === item.id}
-              className={`jobs-tabs__btn${subTab === item.id ? ' jobs-tabs__btn--active' : ''}`}
-              onClick={() => onSubTabChange(item.id)}
+              aria-selected={subTab === id}
+              className={`jobs-tabs__btn${subTab === id ? ' jobs-tabs__btn--active' : ''}`}
+              onClick={() => onSubTabChange(id)}
             >
-              {item.label}
+              {subTabLabel(id)}
               {showNotif ? (
                 <span
                   className="jobs-tabs__alert"
-                  title="Vagas novas no pooling"
+                  title={t('nav.newJobsPooling')}
                   aria-label={`${unreadTotal} notificações não lidas`}
                 >
                   {notifBadge}
                 </span>
               ) : showCount ? (
-                <span className="jobs-tabs__count">{counts[item.id]}</span>
+                <span className="jobs-tabs__count">{counts[id]}</span>
               ) : null}
             </button>
           )
@@ -95,8 +99,8 @@ export function JobsPanel({
           onClick={() => void handleClear('applied')}
         >
           {clearing === 'applied'
-            ? 'Limpando…'
-            : `Limpar aplicadas (${counts.applied})`}
+            ? t('jobs.clearing')
+            : `${t('jobs.clearApplied')} (${counts.applied})`}
         </Button>
         <Button
           variant="ghost"
@@ -106,13 +110,13 @@ export function JobsPanel({
           onClick={() => void handleClear('discarded')}
         >
           {clearing === 'discarded'
-            ? 'Limpando…'
-            : `Limpar descartadas (${counts.discarded})`}
+            ? t('jobs.clearing')
+            : `${t('jobs.clearDiscarded')} (${counts.discarded})`}
         </Button>
       </div>
 
       <Button fullWidth variant="soft" onClick={onRefresh}>
-        Recarregar vagas
+        {t('jobs.refresh')}
       </Button>
     </aside>
   )

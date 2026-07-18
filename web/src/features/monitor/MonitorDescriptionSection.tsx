@@ -1,5 +1,6 @@
 import { FilterTags } from '../../components/FilterTags'
 import { LanguageDropdown } from '../../components/LanguageDropdown'
+import { useI18n } from '../../i18n'
 import type {
   DescriptionLanguage,
   JobFilters,
@@ -25,10 +26,12 @@ export function MonitorDescriptionSection({
   onAddWord,
   onRemoveWord,
 }: Props) {
+  const { t } = useI18n()
+
   return (
     <div className="search-panel__description">
       <div className="search-panel__form">
-        <Field label="Idioma">
+        <Field label={t('desc.language')}>
           <LanguageDropdown
             fullWidth
             value={filters.language}
@@ -48,7 +51,7 @@ export function MonitorDescriptionSection({
             })
           }
         />
-        <span>Buscar e filtrar pela descrição</span>
+        <span>{t('desc.fetch')}</span>
       </label>
 
       {filters.language && !draft.fetchDescriptions ? (
@@ -64,7 +67,7 @@ export function MonitorDescriptionSection({
             das que ainda não têm no banco (as já lidas são reaproveitadas).
           </Alert>
           <FilterTags
-            label="Excluir na descrição"
+            label={t('desc.exclude')}
             hint="Se a descrição tiver uma destas palavras, some."
             words={filters.excludeDescription}
             filterKey="excludeDescription"
@@ -73,7 +76,7 @@ export function MonitorDescriptionSection({
             tone="exclude"
           />
           <FilterTags
-            label="Exigir na descrição"
+            label={t('desc.include')}
             hint="Se preencher, a descrição precisa conter ao menos uma."
             words={filters.includeDescription}
             filterKey="includeDescription"

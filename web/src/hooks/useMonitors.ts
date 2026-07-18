@@ -58,27 +58,6 @@ function mergeMonitorFilters(
   }
 }
 
-export const JOBS_TITLES: Record<
-  JobStatus,
-  { title: string; empty: string; hint: string }
-> = {
-  viewed: {
-    title: 'Vagas pendentes',
-    empty: 'Nenhuma vaga pendente',
-    hint: 'Busque no Monitor. Use Descartar ou Já apliquei nos cards.',
-  },
-  applied: {
-    title: 'Vagas aplicadas',
-    empty: 'Nenhuma vaga aplicada',
-    hint: 'Marque “Já apliquei” em um card para movê-la para cá.',
-  },
-  discarded: {
-    title: 'Vagas descartadas',
-    empty: 'Nenhuma vaga descartada',
-    hint: 'Descartadas somem do Monitor. Você pode restaurá-las aqui.',
-  },
-}
-
 export function useMonitors(params: { filters: JobFilters }) {
   const { filters } = params
 

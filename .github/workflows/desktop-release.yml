@@ -1,0 +1,110 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify tag matches desktop version
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./desktop/package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag v$TAG não bate com desktop/package.json ($PKG)"
+            exit 1
+          fi
+
+      - name: Build Windows portable
+        run: npm run desktop:dist:win
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-portable
+          path: desktop/release/BuscaVagas-*-win-x64-portable.exe
+          if-no-files-found: error
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Verify tag matches desktop version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./desktop/package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag v$TAG não bate com desktop/package.json ($PKG)"
+            exit 1
+          fi
+
+      - name: Build Linux AppImage
+        run: npm run desktop:dist:linux
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: desktop/release/BuscaVagas-*-linux-x64.AppImage
+          if-no-files-found: error
+
+  publish:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: win-portable
+          path: dist
+
+      - name: Download Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist
+
+      - name: List artifacts
+        run: ls -lah dist
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Busca Vagas ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/BuscaVagas-*-win-x64-portable.exe
+            dist/BuscaVagas-*-linux-x64.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

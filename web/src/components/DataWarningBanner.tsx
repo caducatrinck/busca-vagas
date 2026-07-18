@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
 import { Button, cx } from '../ui'
 import './DataWarningBanner.css'
 
@@ -16,6 +17,7 @@ type Feedback = {
 }
 
 export function DataWarningBanner({ onExport, onImportFile }: Props) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const clearTimer = useRef<number | null>(null)
   const [busy, setBusy] = useState<'export' | 'import' | null>(null)
@@ -41,12 +43,12 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
     setFeedback(null)
     try {
       await onExport()
-      showFeedback({ action: 'export', kind: 'ok', text: 'Baixado' })
+      showFeedback({ action: 'export', kind: 'ok', text: t('data.exported') })
     } catch (err) {
       showFeedback({
         action: 'export',
         kind: 'error',
-        text: err instanceof Error ? err.message : 'Falhou',
+        text: err instanceof Error ? err.message : t('data.failed'),
       })
     } finally {
       setBusy(null)
@@ -55,21 +57,19 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
 
   async function handleImport(file: File | undefined) {
     if (!file) return
-    const ok = window.confirm(
-      'Importar vai substituir vagas e monitores atuais pelos do arquivo. Continuar?',
-    )
+    const ok = window.confirm(t('data.importConfirm'))
     if (!ok) return
 
     setBusy('import')
     setFeedback(null)
     try {
       await onImportFile(file)
-      showFeedback({ action: 'import', kind: 'ok', text: 'Importado' })
+      showFeedback({ action: 'import', kind: 'ok', text: t('data.imported') })
     } catch (err) {
       showFeedback({
         action: 'import',
         kind: 'error',
-        text: err instanceof Error ? err.message : 'Falhou',
+        text: err instanceof Error ? err.message : t('data.failed'),
       })
     } finally {
       setBusy(null)
@@ -117,11 +117,11 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
             title={
               feedback?.action === 'export' && feedback.kind === 'error'
                 ? feedback.text
-                : 'Exportar backup JSON'
+                : t('data.export')
             }
             onClick={() => void handleExport()}
           >
-            {buttonLabel('export', 'Exportar', 'Exportando…')}
+            {buttonLabel('export', t('data.export'), `${t('data.export')}…`)}
           </Button>
           <Button
             size="sm"
@@ -135,11 +135,11 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
             title={
               feedback?.action === 'import' && feedback.kind === 'error'
                 ? feedback.text
-                : 'Importar backup JSON'
+                : t('data.import')
             }
             onClick={() => inputRef.current?.click()}
           >
-            {buttonLabel('import', 'Importar', 'Importando…')}
+            {buttonLabel('import', t('data.import'), `${t('data.import')}…`)}
           </Button>
           <input
             ref={inputRef}
@@ -152,15 +152,8 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
       </div>
 
       <aside className="linkedin-alert" role="note">
-        <p className="linkedin-alert__title">Cuidado com o LinkedIn</p>
-        <p className="linkedin-alert__body">
-          Muitas requisições seguidas podem fazer o LinkedIn bloquear
-          temporariamente as buscas. Se isso acontecer,{' '}
-          <strong>espere</strong> o bloqueio passar e, nas Configurações,
-          reduza o ritmo: aumente o <strong>intervalo entre buscas</strong> e
-          baixe os tetos por hora/dia. Use o app com parcimônia e evite várias
-          abas buscando ao mesmo tempo.
-        </p>
+        <p className="linkedin-alert__title">{t('data.linkedinTitle')}</p>
+        <p className="linkedin-alert__body">{t('data.linkedinBody')}</p>
       </aside>
     </div>
   )

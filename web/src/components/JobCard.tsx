@@ -2,6 +2,7 @@ import type { Job, JobFilters, JobStatus } from '../lib/types'
 import { jobStatus } from '../lib/jobStatus'
 import { matchedWords, titleSearchText } from '../lib/filterJobs'
 import { formatPostedAt } from '../lib/formatPostedAt'
+import { useI18n } from '../i18n'
 import {
   WORKPLACE_TYPE_LABELS,
   parseContractTags,
@@ -23,6 +24,7 @@ export function JobCard({
   showDescriptionFilters = true,
   onStatusChange,
 }: Props) {
+  const { t } = useI18n()
   const status = jobStatus(job)
   const titleHaystack = titleSearchText(job)
   const titleHits = [
@@ -63,7 +65,9 @@ export function JobCard({
       <div className="job-card__top">
         <h2>{job.title}</h2>
         <div className="job-card__meta">
-          {job.isNew ? <span className="job-card__new">Nova</span> : null}
+          {job.isNew ? (
+            <span className="job-card__new">{t('card.new')}</span>
+          ) : null}
           {job.isNew === false ? (
             <span
               className="job-card__seen"
@@ -109,7 +113,7 @@ export function JobCard({
                 onStatusChange?.(job, e.target.checked ? 'applied' : 'viewed')
               }
             />
-            <span>Já apliquei</span>
+            <span>{t('card.apply')}</span>
           </label>
           {status === 'discarded' ? (
             <Button
@@ -118,7 +122,7 @@ export function JobCard({
               className="job-card__action-btn"
               onClick={() => onStatusChange?.(job, 'viewed')}
             >
-              Restaurar
+              {t('card.restore')}
             </Button>
           ) : (
             <Button
@@ -127,7 +131,7 @@ export function JobCard({
               className="job-card__action-btn job-card__action-btn--discard"
               onClick={() => onStatusChange?.(job, 'discarded')}
             >
-              Descartar
+              {t('card.discard')}
             </Button>
           )}
         </div>
@@ -137,7 +141,7 @@ export function JobCard({
           target="_blank"
           rel="noreferrer"
         >
-          Abrir no LinkedIn
+          {t('card.open')}
         </a>
       </div>
     </article>

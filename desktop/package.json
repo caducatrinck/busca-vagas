@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
+    "test": "node --test updaterLogic.test.mjs",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win portable",
@@ -23,7 +24,13 @@
     },
     "files": [
       "main.mjs",
-      "package.json"
+      "updater.mjs",
+      "updaterLogic.mjs",
+      "preload.cjs",
+      "trayBadge.mjs",
+      "splash.html",
+      "package.json",
+      "build/icon.png"
     ],
     "extraResources": [
       {
@@ -40,18 +47,18 @@
         }
       ],
       "icon": "build/icon.png",
-      "artifactName": "BuscaVagas-${version}-portable.${ext}"
+      "artifactName": "BuscaVagas-${version}-win-x64-portable.${ext}"
     },
     "linux": {
       "target": ["AppImage"],
       "category": "Office",
       "icon": "build/icon.png",
-      "artifactName": "BuscaVagas-${version}.${ext}"
+      "artifactName": "BuscaVagas-${version}-linux-x64.${ext}"
     },
     "mac": {
       "target": ["dmg"],
       "icon": "build/icon.png",
-      "artifactName": "BuscaVagas-${version}.${ext}"
+      "artifactName": "BuscaVagas-${version}-mac.${ext}"
     }
   },
   "devDependencies": {

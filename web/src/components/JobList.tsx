@@ -268,9 +268,7 @@ export function JobList({
                 ? `${totalCount} vaga(s) ocultadas pelos filtros.`
                 : showTopFilters
                   ? 'Ajuste o título/descrição ou limpe os filtros acima.'
-                  : safeJobs.length === 0 && totalCount > 0
-                    ? 'Nenhuma vaga para exibir no momento.'
-                    : emptyHint}
+                  : emptyHint}
             </p>
           </div>
         ) : (

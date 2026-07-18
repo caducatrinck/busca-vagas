@@ -14,6 +14,7 @@ import {
   normalizeRateLimit,
   normalizeSettings,
   normalizeTheme,
+  normalizeLocale,
 } from './defaults.js'
 import { ensureStore, persist } from './persistence.js'
 
@@ -83,6 +84,7 @@ export async function getUiPrefs(): Promise<UiPrefs> {
   return {
     filters: normalizeJobFilters(store.filters),
     theme: normalizeTheme(store.theme),
+    locale: normalizeLocale(store.locale),
   }
 }
 
@@ -95,6 +97,9 @@ export async function updateUiPrefs(
   }
   if (patch.theme !== undefined) {
     store.theme = normalizeTheme(patch.theme)
+  }
+  if (patch.locale !== undefined) {
+    store.locale = normalizeLocale(patch.locale)
   }
   await persist(store)
   return getUiPrefs()
@@ -140,6 +145,9 @@ export async function replaceStoreData(
     filters: normalizeJobFilters(incoming.filters ?? current.filters),
     theme: normalizeTheme(
       incoming.theme !== undefined ? incoming.theme : current.theme,
+    ),
+    locale: normalizeLocale(
+      incoming.locale !== undefined ? incoming.locale : current.locale,
     ),
   }
   await persist(next, { allowEmptyOverwrite: true })

@@ -17,12 +17,14 @@
     "start:api": "npm run start -w api",
     "preview:web": "npm run preview -w web",
     "build": "npm run build -w web && npm run build -w api",
-    "test": "npm run test -w api && npm run test -w web",
+    "test": "npm run test -w api && npm run test -w web && npm run test -w desktop",
     "desktop:prepare": "node scripts/prepare-desktop.mjs",
     "desktop:dev": "node scripts/desktop-dev.mjs",
     "desktop:dist": "npm run desktop:prepare && npm run dist -w desktop",
     "desktop:dist:win": "npm run desktop:prepare && npm run dist:win -w desktop",
-    "desktop:dist:linux": "npm run desktop:prepare && npm run dist:linux -w desktop"
+    "desktop:dist:linux": "npm run desktop:prepare && npm run dist:linux -w desktop",
+    "screenshots": "npm run screenshots --prefix e2e",
+    "screenshots:install": "npm install --prefix e2e && npm run install:browsers --prefix e2e"
   },
   "devDependencies": {
     "esbuild": "^0.28.0"

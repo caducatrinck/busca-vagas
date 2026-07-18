@@ -1,12 +1,6 @@
 import type { DescriptionLanguage } from '../lib/types'
+import { useI18n } from '../i18n'
 import { Select } from '../ui'
-
-const LANGUAGE_OPTIONS: Array<{ value: DescriptionLanguage; label: string }> =
-  [
-    { value: '', label: 'Qualquer' },
-    { value: 'pt', label: 'Português' },
-    { value: 'en', label: 'Inglês' },
-  ]
 
 type Props = {
   value: DescriptionLanguage
@@ -21,16 +15,23 @@ export function LanguageDropdown({
   onChange,
   fullWidth = false,
   id,
-  'aria-label': ariaLabel = 'Filtrar por idioma',
+  'aria-label': ariaLabel,
 }: Props) {
+  const { t } = useI18n()
+  const options = [
+    { value: '' as const, label: t('lang.any') },
+    { value: 'pt' as const, label: t('lang.pt') },
+    { value: 'en' as const, label: t('lang.en') },
+  ]
+
   return (
     <Select
       value={value}
-      options={LANGUAGE_OPTIONS}
+      options={options}
       onChange={onChange}
       fullWidth={fullWidth}
       id={id}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('list.language')}
     />
   )
 }

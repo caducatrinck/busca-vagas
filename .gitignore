@@ -53,7 +53,16 @@ Thumbs.db
 # Docker / local overrides
 docker-compose.override.yml
 
+# E2E / screenshots
+e2e/node_modules/
+e2e/.data/
+e2e/.libs/
+e2e/test-results/
+e2e/playwright-report/
+
 # Desktop (Electron)
 desktop/resources/
 desktop/release/
 desktop/dist/
+
+

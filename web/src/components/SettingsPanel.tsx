@@ -5,6 +5,7 @@ import {
   type PublicAppSettings,
   type SettingsPatch,
 } from '../lib/api'
+import { useI18n } from '../i18n'
 import { Alert, Button, Field, NumberInput, TextInput } from '../ui'
 import './SettingsPanel.css'
 
@@ -48,6 +49,7 @@ function cookiePatchValue(
 }
 
 export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
+  const { t } = useI18n()
   const [current, setCurrent] = useState<PublicAppSettings | null>(null)
   const [form, setForm] = useState<FormState | null>(null)
   const [loading, setLoading] = useState(true)
@@ -140,7 +142,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   if (loading) {
     return (
       <section className="settings-panel">
-        <p className="settings-panel__lead">Carregando configurações…</p>
+        <p className="settings-panel__lead">{t('list.loading')}</p>
       </section>
     )
   }
@@ -149,7 +151,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     return (
       <section className="settings-panel">
         <header className="settings-panel__header">
-          <p className="settings-panel__mark">Configurações</p>
+          <p className="settings-panel__mark">{t('nav.settings')}</p>
           <h1>Não foi possível carregar</h1>
         </header>
         <Alert tone="danger">{error || 'API indisponível. Confira se o serviço está no ar.'}</Alert>
@@ -167,18 +169,20 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   return (
     <section className="settings-panel">
       <header className="settings-panel__header">
-        <p className="settings-panel__mark">Configurações</p>
-        <h1>{setupRequired ? 'Configure para continuar' : 'Cookies e limites'}</h1>
+        <p className="settings-panel__mark">{t('nav.settings')}</p>
+        <h1>
+          {setupRequired ? t('settings.setupTitle') : t('settings.title')}
+        </h1>
         {setupRequired ? (
           <p className="settings-panel__banner" role="alert">
-            O app está bloqueado até você salvar o cookie <code>li_at</code> do
-            LinkedIn. Sem ele não é possível buscar vagas.
+            {t('settings.setupLead')}
           </p>
         ) : null}
       </header>
 
       <aside className="settings-guide" aria-labelledby="settings-guide-title">
         <h2 id="settings-guide-title">Como pegar os cookies</h2>
+        <p className="settings-guide__howto">{t('settings.howto')}</p>
         <ol>
           <li>Abra o LinkedIn no navegador e faça login na sua conta.</li>
           <li>
@@ -211,7 +215,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         <fieldset>
           <legend>LinkedIn</legend>
 
-          <Field label="Cookie li_at">
+          <Field label={t('settings.liAt')}>
             <TextInput
               type="password"
               autoComplete="off"
@@ -225,7 +229,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             />
           </Field>
 
-          <Field label="Cookie JSESSIONID">
+          <Field label={t('settings.jsession')}>
             <TextInput
               type="password"
               autoComplete="off"
@@ -241,7 +245,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             />
           </Field>
 
-          <Field label="Máx. páginas por busca">
+          <Field label={t('settings.maxPages')}>
             <NumberInput
               min={1}
               max={5000}
@@ -257,7 +261,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         <fieldset>
           <legend>Rate limit</legend>
 
-          <Field label="Intervalo mínimo entre buscas (segundos)">
+          <Field label={t('settings.cooldown')}>
             <NumberInput
               min={0}
               max={600}
@@ -270,7 +274,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             />
           </Field>
 
-          <Field label="Máx. buscas por hora">
+          <Field label={t('settings.maxHour')}>
             <NumberInput
               min={0}
               max={500}
@@ -282,7 +286,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             />
           </Field>
 
-          <Field label="Máx. buscas por dia">
+          <Field label={t('settings.maxDay')}>
             <NumberInput
               min={0}
               max={2000}
@@ -294,7 +298,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             />
           </Field>
 
-          <Field label="Concorrência de descrições">
+          <Field label={t('settings.concurrency')}>
             <NumberInput
               min={1}
               max={20}
@@ -311,7 +315,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         {okMsg ? <p className="settings-panel__ok">{okMsg}</p> : null}
 
         <Button type="submit" disabled={saving}>
-          {saving ? 'Salvando…' : 'Salvar configurações'}
+          {saving ? t('settings.saving') : t('settings.save')}
         </Button>
       </form>
     </section>
