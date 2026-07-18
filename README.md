@@ -28,8 +28,6 @@ Tutorial com prints: **[docs/tutorial](./docs/tutorial/README.md)**
 | **Cheerio** | Parsing HTML do LinkedIn | Extrai listagem/detalhe sem browser headless pesado |
 | **electron-builder** | Empacote / release | Gera o `.exe` portable e o AppImage a partir do mesmo código |
 
-O shell desktop é **Electron** (não Tauri).
-
 ### Dados
 
 Ficam só na sua máquina:
