@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Busca Vagas — app desktop (Electron)",
   "main": "main.mjs",
   "type": "module",
@@ -36,27 +36,35 @@
       {
         "from": "resources",
         "to": "app-resources",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}-win-x64-portable.${ext}"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Office",
       "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}-linux-x64.${ext}"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}-mac.${ext}"
     }
