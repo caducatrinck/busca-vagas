@@ -2,7 +2,7 @@
   "name": "busca-vagas",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "workspaces": [
     "web",
@@ -27,6 +27,6 @@
     "screenshots:install": "npm install --prefix e2e && npm run install:browsers --prefix e2e"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.1"
   }
 }

@@ -21,7 +21,7 @@ Só quer **baixar o .exe / AppImage**? Use o [README](./README.md) e os [Release
 | Programa | Para quê |
 |----------|----------|
 | **Git** | Baixar o código deste projeto |
-| **Node.js 20+** (vem com **npm**) | Rodar o app |
+| **Node.js 22+** (vem com **npm**) | Rodar o app |
 
 Não precisa de Docker neste guia.  
 Você também precisa de uma **conta no LinkedIn** (para o cookie `li_at` no primeiro uso).
@@ -99,7 +99,7 @@ npm --version
 - `node` deve ser **v20** ou superior (ex.: `v22.x.x`)  
 - `npm` deve mostrar um número (ex.: `10.x.x`)
 
-### Linux (Debian/Ubuntu) — Node 20 via NodeSource
+### Linux (Debian/Ubuntu) — Node 22 via NodeSource
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
@@ -213,7 +213,7 @@ For the short technical overview, see the [README](./README.md).
 | Tool | Why |
 |------|-----|
 | **Git** | Download this project |
-| **Node.js 20+** (includes **npm**) | Run the app |
+| **Node.js 22+** (includes **npm**) | Run the app |
 
 No Docker in this guide.  
 You also need a **LinkedIn account** (for the `li_at` cookie on first use).
