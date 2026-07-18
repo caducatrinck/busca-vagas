@@ -1,5 +1,7 @@
 # Busca Vagas
 
+English guide: **[docs/tutorial/README.en.md](./docs/tutorial/README.en.md)**
+
 App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações).
 
 ### Baixar
@@ -36,9 +38,22 @@ Ficam só na sua máquina:
 
 Use **Exportar / Importar** no topo do app para backup.
 
-### Aviso
+### Aviso (importante)
 
-Uso pessoal/local. Scraping do LinkedIn pode conflitar com os [Termos de Uso](https://www.linkedin.com/legal/user-agreement). Use o **seu** cookie e a **sua** conta.
+Este projeto é **experimental**, para uso **pessoal e local** no seu próprio PC.
+
+Ele automatiza consultas de vagas no LinkedIn com a **sua** sessão (cookie). Isso **conflita** com o [Contrato do Usuário do LinkedIn](https://br.linkedin.com/legal/user-agreement) — em especial a seção **8.2** (proibição de desenvolver/usar meios para extrair dados e de métodos automatizados não autorizados) — e com a política de [software proibido](https://www.linkedin.com/help/linkedin/answer/a1341387).
+
+**Riscos (você assume):**
+- bloqueios técnicos (rate limit / sessão inválida)
+- o LinkedIn pode tomar outras medidas que considerar adequadas ao Contrato
+
+**Não faça:**
+- usar cookie/conta de outra pessoa
+- revender, hospedar como serviço ou extrair dados em massa para terceiros
+- tratar este repo como “aprovado” ou “oficial” pelo LinkedIn
+
+O código é público só como referência de projeto open source. **Não somos afiliados ao LinkedIn.**
 
 ---
 
@@ -46,8 +61,7 @@ Uso pessoal/local. Scraping do LinkedIn pode conflitar com os [Termos de Uso](ht
 
 Guia de rodar com Node/Docker: **[docs/dev.md](./docs/dev.md)**  
 Instalação do zero (Git/Node): **[INSTALACAO-DO-ZERO.md](./INSTALACAO-DO-ZERO.md)**  
-Empacotar desktop / releases: **[DESKTOP.md](./DESKTOP.md)**  
-Tutorial EN: **[docs/tutorial/README.en.md](./docs/tutorial/README.en.md)**
+Empacotar desktop / releases: **[DESKTOP.md](./DESKTOP.md)**
 
 ### Pipeline automatizada
 
@@ -66,3 +80,7 @@ flowchart LR
 - Push na `main` (web/api/e2e/docs) → *Tutorial screenshots* → prints em `docs/tutorial/screenshots`
 
 Stack de CI usada nessa pipeline: **GitHub Actions**, **Playwright**.
+
+---
+
+> Isto **não é aconselhamento jurídico**. Em caso de dúvida, consulte um advogado e leia o Contrato atualizado.
