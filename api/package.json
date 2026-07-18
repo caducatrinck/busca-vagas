@@ -7,7 +7,7 @@
     "dev": "tsx watch src/runServer.ts",
     "build": "tsc",
     "start": "node dist/api/src/runServer.js",
-    "test": "tsx --test src/**/*.test.ts src/**/**/*.test.ts"
+    "test": "tsx --test src/*.test.ts src/**/*.test.ts src/**/**/*.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",

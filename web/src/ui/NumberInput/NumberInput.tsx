@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cx } from '../cx'
 import '../TextInput/TextInput.css'
+import { parseNumberInput } from './numberInputMath'
 
 type Props = {
   value: number
@@ -14,13 +15,6 @@ type Props = {
   className?: string
   /** fallback se sair do campo vazio */
   emptyValue?: number
-}
-
-function clamp(n: number, min?: number, max?: number): number {
-  let out = n
-  if (min != null) out = Math.max(min, out)
-  if (max != null) out = Math.min(max, out)
-  return out
 }
 
 export function NumberInput({
@@ -43,14 +37,8 @@ export function NumberInput({
   }, [value])
 
   function commit(raw: string) {
-    const trimmed = raw.trim()
     const fallback = emptyValue ?? min ?? 0
-    const parsed = trimmed === '' ? fallback : Number(trimmed)
-    const next = clamp(
-      Number.isFinite(parsed) ? parsed : fallback,
-      min,
-      max,
-    )
+    const next = parseNumberInput(raw, fallback, min, max)
     setText(String(next))
     if (next !== value) onValueChange(next)
   }
