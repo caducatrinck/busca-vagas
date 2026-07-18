@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n'
-import { Button } from '../ui'
 import type { LinkedInSessionStatus } from '../lib/api'
+import { Button } from '../ui'
 import './LinkedInSessionBanner.css'
 
 type Props = {
@@ -26,10 +26,23 @@ export function LinkedInSessionBanner({
           ? t('session.missing')
           : t('session.unknown')
 
+  const body =
+    session.httpStatus === 429
+      ? t('session.body.rateLimited')
+      : session.code === 'expired'
+        ? t('session.body.expired')
+        : session.code === 'incomplete'
+          ? t('session.body.incomplete')
+          : session.code === 'missing'
+            ? t('session.body.missing')
+            : session.code === 'network'
+              ? t('session.body.network')
+              : t('session.body.unknown')
+
   return (
     <aside className="linkedin-session-alert" role="alert">
       <p className="linkedin-session-alert__title">{title}</p>
-      <p className="linkedin-session-alert__body">{session.message}</p>
+      <p className="linkedin-session-alert__body">{body}</p>
       <div className="linkedin-session-alert__actions">
         <Button size="sm" variant="primary" onClick={onGoSettings}>
           {t('session.openSettings')}

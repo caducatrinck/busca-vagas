@@ -146,10 +146,10 @@ export class SearchRateLimiter {
     this.blockReason =
       input.message?.trim() ||
       (status === 999
-        ? `LinkedIn anti-bot (HTTP 999). Pausando ~${waitLabel}s.`
+        ? `err:linkedin_999:${waitLabel}`
         : status === 429
-          ? `LinkedIn rate limit (HTTP 429). Pausando ~${waitLabel}s.`
-          : `LinkedIn pediu pausa. Aguarde ~${waitLabel}s.`)
+          ? `err:linkedin_429:${waitLabel}`
+          : `err:linkedin_pause:${waitLabel}`)
     this.persist()
     return this.snapshot(now)
   }
@@ -204,10 +204,10 @@ export class SearchRateLimiter {
     if (config.maxPerHour > 0 && searchesThisHour >= config.maxPerHour) {
       const oldestInHour = this.events.find((e) => e.at >= now - HOUR_MS)
       localCapUntil = (oldestInHour?.at ?? now) + HOUR_MS
-      localCapReason = `Limite de segurança local: ${config.maxPerHour} buscas/hora (opcional).`
+      localCapReason = `err:local_cap_hour:${config.maxPerHour}`
     } else if (config.maxPerDay > 0 && searchesToday >= config.maxPerDay) {
       localCapUntil = now + DAY_MS
-      localCapReason = `Limite de segurança local: ${config.maxPerDay} buscas/dia (opcional).`
+      localCapReason = `err:local_cap_day:${config.maxPerDay}`
     }
 
     const candidates: Array<{
@@ -218,7 +218,7 @@ export class SearchRateLimiter {
     if (linkedInUntil) {
       candidates.push({
         until: linkedInUntil,
-        reason: this.blockReason || 'LinkedIn pediu pausa.',
+        reason: this.blockReason || 'err:linkedin_pause:0',
         source: 'linkedin',
       })
     }
@@ -226,7 +226,7 @@ export class SearchRateLimiter {
       const waitSec = Math.max(1, Math.ceil((cooldownUntil - now) / 1000))
       candidates.push({
         until: cooldownUntil,
-        reason: `Aguarde ${waitSec}s entre buscas`,
+        reason: `err:cooldown:${waitSec}`,
         source: 'cooldown',
       })
     }
@@ -273,7 +273,7 @@ export class SearchRateLimiter {
   assertAllowed(now = Date.now()): RateLimitSnapshot {
     const snap = this.snapshot(now)
     if (!snap.allowed) {
-      const err = new Error(snap.reason || 'Rate limit excedido')
+      const err = new Error(snap.reason || 'err:rate_exceeded')
       ;(err as Error & { retryAfterMs?: number }).retryAfterMs = snap.retryAfterMs
       ;(err as Error & { rateLimitSource?: string | null }).rateLimitSource =
         snap.source

@@ -49,7 +49,7 @@ export type LinkedInSessionStatus = {
 
 export async function fetchLinkedInSession(): Promise<LinkedInSessionStatus> {
   const res = await fetch(`${API_URL}/linkedin/session`)
-  if (!res.ok) throw new Error('Falha ao ler status da sessão LinkedIn')
+  if (!res.ok) throw new Error('err:session_status')
   return parseJson(res)
 }
 
@@ -57,7 +57,7 @@ export async function checkLinkedInSession(): Promise<LinkedInSessionStatus> {
   const res = await fetch(`${API_URL}/linkedin/session/check`, {
     method: 'POST',
   })
-  if (!res.ok) throw new Error('Falha ao verificar sessão LinkedIn')
+  if (!res.ok) throw new Error('err:session_check')
   return parseJson(res)
 }
 
@@ -112,7 +112,7 @@ export type SettingsPatch = {
 export async function fetchSettings(): Promise<PublicAppSettings> {
   const res = await fetch(`${API_URL}/settings`)
   const data = await parseJson<PublicAppSettings & { error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || 'Falha ao carregar configurações')
+  if (!res.ok) throw new Error(data.error || 'err:settings_load')
   return data
 }
 
@@ -125,7 +125,7 @@ export async function saveSettings(
     body: JSON.stringify(patch),
   })
   const data = await parseJson<PublicAppSettings & { error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || 'Falha ao salvar configurações')
+  if (!res.ok) throw new Error(data.error || 'err:settings_save')
   return data
 }
 
@@ -153,7 +153,7 @@ export async function searchJobs(form: SearchForm): Promise<{
 
   if (!res.ok) {
     const extra = data.rateLimit?.reason ? ` ${data.rateLimit.reason}` : ''
-    throw new Error((data.error || `Erro HTTP ${res.status}`) + extra)
+    throw new Error((data.error || `err:http:${res.status}`) + extra)
   }
 
   return {
@@ -176,7 +176,7 @@ export async function fetchSavedJobs(options?: {
   const qs = params.toString()
   const res = await fetch(`${API_URL}/jobs${qs ? `?${qs}` : ''}`)
   const data = await parseJson<{ jobs?: Job[]; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return Array.isArray(data.jobs) ? data.jobs : []
 }
 
@@ -187,8 +187,8 @@ export async function setJobStatus(id: string, status: JobStatus): Promise<Job> 
     body: JSON.stringify({ status }),
   })
   const data = await parseJson<{ job?: Job; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
-  if (!data.job) throw new Error('Resposta inválida')
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  if (!data.job) throw new Error('err:invalid_response')
   return data.job
 }
 
@@ -205,14 +205,14 @@ export async function clearJobsByStatus(
     body: JSON.stringify({ status }),
   })
   const data = await parseJson<{ removed?: number; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return data.removed ?? 0
 }
 
 export async function fetchMonitors(): Promise<Monitor[]> {
   const res = await fetch(`${API_URL}/monitors`)
   const data = await parseJson<{ monitors?: Monitor[]; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return Array.isArray(data.monitors) ? data.monitors : []
 }
 
@@ -226,8 +226,8 @@ export async function createMonitor(input?: {
     body: JSON.stringify(input ?? {}),
   })
   const data = await parseJson<{ monitor?: Monitor; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
-  if (!data.monitor) throw new Error('Resposta inválida')
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  if (!data.monitor) throw new Error('err:invalid_response')
   return data.monitor
 }
 
@@ -247,8 +247,8 @@ export async function updateMonitor(
     body: JSON.stringify(patch),
   })
   const data = await parseJson<{ monitor?: Monitor; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
-  if (!data.monitor) throw new Error('Resposta inválida')
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  if (!data.monitor) throw new Error('err:invalid_response')
   return data.monitor
 }
 
@@ -258,7 +258,7 @@ export async function removeMonitor(id: string): Promise<void> {
   })
   if (!res.ok) {
     const data = await parseJson<{ error?: string }>(res)
-    throw new Error(data.error || `Erro HTTP ${res.status}`)
+    throw new Error(data.error || `err:http:${res.status}`)
   }
 }
 
@@ -267,8 +267,8 @@ export async function runMonitor(id: string): Promise<Monitor> {
     method: 'POST',
   })
   const data = await parseJson<{ monitor?: Monitor; error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
-  if (!data.monitor) throw new Error('Resposta inválida')
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  if (!data.monitor) throw new Error('err:invalid_response')
   return data.monitor
 }
 
@@ -301,7 +301,7 @@ export type UiPrefs = {
 export async function fetchUiPrefs(): Promise<UiPrefs> {
   const res = await fetch(`${API_URL}/prefs`)
   const data = await parseJson<UiPrefs & { error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return data
 }
 
@@ -312,14 +312,14 @@ export async function saveUiPrefs(prefs: Partial<UiPrefs>): Promise<UiPrefs> {
     body: JSON.stringify(prefs),
   })
   const data = await parseJson<UiPrefs & { error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return data
 }
 
 export async function exportAppData(): Promise<DataBackup> {
   const res = await fetch(`${API_URL}/data/export`)
   const data = await parseJson<DataBackup & { error?: string }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return data
 }
 
@@ -338,7 +338,7 @@ export async function importAppData(backup: DataBackup): Promise<{
     monitors?: number
     error?: string
   }>(res)
-  if (!res.ok) throw new Error(data.error || `Erro HTTP ${res.status}`)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return {
     jobs: data.jobs ?? 0,
     monitors: data.monitors ?? 0,
@@ -367,12 +367,12 @@ export async function runMonitorWithProgress(
   if (!res.ok) {
     const data = await parseJson<{ error?: string }>(res).catch(() => ({}))
     throw new Error(
-      (data as { error?: string }).error || `Erro HTTP ${res.status}`,
+      (data as { error?: string }).error || `err:http:${res.status}`,
     )
   }
 
   if (!res.body) {
-    throw new Error('Resposta sem corpo (stream indisponível)')
+    throw new Error('err:stream_empty')
   }
 
   const reader = res.body.getReader()
@@ -413,7 +413,7 @@ export async function runMonitorWithProgress(
             if (data.monitor) monitor = data.monitor
             cancelled = Boolean(data.cancelled)
           } else if (parsed.event === 'error') {
-            streamError = data.error || 'Erro na busca'
+            streamError = data.error || 'err:generic'
             if (data.monitor) monitor = data.monitor
           }
         } catch {
@@ -436,7 +436,7 @@ export async function runMonitorWithProgress(
     if (cancelled || handlers.signal?.aborted) {
       return { monitor: null, cancelled: true, stats: null }
     }
-    throw new Error('Busca encerrada sem resultado')
+    throw new Error('err:search_no_result')
   }
   return {
     monitor,

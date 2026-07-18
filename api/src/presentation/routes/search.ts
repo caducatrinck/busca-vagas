@@ -26,7 +26,7 @@ export function registerSearchRoutes(
       request.body ?? { query: '' }
 
     if (!query?.trim()) {
-      return reply.status(400).send({ error: 'Campo query é obrigatório' })
+      return reply.status(400).send({ error: 'err:query_required' })
     }
 
     let rateLimit

@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import {
   clampIntervalMinutes,
   isCooldownErrorMessage,
-  POSTED_WITHIN_OPTIONS,
+  POSTED_WITHIN_VALUES,
 } from './constants.ts'
 import { formatCountdown, tabCountdownLabel } from './formatCountdown.ts'
 
@@ -22,17 +22,19 @@ describe('clampIntervalMinutes', () => {
 describe('isCooldownErrorMessage', () => {
   it('reconhece mensagens de cooldown', () => {
     assert.equal(isCooldownErrorMessage('Aguarde 15s entre buscas'), true)
-    assert.equal(isCooldownErrorMessage('Pausa de 29s entre buscas (anti-spam local).'), true)
+    assert.equal(
+      isCooldownErrorMessage('Pausa de 29s entre buscas (anti-spam local).'),
+      true,
+    )
     assert.equal(isCooldownErrorMessage('Cookie inválido'), false)
   })
 })
 
-describe('POSTED_WITHIN_OPTIONS', () => {
+describe('POSTED_WITHIN_VALUES', () => {
   it('tem as janelas curtas novas', () => {
-    const values = POSTED_WITHIN_OPTIONS.map((o) => o.value)
-    assert.ok(values.includes('30m'))
-    assert.ok(values.includes('1h'))
-    assert.ok(values.includes('10h'))
+    assert.ok(POSTED_WITHIN_VALUES.includes('30m'))
+    assert.ok(POSTED_WITHIN_VALUES.includes('1h'))
+    assert.ok(POSTED_WITHIN_VALUES.includes('10h'))
   })
 })
 
@@ -57,5 +59,9 @@ describe('tabCountdownLabel', () => {
       tabCountdownLabel(new Date(now - 1000).toISOString(), now, false),
       'agora',
     )
+  })
+
+  it('usa inglês quando locale=en', () => {
+    assert.equal(tabCountdownLabel(null, Date.now(), true, 'en'), 'searching')
   })
 })

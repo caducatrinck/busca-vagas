@@ -47,8 +47,7 @@ export async function runMonitor(
 
     const appSettings = await getAppSettings()
     if (!isAppConfigured(appSettings)) {
-      const message =
-        'Configure o cookie li_at em Configurações antes de buscar vagas.'
+      const message = 'err:missing_li_at'
       callbacks.onProgress?.({
         phase: 'error',
         label: 'Configuração necessária',
@@ -235,7 +234,7 @@ export async function runMonitor(
         message:
           newCount > 0
             ? `${newCount} nova(s) vaga(s)`
-            : (searchTelemetry.emptyReason ?? 'Nenhuma vaga nova nesta rodada'),
+            : (searchTelemetry.emptyReason ?? 'no_new_jobs'),
         overallPercent: 100,
         listing: { current: found.length, total: found.length },
         descriptions: {
@@ -276,8 +275,8 @@ export async function runMonitor(
           phase: 'done',
           label: 'Busca cancelada',
           message: err.jobs.length
-            ? `Parcial salvo · ${err.jobs.length} vaga(s)`
-            : 'Cancelada sem resultados',
+            ? 'err:cancelled_partial'
+            : 'err:cancelled_empty',
           overallPercent: 100,
           listing: { current: err.jobs.length, total: err.jobs.length },
           descriptions: {
@@ -292,7 +291,8 @@ export async function runMonitor(
         return { newCount: stats.newCount, cancelled: true }
       }
 
-      const message = err instanceof Error ? err.message : 'Erro na busca'
+      const message =
+        err instanceof Error ? err.message : 'err:generic'
       log.error('monitor.run.error', {
         monitorId: id,
         mode,

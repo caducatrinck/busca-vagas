@@ -4,9 +4,9 @@ import { matchedWords, titleSearchText } from '../lib/filterJobs'
 import { formatPostedAt } from '../lib/formatPostedAt'
 import { useI18n } from '../i18n'
 import {
-  WORKPLACE_TYPE_LABELS,
   parseContractTags,
   resolveWorkplaceType,
+  type WorkplaceType,
 } from '../shared/domain'
 import { Button } from '../ui'
 import './JobCard.css'
@@ -18,13 +18,19 @@ type Props = {
   onStatusChange?: (job: Job, status: JobStatus) => void
 }
 
+const WORKPLACE_KEYS: Record<WorkplaceType, 'workplace.hybrid' | 'workplace.onsite' | 'workplace.remote'> = {
+  hybrid: 'workplace.hybrid',
+  onsite: 'workplace.onsite',
+  remote: 'workplace.remote',
+}
+
 export function JobCard({
   job,
   filters,
   showDescriptionFilters = true,
   onStatusChange,
 }: Props) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const status = jobStatus(job)
   const titleHaystack = titleSearchText(job)
   const titleHits = [
@@ -39,12 +45,11 @@ export function JobCard({
     : []
   const badges = [...new Set([...titleHits, ...descHits])]
 
-  const excerpt =
-    job.description?.trim() || 'Descrição não disponível nesta busca.'
+  const excerpt = job.description?.trim() || t('card.noDescription')
 
-  const postedLabel = formatPostedAt(job.postedAt)
+  const postedLabel = formatPostedAt(job.postedAt, Date.now(), locale)
   const postedTitle = job.postedLabel
-    ? `No LinkedIn: ${job.postedLabel}`
+    ? t('card.linkedinPosted', { label: job.postedLabel })
     : job.postedAt
 
   const contractTags = job.contractTags?.length
@@ -52,7 +57,7 @@ export function JobCard({
     : parseContractTags(job.description ?? '')
   const workplace = resolveWorkplaceType(job.workplaceType, job.description)
   const metaTags = [
-    ...(workplace ? [WORKPLACE_TYPE_LABELS[workplace]] : []),
+    ...(workplace ? [t(WORKPLACE_KEYS[workplace])] : []),
     ...contractTags,
   ]
 
@@ -69,25 +74,26 @@ export function JobCard({
             <span className="job-card__new">{t('card.new')}</span>
           ) : null}
           {job.isNew === false ? (
-            <span
-              className="job-card__seen"
-              title="Já apareceu em buscas anteriores"
-            >
-              Já vista
+            <span className="job-card__seen" title={t('card.seenBefore')}>
+              {t('card.seen')}
             </span>
           ) : null}
           {status === 'discarded' ? (
-            <span className="job-card__discarded-badge">Descartada</span>
+            <span className="job-card__discarded-badge">
+              {t('card.discardedBadge')}
+            </span>
           ) : null}
           {postedLabel ? (
-            <time dateTime={job.postedAt} title={postedTitle}>
+            <time dateTime={job.postedAt} title={postedTitle ?? undefined}>
               {postedLabel}
             </time>
           ) : null}
         </div>
       </div>
-      <p className="job-card__company">{job.company || 'Empresa não informada'}</p>
-      <p className="job-card__location">{job.location || 'Local não informado'}</p>
+      <p className="job-card__company">{job.company || t('card.noCompany')}</p>
+      <p className="job-card__location">
+        {job.location || t('card.noLocation')}
+      </p>
       {metaTags.length > 0 ? (
         <ul className="job-card__tags">
           {metaTags.map((tag) => (

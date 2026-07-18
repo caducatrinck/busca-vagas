@@ -1,4 +1,5 @@
 import { useI18n } from '../../i18n'
+import { localizeVisibleError } from '../../lib/localizeVisibleError'
 import { NumberInput } from '../../ui'
 import { clampIntervalMinutes } from './constants'
 
@@ -36,7 +37,7 @@ export function MonitorPollInterval({
         </label>
       </div>
       {lastError && !hideError ? (
-        <p className="monitor-error">{lastError}</p>
+        <p className="monitor-error">{localizeVisibleError(lastError, t)}</p>
       ) : null}
     </div>
   )

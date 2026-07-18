@@ -112,7 +112,7 @@ export function registerSettingsRoutes(
 
     if (!storePayload.jobs || typeof storePayload.jobs !== 'object') {
       return reply.status(400).send({
-        error: 'Arquivo inválido: esperado store.jobs (objeto)',
+        error: 'err:invalid_backup',
       })
     }
 

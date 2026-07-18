@@ -10,6 +10,8 @@ import { matchesQuickFilter, titleSearchText } from '../lib/filterJobs'
 import { jobRecencyMs } from '../lib/formatPostedAt'
 import { jobStatus } from '../lib/jobStatus'
 import { isRateLimitError } from '../lib/rateLimit'
+import { localizeVisibleError } from '../lib/localizeVisibleError'
+import { useI18n } from '../i18n'
 import { JobCard } from './JobCard'
 import { LanguageDropdown } from './LanguageDropdown'
 import { SearchProgressCard } from './SearchProgressCard'
@@ -46,12 +48,12 @@ export function JobList({
   filters,
   loading,
   error,
-  emptyTitle = 'Nenhuma vaga',
-  emptyHint = 'Nada para mostrar aqui ainda.',
+  emptyTitle,
+  emptyHint,
   showDescriptionFilters = true,
   showTopFilters = false,
   showLanguageFilter = false,
-  title = 'Vagas',
+  title,
   searchProgress = null,
   fetchDescriptions = false,
   onCancelSearch,
@@ -59,6 +61,10 @@ export function JobList({
   onDiscardAll,
   onLanguageChange,
 }: Props) {
+  const { t } = useI18n()
+  const resolvedEmptyTitle = emptyTitle ?? t('list.emptyDefault')
+  const resolvedEmptyHint = emptyHint ?? t('list.emptyHintDefault')
+  const resolvedTitle = title ?? t('list.titleDefault')
   const searching = Boolean(searchProgress)
   const [titleQuery, setTitleQuery] = useState('')
   const [descriptionQuery, setDescriptionQuery] = useState('')
@@ -121,12 +127,12 @@ export function JobList({
 
   if (error && !loading && !searching) {
     const errorTitle = isRateLimitError(error)
-      ? 'Busca bloqueada'
-      : 'Não foi possível carregar'
+      ? t('list.blocked')
+      : t('list.loadFailed')
     return (
       <div className="job-list job-list--state job-list--error">
         <h2>{errorTitle}</h2>
-        <p>{error}</p>
+        <p>{localizeVisibleError(error, t)}</p>
       </div>
     )
   }
@@ -147,7 +153,7 @@ export function JobList({
     return (
       <div className="job-list job-list--state">
         <div className="job-list__pulse" />
-        <p>Carregando…</p>
+        <p>{t('list.loading')}</p>
       </div>
     )
   }
@@ -155,19 +161,23 @@ export function JobList({
   if (!loading && !searching && safeJobs.length === 0 && totalCount === 0) {
     return (
       <div className="job-list job-list--state">
-        <h2>{emptyTitle}</h2>
-        <p>{emptyHint}</p>
+        <h2>{resolvedEmptyTitle}</h2>
+        <p>{resolvedEmptyHint}</p>
       </div>
     )
   }
 
   const countLabel = showTopFilters
     ? visibleJobs.length !== safeJobs.length
-      ? `${visibleJobs.length} de ${safeJobs.length}`
+      ? t('list.of', { a: visibleJobs.length, b: safeJobs.length })
       : safeJobs.length !== totalCount && totalCount > 0
-        ? `${safeJobs.length} de ${totalCount}`
-        : `${visibleJobs.length} vaga${visibleJobs.length === 1 ? '' : 's'}`
-    : `${visibleJobs.length} vaga${visibleJobs.length === 1 ? '' : 's'}`
+        ? t('list.of', { a: safeJobs.length, b: totalCount })
+        : visibleJobs.length === 1
+          ? t('list.jobs', { n: visibleJobs.length })
+          : t('list.jobs_plural', { n: visibleJobs.length })
+    : visibleJobs.length === 1
+      ? t('list.jobs', { n: visibleJobs.length })
+      : t('list.jobs_plural', { n: visibleJobs.length })
 
   const hiddenByParentFilters =
     showTopFilters && safeJobs.length === 0 && totalCount > 0
@@ -184,7 +194,7 @@ export function JobList({
 
       <header className="job-list__header">
         <div className="job-list__heading">
-          <h2>{title}</h2>
+          <h2>{resolvedTitle}</h2>
           <p className="job-list__count">{countLabel}</p>
         </div>
         {showTopFilters ? (
@@ -194,9 +204,9 @@ export function JobList({
                 type="search"
                 value={titleQuery}
                 onChange={(e) => setTitleQuery(e.target.value)}
-                placeholder="Filtrar título…"
+                placeholder={t('list.filterTitle')}
                 autoComplete="off"
-                aria-label="Filtrar por título"
+                aria-label={t('list.filterTitleAria')}
               />
             </label>
             <label className="job-list__search">
@@ -204,14 +214,14 @@ export function JobList({
                 type="search"
                 value={descriptionQuery}
                 onChange={(e) => setDescriptionQuery(e.target.value)}
-                placeholder="Filtrar descrição…"
+                placeholder={t('list.filterDesc')}
                 autoComplete="off"
-                aria-label="Filtrar por descrição"
+                aria-label={t('list.filterDescAria')}
               />
             </label>
             {showLanguageFilter && onLanguageChange ? (
               <label className="job-list__language">
-                <span>Idioma</span>
+                <span>{t('list.language')}</span>
                 <LanguageDropdown
                   value={filters.language}
                   onChange={onLanguageChange}
@@ -225,13 +235,13 @@ export function JobList({
               onClick={() => setNewestFirst((v) => !v)}
               aria-label={
                 newestFirst
-                  ? 'Ordenar: mais recentes primeiro'
-                  : 'Ordenar: mais antigas primeiro'
+                  ? t('list.sortNewestAria')
+                  : t('list.sortOldestAria')
               }
               title={
                 newestFirst
-                  ? 'Mais recentes primeiro'
-                  : 'Mais antigas primeiro'
+                  ? t('list.sortNewestTitle')
+                  : t('list.sortOldestTitle')
               }
             >
               {newestFirst ? '↓' : '↑'}
@@ -245,8 +255,10 @@ export function JobList({
                 onClick={() => setConfirmDiscard(true)}
               >
                 {discarding
-                  ? 'Descartando…'
-                  : `Descartar todas${discardCount > 0 ? ` (${discardCount})` : ''}`}
+                  ? t('list.discarding')
+                  : discardCount > 0
+                    ? t('list.discardAllCount', { n: discardCount })
+                    : t('list.discardAll')}
               </Button>
             ) : null}
           </div>
@@ -258,17 +270,17 @@ export function JobList({
           <div className="job-list__empty job-list--state job-list--state-inline">
             <h2>
               {hiddenByParentFilters
-                ? emptyTitle
+                ? resolvedEmptyTitle
                 : showTopFilters
-                  ? 'Nenhuma vaga neste filtro'
-                  : emptyTitle}
+                  ? t('list.noFilter')
+                  : resolvedEmptyTitle}
             </h2>
             <p>
               {hiddenByParentFilters
-                ? `${totalCount} vaga(s) ocultadas pelos filtros.`
+                ? t('list.hiddenByFilters', { n: totalCount })
                 : showTopFilters
-                  ? 'Ajuste o título/descrição ou limpe os filtros acima.'
-                  : emptyHint}
+                  ? t('list.adjustFilters')
+                  : resolvedEmptyHint}
             </p>
           </div>
         ) : (
@@ -299,24 +311,17 @@ export function JobList({
             aria-labelledby="discard-all-title"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 id="discard-all-title">Descartar todas?</h3>
-            <p>
-              Marcar{' '}
-              <strong>
-                {discardCount} vaga{discardCount === 1 ? '' : 's'}
-              </strong>{' '}
-              como descartada{discardCount === 1 ? '' : 's'}? Elas saem do
-              Monitor e vão para a aba Descartadas.
-            </p>
+            <h3 id="discard-all-title">{t('list.discardConfirmTitle')}</h3>
+            <p>{t('list.discardConfirmBody', { n: discardCount })}</p>
             <div className="job-list__modal-actions">
               <Button
                 variant="ghost"
                 onClick={() => setConfirmDiscard(false)}
               >
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button variant="danger" onClick={() => void confirmDiscardAll()}>
-                Sim, descartar
+                {t('list.discardConfirmYes')}
               </Button>
             </div>
           </div>

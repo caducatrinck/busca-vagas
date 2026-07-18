@@ -115,9 +115,7 @@ async function fetchLatestRelease() {
           }
           if ((res.statusCode ?? 0) < 200 || (res.statusCode ?? 0) >= 300) {
             reject(
-              new Error(
-                `GitHub Releases HTTP ${res.statusCode}: ${text.slice(0, 200)}`,
-              ),
+              new Error(`err:update_github:${res.statusCode}`),
             )
             return
           }
@@ -200,7 +198,7 @@ export async function checkForUpdate() {
 async function downloadUpdate() {
   if (state.phase === 'downloading') return { ...state }
   if (!state.downloadUrl || !state.assetName) {
-    setState({ phase: 'error', error: 'Nenhum asset para baixar' })
+    setState({ phase: 'error', error: 'err:update_no_asset' })
     return { ...state }
   }
 
@@ -224,7 +222,7 @@ async function downloadUpdate() {
     const code = res.statusCode ?? 0
     if (code < 200 || code >= 300) {
       res.resume()
-      throw new Error(`Download HTTP ${code}`)
+      throw new Error(`err:update_http:${code}`)
     }
 
     const total = Number(res.headers['content-length'] || 0)

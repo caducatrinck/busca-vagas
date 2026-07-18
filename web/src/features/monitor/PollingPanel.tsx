@@ -56,7 +56,7 @@ export function PollingPanel({
   onRemoveWord,
   rateLimit = null,
 }: Props) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const busy = loading || searching
   const searchBlocked = rateLimit != null && !rateLimit.allowed
   const active = monitors.find((m) => m.id === activeId) ?? null
@@ -67,7 +67,9 @@ export function PollingPanel({
   const [now, setNow] = useState(() => Date.now())
   const anyPolling = monitors.some((m) => m.pollingEnabled)
   const rateLimitMsg =
-    rateLimit && searchBlocked ? formatRateLimitSummary(rateLimit, now) : null
+    rateLimit && searchBlocked
+      ? formatRateLimitSummary(rateLimit, now, locale)
+      : null
 
   useEffect(() => {
     if (activeIntervalMinutes != null) setIntervalDraft(activeIntervalMinutes)

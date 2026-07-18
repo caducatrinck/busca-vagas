@@ -15,6 +15,41 @@ Roda no seu PC — sem instalar Git nem Node.
 
 ## Português
 
+### Stack e por quê
+
+| Tecnologia | Papel | Por quê |
+|------------|--------|---------|
+| **Electron** | App desktop (Windows portable / Linux AppImage) | Empacota UI + API no PC, bandeja, notificações e auto-update sem depender de navegador aberto |
+| **React + Vite** | Interface | UI rápida de desenvolver e empacotar; hot reload no dia a dia |
+| **TypeScript** | Linguagem | Tipagem compartilhada entre web, API e domínio (filtros, monitores, vagas) |
+| **Fastify** | API local | Servidor HTTP leve embutido no desktop: buscas, store, pooling |
+| **Cheerio** | Parsing HTML do LinkedIn | Extrai listagem/detalhe sem browser headless pesado |
+| **electron-builder** | Empacote / release | Gera o `.exe` portable e o AppImage a partir do mesmo código |
+| **GitHub Actions** | CI/CD | Release na tag; screenshots do tutorial no push da `main` |
+| **Playwright** | Screenshots E2E | Gera os prints do tutorial de forma repetível |
+| **npm workspaces** | Monorepo (`web`, `api`, `desktop`) | Um `npm ci` e scripts únicos para dev, test e dist |
+
+Não usamos Tauri: o shell desktop é **Electron**.
+
+### Pipeline automatizada
+
+```mermaid
+flowchart LR
+  tag["git tag v*"] --> release["Desktop Release"]
+  release --> win["BuscaVagas-*-win-x64-portable.exe"]
+  release --> linux["BuscaVagas-*-linux-x64.AppImage"]
+  win --> gh["GitHub Release"]
+  linux --> gh
+  main["push main + paths"] --> shots["Tutorial screenshots"]
+  shots --> docs["docs/tutorial/screenshots"]
+  open["Abrir o app"] --> upd["Checa release no GitHub"]
+  upd --> offer["Oferece baixar / abrir nova versão"]
+```
+
+1. **Release desktop** — push de tag `v*` (versão = `desktop/package.json`) → workflow *Desktop Release* → artefatos Windows/Linux na [Releases](https://github.com/caducatrinck/busca-vagas/releases)
+2. **Tutorial** — push na `main` (web/api/e2e/docs) → *Tutorial screenshots* → atualiza prints em `docs/tutorial/screenshots`
+3. **Auto-update** — ao abrir, o app consulta a release mais recente e pergunta se você quer baixar
+
 ### Baixar e abrir
 
 1. Abra a página de [**Releases**](https://github.com/caducatrinck/busca-vagas/releases/latest)
@@ -36,11 +71,13 @@ Não precisa de instalação: o Windows é portable; o Linux é AppImage.
 | 3 | **Buscar agora** (liga o pooling) |
 | 4 | Veja vagas em **Vagas**; o app pode notificar e ficar na bandeja |
 
-Tutorial com prints: **[docs/tutorial](./docs/tutorial/README.md)**
+Tutorial com prints: **[docs/tutorial](./docs/tutorial/README.md)** · [English guide](./docs/tutorial/README.en.md)
 
 ![Configuração](./docs/tutorial/screenshots/01-configuracao.png)
 
 ![Pooling ativo](./docs/tutorial/screenshots/04-pooling-ativo.png)
+
+![Notificação](./docs/tutorial/screenshots/06-notificacao.png)
 
 ### Atualização
 
@@ -75,6 +112,28 @@ Empacotar desktop / releases: **[DESKTOP.md](./DESKTOP.md)**
 Local LinkedIn job monitor (pooling, filters, notifications).  
 Runs on your PC — no Git or Node required.
 
+### Stack and why
+
+| Tech | Role | Why |
+|------|------|-----|
+| **Electron** | Desktop app (Windows portable / Linux AppImage) | Ships UI + API on your machine, tray, notifications, auto-update — no browser left open |
+| **React + Vite** | UI | Fast UI iteration and packaging; hot reload in day-to-day work |
+| **TypeScript** | Language | Shared types across web, API, and domain (filters, monitors, jobs) |
+| **Fastify** | Local API | Lightweight HTTP server embedded in the desktop app: searches, store, pooling |
+| **Cheerio** | LinkedIn HTML parsing | Listing/detail extraction without a heavy headless browser |
+| **electron-builder** | Packaging / release | Builds the portable `.exe` and AppImage from the same codebase |
+| **GitHub Actions** | CI/CD | Release on tag; tutorial screenshots on `main` push |
+| **Playwright** | E2E screenshots | Repeatable tutorial screenshots |
+| **npm workspaces** | Monorepo (`web`, `api`, `desktop`) | One `npm ci` and shared scripts for dev, test, and dist |
+
+We do **not** use Tauri — the desktop shell is **Electron**.
+
+### Automated pipeline
+
+1. **Desktop release** — push tag `v*` (must match `desktop/package.json`) → *Desktop Release* workflow → Windows/Linux assets on [Releases](https://github.com/caducatrinck/busca-vagas/releases)
+2. **Tutorial** — push to `main` (web/api/e2e/docs) → *Tutorial screenshots* → updates `docs/tutorial/screenshots`
+3. **Auto-update** — on launch, the app checks the latest GitHub release and offers download
+
 ### Download and open
 
 1. Open **[Releases](https://github.com/caducatrinck/busca-vagas/releases/latest)**
@@ -96,7 +155,7 @@ No installer needed: Windows portable / Linux AppImage.
 | 3 | **Search now** (enables pooling) |
 | 4 | Check **Jobs**; the app can notify and stay in the tray |
 
-Illustrated guide: **[docs/tutorial](./docs/tutorial/README.md)** (PT screenshots)
+Illustrated guide: **[docs/tutorial (PT)](./docs/tutorial/README.md)** · **[English](./docs/tutorial/README.en.md)**
 
 ### Updates
 

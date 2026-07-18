@@ -55,7 +55,7 @@ export function armTimer(id: string, desired: number) {
         try {
           result = await runMonitor(id, {}, 'pooling')
         } catch {
-          result = { newCount: 0, error: 'Falha inesperada no pooling' }
+          result = { newCount: 0, error: 'err:pooling_unexpected' }
         }
         log.info('poller.tick.done', {
           query: label,
@@ -101,7 +101,7 @@ export async function syncSchedulers(): Promise<void> {
 
     if (
       monitor.lastError &&
-      /aguarde|pausa|limite|rate|intervalo|hora|dia|proteção local|anti-spam|entre buscas|nenhuma vaga encontrada/i.test(
+      /aguarde|pausa|limite|rate|intervalo|hora|dia|proteção local|anti-spam|entre buscas|nenhuma vaga encontrada|err:cooldown|err:local_cap|err:linkedin_|err:rate_/i.test(
         monitor.lastError,
       )
     ) {

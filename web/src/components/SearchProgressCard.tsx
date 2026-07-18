@@ -4,6 +4,8 @@ import {
   formatEta,
   type SearchProgress,
 } from '../lib/types'
+import { localizeProgressTitle, localizeProgressMessage } from '../lib/localizeProgress'
+import { useI18n } from '../i18n'
 import { Button } from '../ui'
 import './SearchProgressCard.css'
 
@@ -31,6 +33,7 @@ export function SearchProgressCard({
   fetchDescriptions,
   onCancel,
 }: Props) {
+  const { t } = useI18n()
   const [now, setNow] = useState(() => Date.now())
   const running =
     progress.phase !== 'done' &&
@@ -67,6 +70,8 @@ export function SearchProgressCard({
   const descDone = progress.phase === 'saving' || progress.phase === 'done'
   const eta = formatEta(progress.etaSeconds)
   const canCancel = Boolean(onCancel) && running
+  const title = localizeProgressTitle(progress, t)
+  const message = localizeProgressMessage(progress, t)
 
   return (
     <div className="search-progress" role="status" aria-live="polite">
@@ -74,13 +79,13 @@ export function SearchProgressCard({
         <div className="search-progress__title-row">
           <span className="search-progress__orb" aria-hidden />
           <div>
-            <p className="search-progress__eyebrow">Busca em andamento</p>
-            <h3 className="search-progress__title">{progress.label}</h3>
+            <p className="search-progress__eyebrow">{t('progress.eyebrow')}</p>
+            <h3 className="search-progress__title">{title}</h3>
           </div>
         </div>
         <div
           className="search-progress__overall"
-          aria-label={`${progress.overallPercent} por cento do processo`}
+          aria-label={t('progress.overallAria', { n: progress.overallPercent })}
         >
           <span className="search-progress__overall-value">
             {progress.overallPercent}
@@ -90,8 +95,10 @@ export function SearchProgressCard({
       </div>
 
       <div className="search-progress__meta">
-        <span>Decorrido {formatDuration(elapsedMs)}</span>
-        {eta ? <span>Restante {eta}</span> : null}
+        <span>
+          {t('progress.elapsed', { time: formatDuration(elapsedMs) })}
+        </span>
+        {eta ? <span>{t('progress.remaining', { time: eta })}</span> : null}
       </div>
 
       <div className="search-progress__track search-progress__track--overall">
@@ -112,7 +119,9 @@ export function SearchProgressCard({
             .join(' ')}
         >
           <div className="search-progress__phase-meta">
-            <span className="search-progress__phase-name">Vagas</span>
+            <span className="search-progress__phase-name">
+              {t('progress.jobs')}
+            </span>
             <span className="search-progress__phase-count">
               {formatCount(progress.listing.current, progress.listing.total)}
               {progress.listing.total == null && progress.listing.current > 0
@@ -128,10 +137,10 @@ export function SearchProgressCard({
           </div>
           <p className="search-progress__phase-hint">
             {listingActive
-              ? 'Coletando listagem no LinkedIn…'
+              ? t('progress.listingActive')
               : listingDone
-                ? 'Listagem concluída'
-                : 'Aguardando'}
+                ? t('progress.listingDone')
+                : t('progress.waiting')}
           </p>
         </li>
 
@@ -146,14 +155,16 @@ export function SearchProgressCard({
               .join(' ')}
           >
             <div className="search-progress__phase-meta">
-              <span className="search-progress__phase-name">Descrições</span>
+              <span className="search-progress__phase-name">
+                {t('progress.descriptions')}
+              </span>
               <span className="search-progress__phase-count">
                 {descTotal > 0
                   ? formatCount(progress.descriptions.current, descTotal)
                   : listingActive
-                    ? 'depois'
+                    ? t('progress.descLater')
                     : listingDone
-                      ? 'cache'
+                      ? t('progress.descCache')
                       : '—'}
               </span>
             </div>
@@ -165,20 +176,20 @@ export function SearchProgressCard({
             </div>
             <p className="search-progress__phase-hint">
               {listingActive
-                ? 'Só começa depois de listar todas as vagas'
+                ? t('progress.descWaitList')
                 : descActive
-                  ? 'Abrindo cada vaga para ler a descrição…'
+                  ? t('progress.descActive')
                   : descDone
-                    ? 'Descrições prontas'
-                    : 'Aguardando'}
+                    ? t('progress.descDone')
+                    : t('progress.waiting')}
             </p>
           </li>
         ) : null}
       </ol>
 
       <div className="search-progress__footer">
-        {progress.message ? (
-          <p className="search-progress__message">{progress.message}</p>
+        {message ? (
+          <p className="search-progress__message">{message}</p>
         ) : (
           <span />
         )}
@@ -189,7 +200,7 @@ export function SearchProgressCard({
             className="search-progress__cancel"
             onClick={onCancel}
           >
-            Cancelar
+            {t('list.cancel')}
           </Button>
         ) : null}
       </div>

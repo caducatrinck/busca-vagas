@@ -23,6 +23,7 @@ import {
   type SearchForm,
   type WordFilterKey,
 } from '../lib/types'
+import { useI18n } from '../i18n'
 
 const EMPTY_MONITORS: Monitor[] = []
 const EMPTY_JOBS: Job[] = []
@@ -60,6 +61,7 @@ function mergeMonitorFilters(
 
 export function useMonitors(params: { filters: JobFilters }) {
   const { filters } = params
+  const { t } = useI18n()
 
   const [monitors, setMonitors] = useState<Monitor[]>([])
   const [activeMonitorId, setActiveMonitorId] = useState<string | null>(null)
@@ -202,7 +204,7 @@ export function useMonitors(params: { filters: JobFilters }) {
           : next
       })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar vaga')
+      setError(err instanceof Error ? err.message : t('err.updateJob'))
     }
   }
 
@@ -219,12 +221,12 @@ export function useMonitors(params: { filters: JobFilters }) {
     setError(null)
     try {
       const created = await createMonitor({
-        name: `Monitor ${monitors.length + 1}`,
+        name: t('monitor.defaultNameN', { n: monitors.length + 1 }),
         search: { ...EMPTY_SEARCH, query: '' },
       })
       await loadMonitors(created.id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar monitor')
+      setError(err instanceof Error ? err.message : t('err.createMonitor'))
     } finally {
       setLoading(false)
     }
@@ -244,7 +246,7 @@ export function useMonitors(params: { filters: JobFilters }) {
     try {
       await loadMonitorJobs(id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar vagas')
+      setError(err instanceof Error ? err.message : t('err.loadJobs'))
     } finally {
       setLoading(false)
     }
@@ -259,14 +261,14 @@ export function useMonitors(params: { filters: JobFilters }) {
       void (async () => {
         try {
           const updated = await updateMonitor(activeMonitorId, {
-            name: next.query.trim().slice(0, 28) || 'Monitor',
+            name: next.query.trim().slice(0, 28) || t('monitor.defaultName'),
             search: next,
           })
           setMonitors((prev) =>
             prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
           )
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Erro ao salvar monitor')
+          setError(err instanceof Error ? err.message : t('err.saveMonitor'))
         }
       })()
     }, 450)
@@ -311,7 +313,7 @@ export function useMonitors(params: { filters: JobFilters }) {
           setError(
             err instanceof Error
               ? err.message
-              : 'Erro ao salvar filtros da aba',
+              : t('err.saveTabFilters'),
           )
         }
       })()
@@ -360,14 +362,14 @@ export function useMonitors(params: { filters: JobFilters }) {
       }
       await updateMonitor(activeMonitorId, {
         search: monitorDraft,
-        name: monitorDraft.query.trim().slice(0, 28) || 'Monitor',
+        name: monitorDraft.query.trim().slice(0, 28) || t('monitor.defaultName'),
         pollingEnabled: enabled,
         intervalMinutes: safeInterval,
       })
       await loadMonitors(activeMonitorId)
       await loadSaved()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar pooling')
+      setError(err instanceof Error ? err.message : t('err.updatePooling'))
     } finally {
       setLoading(false)
     }
@@ -383,7 +385,7 @@ export function useMonitors(params: { filters: JobFilters }) {
       })
       await loadMonitors(activeMonitorId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao alterar intervalo')
+      setError(err instanceof Error ? err.message : t('err.changeInterval'))
     }
   }
 
@@ -394,7 +396,7 @@ export function useMonitors(params: { filters: JobFilters }) {
       await removeMonitor(id)
       await loadMonitors(id === activeMonitorId ? null : activeMonitorId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao remover monitor')
+      setError(err instanceof Error ? err.message : t('err.removeMonitor'))
     } finally {
       setLoading(false)
     }
@@ -406,7 +408,7 @@ export function useMonitors(params: { filters: JobFilters }) {
     try {
       await loadSaved()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar vagas')
+      setError(err instanceof Error ? err.message : t('err.loadJobs'))
     } finally {
       setLoading(false)
     }
@@ -419,7 +421,7 @@ export function useMonitors(params: { filters: JobFilters }) {
       await loadSaved()
       if (activeMonitorId) await loadMonitorJobs(activeMonitorId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao limpar vagas')
+      setError(err instanceof Error ? err.message : t('err.clearJobs'))
       throw err
     }
   }

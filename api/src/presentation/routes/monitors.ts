@@ -69,7 +69,7 @@ export function registerMonitorRoutes(
   }>('/monitors/:id', async (request, reply) => {
     const existing = await repo.getMonitor(request.params.id)
     if (!existing) {
-      return reply.status(404).send({ error: 'Monitor não encontrado' })
+      return reply.status(404).send({ error: 'err:monitor_not_found' })
     }
 
     const body = request.body ?? {}
@@ -113,7 +113,7 @@ export function registerMonitorRoutes(
     '/monitors/:id',
     async (request, reply) => {
       const ok = await repo.deleteMonitor(request.params.id)
-      if (!ok) return reply.status(404).send({ error: 'Monitor não encontrado' })
+      if (!ok) return reply.status(404).send({ error: 'err:monitor_not_found' })
       await syncSchedulers()
       return { ok: true }
     },
@@ -127,21 +127,21 @@ export function registerMonitorRoutes(
 
       const monitor = await repo.getMonitor(request.params.id)
       if (!monitor) {
-        return reply.status(404).send({ error: 'Monitor não encontrado' })
+        return reply.status(404).send({ error: 'err:monitor_not_found' })
       }
       if (!monitor.search.query?.trim()) {
         return reply
           .status(400)
-          .send({ error: 'Configure a busca do monitor antes' })
+          .send({ error: 'err:monitor_search_required' })
       }
 
       const status = await runMonitorNow(request.params.id)
       if (!status) {
-        return reply.status(404).send({ error: 'Monitor não encontrado' })
+        return reply.status(404).send({ error: 'err:monitor_not_found' })
       }
       if (status.lastError) {
         const isRate =
-          /rate|limite|aguarde|pausa|intervalo|hora|dia|proteção local/i.test(status.lastError)
+          /rate|limite|aguarde|pausa|intervalo|hora|dia|proteção local|err:cooldown|err:local_cap|err:linkedin_|err:rate_/i.test(status.lastError)
         return reply.status(isRate ? 429 : 502).send({
           error: status.lastError,
           monitor: status,
@@ -160,12 +160,12 @@ export function registerMonitorRoutes(
 
       const monitor = await repo.getMonitor(request.params.id)
       if (!monitor) {
-        return reply.status(404).send({ error: 'Monitor não encontrado' })
+        return reply.status(404).send({ error: 'err:monitor_not_found' })
       }
       if (!monitor.search.query?.trim()) {
         return reply
           .status(400)
-          .send({ error: 'Configure a busca do monitor antes' })
+          .send({ error: 'err:monitor_search_required' })
       }
 
       const monitorId = request.params.id
@@ -222,14 +222,14 @@ export function registerMonitorRoutes(
         })
 
         if (!status) {
-          send('error', { error: 'Monitor não encontrado' })
+          send('error', { error: 'err:monitor_not_found' })
           reply.raw.end()
           return
         }
 
         if (status.lastError && !status.lastRunStats?.cancelled) {
           const isRate =
-            /rate|limite|aguarde|pausa|intervalo|hora|dia|proteção local/i.test(status.lastError)
+            /rate|limite|aguarde|pausa|intervalo|hora|dia|proteção local|err:cooldown|err:local_cap|err:linkedin_|err:rate_/i.test(status.lastError)
           send('error', {
             error: status.lastError,
             monitor: status,
@@ -260,7 +260,7 @@ export function registerMonitorRoutes(
     async (request, reply) => {
       const monitor = await repo.getMonitor(request.params.id)
       if (!monitor) {
-        return reply.status(404).send({ error: 'Monitor não encontrado' })
+        return reply.status(404).send({ error: 'err:monitor_not_found' })
       }
       const cancelled = cancelMonitorRun(request.params.id)
       return {

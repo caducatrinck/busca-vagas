@@ -35,7 +35,7 @@ export async function probeLinkedInSession(
       return setLinkedInSessionStatus({
         ok: false,
         code: 'missing',
-        message: 'Configure o cookie li_at em Configurações.',
+        message: 'err:missing_li_at',
         checkedAt: new Date().toISOString(),
         httpStatus: null,
       })
@@ -45,8 +45,7 @@ export async function probeLinkedInSession(
       return setLinkedInSessionStatus({
         ok: false,
         code: 'incomplete',
-        message:
-          'Falta o JSESSIONID. Sem ele a sessão autenticada não pode ser validada — cole li_at e JSESSIONID.',
+        message: 'err:cookie_incomplete',
         checkedAt: new Date().toISOString(),
         httpStatus: null,
       })
@@ -67,14 +66,13 @@ export async function probeLinkedInSession(
       if (httpStatus === 401 || httpStatus === 403) {
         markLinkedInSessionAuthFailure(
           httpStatus,
-          'Sessão LinkedIn expirada. Atualize li_at e JSESSIONID em Configurações.',
+          'err:session_expired',
         )
       } else if (/Cookie LinkedIn incompleto/i.test(message)) {
         setLinkedInSessionStatus({
           ok: false,
           code: 'incomplete',
-          message:
-            'Cookie incompleto (li_at + JSESSIONID). Atualize em Configurações.',
+          message: 'err:cookie_incomplete',
           checkedAt: new Date().toISOString(),
           httpStatus: null,
         })
@@ -83,8 +81,7 @@ export async function probeLinkedInSession(
           setLinkedInSessionStatus({
             ...prev,
             checkedAt: new Date().toISOString(),
-            message:
-              'LinkedIn pediu pausa (429). A sessão pode estar ok — tente de novo em instantes.',
+            message: 'err:session_rate_limited',
             httpStatus: 429,
           })
         } else {

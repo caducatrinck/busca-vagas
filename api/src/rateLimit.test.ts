@@ -24,7 +24,7 @@ describe('SearchRateLimiter', () => {
     const snap = limiter.snapshot(t0 + 5_000)
     assert.equal(snap.allowed, false)
     assert.equal(snap.source, 'cooldown')
-    assert.match(snap.reason ?? '', /Aguarde \d+s entre buscas/i)
+    assert.match(snap.reason ?? '', /^err:cooldown:\d+$/)
   })
 
   it('não bloqueia por cota horária quando maxPerHour=0', () => {
@@ -52,7 +52,7 @@ describe('SearchRateLimiter', () => {
     const snap = limiter.snapshot(t0 + 2)
     assert.equal(snap.allowed, false)
     assert.equal(snap.source, 'local-cap')
-    assert.match(snap.reason ?? '', /segurança local/i)
+    assert.match(snap.reason ?? '', /^err:local_cap_hour:\d+$/)
   })
 
   it('bloqueia a partir de erro real do LinkedIn (429 + Retry-After)', () => {

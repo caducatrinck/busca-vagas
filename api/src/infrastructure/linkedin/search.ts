@@ -300,7 +300,7 @@ export async function searchLinkedInJobs(
 ): Promise<Job[]> {
   const query = params.query?.trim()
   if (!query) {
-    throw new Error('query é obrigatória')
+    throw new Error('err:query_required')
   }
 
   const discardedIds = options.discardedIds ?? new Set<string>()
@@ -386,13 +386,10 @@ export async function searchLinkedInJobs(
 
       if (batch.length === 0) {
         if (skippedDiscardedTotal > 0 && jobs.length === 0) {
-          emptyReason =
-            'Todas as vagas encontradas já estavam descartadas — limpe descartadas ou aguarde novas publicações.'
+          emptyReason = 'all_discarded'
         } else if (listingRequests > 0) {
           emptyReason =
-            html.length < 80
-              ? 'LinkedIn respondeu vazio para essa janela de tempo (sem vagas recentes). Tente pausar o pooling e buscar com “Publicadas em” mais amplo (ex.: semana).'
-              : 'LinkedIn respondeu, mas a listagem veio sem cards para essa janela.'
+            html.length < 80 ? 'linkedin_empty' : 'linkedin_no_cards'
         }
         break
       }
@@ -437,8 +434,7 @@ export async function searchLinkedInJobs(
 
     if (jobs.length === 0) {
       if (!emptyReason && skippedDiscardedTotal > 0) {
-        emptyReason =
-          'Todas as vagas encontradas já estavam descartadas — limpe descartadas ou aguarde novas publicações.'
+        emptyReason = 'all_discarded'
       }
 
       log.info('linkedin.search.empty', {

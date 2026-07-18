@@ -1,4 +1,5 @@
 import type { Monitor } from '../../lib/types'
+import { useI18n } from '../../i18n'
 import { tabCountdownLabel } from './formatCountdown'
 
 type Props = {
@@ -22,6 +23,8 @@ export function MonitorTabs({
   onAdd,
   onClose,
 }: Props) {
+  const { t, locale } = useI18n()
+
   return (
     <div className="monitor-tabs">
       {monitors.map((monitor) => {
@@ -29,9 +32,10 @@ export function MonitorTabs({
           monitor.ticking || (searching && monitor.id === activeId)
         const eta =
           monitor.pollingEnabled || running
-            ? tabCountdownLabel(monitor.nextRunAt, now, running)
+            ? tabCountdownLabel(monitor.nextRunAt, now, running, locale)
             : null
         const titleBase = monitor.search.query || monitor.name
+        const nowLabel = t('tab.now')
         return (
           <div
             key={monitor.id}
@@ -43,11 +47,11 @@ export function MonitorTabs({
               onClick={() => onSelect(monitor.id)}
               title={
                 running
-                  ? `${titleBase} · buscando agora`
-                  : eta === 'agora'
-                    ? `${titleBase} · próxima busca iminente`
+                  ? t('tab.titleSearching', { name: titleBase })
+                  : eta === nowLabel
+                    ? t('tab.titleImminent', { name: titleBase })
                     : eta
-                      ? `${titleBase} · próxima ${eta}`
+                      ? t('tab.titleNext', { name: titleBase, eta })
                       : titleBase
               }
             >
@@ -58,7 +62,7 @@ export function MonitorTabs({
                 {running ? (
                   <span className="monitor-tabs__eta monitor-tabs__eta--spin">
                     <span className="monitor-tabs__spinner" aria-hidden="true" />
-                    buscando
+                    {t('tab.searching')}
                   </span>
                 ) : eta ? (
                   <span className="monitor-tabs__eta" aria-hidden="true">
@@ -70,8 +74,8 @@ export function MonitorTabs({
             <button
               type="button"
               className="monitor-tabs__close"
-              title="Fechar aba"
-              aria-label={`Fechar ${titleBase}`}
+              title={t('tab.close')}
+              aria-label={t('tab.closeAria', { name: titleBase })}
               disabled={busy}
               onClick={(e) => {
                 e.stopPropagation()
@@ -88,8 +92,8 @@ export function MonitorTabs({
         className="monitor-tabs__add"
         onClick={onAdd}
         disabled={busy}
-        title="Adicionar monitor"
-        aria-label="Adicionar monitor"
+        title={t('monitor.add')}
+        aria-label={t('monitor.add')}
       >
         <svg
           className="monitor-tabs__add-icon"

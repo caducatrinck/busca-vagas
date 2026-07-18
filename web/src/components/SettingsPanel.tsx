@@ -6,6 +6,7 @@ import {
   type SettingsPatch,
 } from '../lib/api'
 import { useI18n } from '../i18n'
+import { localizeVisibleError } from '../lib/localizeVisibleError'
 import { Alert, Button, Field, NumberInput, TextInput } from '../ui'
 import './SettingsPanel.css'
 
@@ -70,7 +71,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         setForm(formFromSettings(settings))
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Erro ao carregar')
+          setError(
+            err instanceof Error ? err.message : t('settings.loadError'),
+          )
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -79,7 +82,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [reloadKey, t])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -110,13 +113,11 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       setCurrent(next)
       setForm(formFromSettings(next))
       setOkMsg(
-        next.ready
-          ? 'Configurações salvas — app liberado'
-          : 'Salvo. Sem cookie li_at — o app fica bloqueado até você colar um.',
+        next.ready ? t('settings.savedOk') : t('settings.savedBlocked'),
       )
       onSaved?.(next)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao salvar')
+      setError(err instanceof Error ? err.message : t('settings.saveError'))
     } finally {
       setSaving(false)
     }
@@ -152,15 +153,14 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       <section className="settings-panel">
         <header className="settings-panel__header">
           <p className="settings-panel__mark">{t('nav.settings')}</p>
-          <h1>Não foi possível carregar</h1>
+          <h1>{t('settings.loadFailedTitle')}</h1>
         </header>
-        <Alert tone="danger">{error || 'API indisponível. Confira se o serviço está no ar.'}</Alert>
+        <Alert tone="danger">{error ? localizeVisibleError(error, t) : t('settings.apiDown')}</Alert>
         <p className="settings-panel__lead">
-          Em desenvolvimento a API precisa estar em{' '}
-          <code>http://127.0.0.1:8787</code>.
+          {t('settings.devApiHint', { url: 'http://127.0.0.1:8787' })}
         </p>
         <Button variant="ghost" onClick={() => setReloadKey((n) => n + 1)}>
-          Tentar de novo
+          {t('settings.retry')}
         </Button>
       </section>
     )
@@ -181,46 +181,29 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       </header>
 
       <aside className="settings-guide" aria-labelledby="settings-guide-title">
-        <h2 id="settings-guide-title">Como pegar os cookies</h2>
+        <h2 id="settings-guide-title">{t('settings.guideTitle')}</h2>
         <p className="settings-guide__howto">{t('settings.howto')}</p>
         <ol>
-          <li>Abra o LinkedIn no navegador e faça login na sua conta.</li>
-          <li>
-            Pressione <kbd>F12</kbd> (ou clique com o botão direito → Inspecionar)
-            para abrir as DevTools.
-          </li>
-          <li>
-            Vá em <strong>Application</strong> (Chrome/Edge) ou{' '}
-            <strong>Armazenamento</strong> (Firefox).
-          </li>
-          <li>
-            Em Cookies, selecione <code>https://www.linkedin.com</code>.
-          </li>
-          <li>
-            Copie o valor de <code>li_at</code> (obrigatório) e, se existir, de{' '}
-            <code>JSESSIONID</code> (sem as aspas).
-          </li>
-          <li>
-            Cole abaixo e salve. Cookies expiram — se a busca começar a falhar
-            com 401/403, atualize o <code>li_at</code>.
-          </li>
+          <li>{t('settings.guideStep1')}</li>
+          <li>{t('settings.guideStep2')}</li>
+          <li>{t('settings.guideStep3')}</li>
+          <li>{t('settings.guideStep4')}</li>
+          <li>{t('settings.guideStep5')}</li>
+          <li>{t('settings.guideStep6')}</li>
         </ol>
-        <p className="settings-guide__note">
-          Não compartilhe esses valores. Eles equivalem a estar logado na sua
-          conta.
-        </p>
+        <p className="settings-guide__note">{t('settings.guideNote')}</p>
       </aside>
 
       <form className="settings-panel__form" onSubmit={handleSubmit}>
         <fieldset>
-          <legend>LinkedIn</legend>
+          <legend>{t('settings.legendLinkedIn')}</legend>
 
           <Field label={t('settings.liAt')}>
             <TextInput
               type="password"
               autoComplete="off"
               spellCheck={false}
-              placeholder="Cole o li_at"
+              placeholder={t('settings.liAtPh')}
               value={form.linkedinLiAt}
               onFocus={(e) => {
                 if (form.linkedinLiAt === COOKIE_MASK) e.target.select()
@@ -234,7 +217,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
               type="password"
               autoComplete="off"
               spellCheck={false}
-              placeholder="Cole o JSESSIONID"
+              placeholder={t('settings.jsessionPh')}
               value={form.linkedinJsessionId}
               onFocus={(e) => {
                 if (form.linkedinJsessionId === COOKIE_MASK) e.target.select()
@@ -259,7 +242,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         </fieldset>
 
         <fieldset>
-          <legend>Rate limit</legend>
+          <legend>{t('settings.legendRateLimit')}</legend>
 
           <Field label={t('settings.cooldown')}>
             <NumberInput
@@ -311,7 +294,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
           </Field>
         </fieldset>
 
-        {error ? <Alert tone="danger">{error}</Alert> : null}
+        {error ? (
+          <Alert tone="danger">{localizeVisibleError(error, t)}</Alert>
+        ) : null}
         {okMsg ? <p className="settings-panel__ok">{okMsg}</p> : null}
 
         <Button type="submit" disabled={saving}>

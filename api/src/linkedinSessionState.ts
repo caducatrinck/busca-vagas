@@ -10,7 +10,7 @@ export type LinkedInSessionStatus = {
 let status: LinkedInSessionStatus = {
   ok: false,
   code: 'missing',
-  message: 'Sessão LinkedIn ainda não verificada.',
+  message: 'err:session_unchecked',
   checkedAt: null,
   httpStatus: null,
 }
@@ -30,7 +30,7 @@ export function markLinkedInSessionOk(): void {
   status = {
     ok: true,
     code: 'ok',
-    message: 'Sessão LinkedIn ok.',
+    message: 'err:session_ok',
     checkedAt: new Date().toISOString(),
     httpStatus: null,
   }
@@ -43,9 +43,7 @@ export function markLinkedInSessionAuthFailure(
   status = {
     ok: false,
     code: 'expired',
-    message:
-      detail?.trim() ||
-      'Sessão LinkedIn expirada ou inválida. Atualize o cookie li_at (e JSESSIONID) em Configurações.',
+    message: detail?.trim() || 'err:session_expired',
     checkedAt: new Date().toISOString(),
     httpStatus,
   }

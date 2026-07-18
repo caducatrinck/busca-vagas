@@ -22,6 +22,16 @@ const API_HOST = '127.0.0.1'
 const API_PORT = Number(process.env.BUSCA_VAGAS_PORT || 8787)
 const APP_DISPLAY_NAME = 'Busca Vagas'
 
+/** Splash/tray: locale do SO (app UI i18n vive no renderer). */
+function desktopLocale() {
+  const raw = (app.getLocale?.() || '').toLowerCase()
+  return raw.startsWith('pt') ? 'pt' : 'en'
+}
+
+function d(pt, en) {
+  return desktopLocale() === 'pt' ? pt : en
+}
+
 function ensureWindowsNotificationIdentity() {
   if (process.platform !== 'win32') return
   app.setName(APP_DISPLAY_NAME)
@@ -83,8 +93,11 @@ function applyTrayBadge(count) {
   tray.setImage(trayImage())
   tray.setToolTip(
     trayBadgeCount > 0
-      ? `Busca Vagas — ${trayBadgeCount} nova(s)`
-      : 'Busca Vagas',
+      ? d(
+          `Busca Vagas — ${trayBadgeCount} nova(s)`,
+          `Busca Vagas — ${trayBadgeCount} new`,
+        )
+      : APP_DISPLAY_NAME,
   )
 }
 
@@ -139,7 +152,10 @@ function hideToTray() {
   const icon = iconPath()
   const n = new Notification({
     title: APP_DISPLAY_NAME,
-    body: 'Continua rodando na bandeja. Clique no ícone para abrir.',
+    body: d(
+      'Continua rodando na bandeja. Clique no ícone para abrir.',
+      'Still running in the tray. Click the icon to open.',
+    ),
     ...(icon ? { icon } : {}),
   })
   n.on('click', () => showMainWindow())
@@ -157,18 +173,21 @@ function createTray() {
   tray = new Tray(trayImage())
   tray.setToolTip(
     trayBadgeCount > 0
-      ? `Busca Vagas — ${trayBadgeCount} nova(s)`
-      : 'Busca Vagas',
+      ? d(
+          `Busca Vagas — ${trayBadgeCount} nova(s)`,
+          `Busca Vagas — ${trayBadgeCount} new`,
+        )
+      : APP_DISPLAY_NAME,
   )
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
-        label: 'Abrir Busca Vagas',
+        label: d('Abrir Busca Vagas', 'Open Busca Vagas'),
         click: () => showMainWindow(),
       },
       { type: 'separator' },
       {
-        label: 'Sair',
+        label: d('Sair', 'Quit'),
         click: () => {
           isQuitting = true
           destroyTray()
@@ -209,7 +228,7 @@ async function createSplash() {
 
   splashWindow.once('ready-to-show', () => splashWindow?.show())
   await splashWindow.loadFile(path.join(__dirname, 'splash.html'))
-  setSplashStatus('Iniciando…')
+  setSplashStatus(d('Iniciando…', 'Starting…'))
 }
 
 function closeSplash() {
@@ -379,15 +398,15 @@ if (!gotLock) {
     })
     try {
       await createSplash()
-      setSplashStatus('Subindo o servidor local…')
+      setSplashStatus(d('Subindo o servidor local…', 'Starting local server…'))
       startApi()
-      setSplashStatus('Aguardando API…')
+      setSplashStatus(d('Aguardando API…', 'Waiting for API…'))
       await waitForHealth(`http://${API_HOST}:${API_PORT}/health`)
-      setSplashStatus('Carregando interface…')
+      setSplashStatus(d('Carregando interface…', 'Loading interface…'))
       await createWindow()
     } catch (err) {
       console.error(err)
-      setSplashStatus('Falha ao iniciar. Fechando…')
+      setSplashStatus(d('Falha ao iniciar. Fechando…', 'Failed to start. Closing…'))
       await new Promise((r) => setTimeout(r, 1200))
       closeSplash()
       destroyTray()

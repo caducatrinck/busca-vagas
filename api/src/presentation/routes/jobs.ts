@@ -36,13 +36,13 @@ export function registerJobRoutes(
   }>('/jobs/:id/status', async (request, reply) => {
     const status = request.body?.status
     if (status !== 'viewed' && status !== 'applied' && status !== 'discarded') {
-      return reply.status(400).send({ error: 'status inválido' })
+      return reply.status(400).send({ error: 'err:invalid_status' })
     }
     const job = await repo.setJobStatus(request.params.id, status)
     if (!job) {
       return reply
         .status(404)
-        .send({ error: 'Vaga não encontrada no banco local' })
+        .send({ error: 'err:job_not_found' })
     }
     return { job }
   })
@@ -56,7 +56,7 @@ export function registerJobRoutes(
     if (!job) {
       return reply
         .status(404)
-        .send({ error: 'Vaga não encontrada no banco local' })
+        .send({ error: 'err:job_not_found' })
     }
     return { job }
   })
@@ -68,7 +68,7 @@ export function registerJobRoutes(
     if (status !== 'applied' && status !== 'discarded') {
       return reply
         .status(400)
-        .send({ error: 'Só é possível limpar aplicadas ou descartadas' })
+        .send({ error: 'err:clear_status_invalid' })
     }
     const removed = await repo.deleteJobsByStatus(status)
     return { ok: true, removed, status }

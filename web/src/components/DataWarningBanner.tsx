@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
+import { localizeVisibleError } from '../lib/localizeVisibleError'
 import { Button, cx } from '../ui'
 import './DataWarningBanner.css'
 
@@ -48,7 +49,10 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
       showFeedback({
         action: 'export',
         kind: 'error',
-        text: err instanceof Error ? err.message : t('data.failed'),
+        text:
+          err instanceof Error
+            ? localizeVisibleError(err.message, t)
+            : t('data.failed'),
       })
     } finally {
       setBusy(null)
@@ -69,7 +73,10 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
       showFeedback({
         action: 'import',
         kind: 'error',
-        text: err instanceof Error ? err.message : t('data.failed'),
+        text:
+          err instanceof Error
+            ? localizeVisibleError(err.message, t)
+            : t('data.failed'),
       })
     } finally {
       setBusy(null)
@@ -98,7 +105,7 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
     <div className="app-top">
       <div className="app-top__bar">
         <p className="app-top__credit">
-          created by{' '}
+          {t('data.createdBy')}{' '}
           <a
             href={GITHUB_URL}
             target="_blank"

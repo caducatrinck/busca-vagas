@@ -78,7 +78,7 @@ export function JobsPanel({
                 <span
                   className="jobs-tabs__alert"
                   title={t('nav.newJobsPooling')}
-                  aria-label={`${unreadTotal} notificações não lidas`}
+                  aria-label={t('nav.unread', { n: unreadTotal })}
                 >
                   {notifBadge}
                 </span>

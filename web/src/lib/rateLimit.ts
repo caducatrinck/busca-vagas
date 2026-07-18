@@ -1,4 +1,7 @@
+import type { Locale } from '../i18n/types'
+import { translate } from '../i18n/messages'
 import type { RateLimitInfo } from './api'
+import { localizeVisibleError } from './localizeVisibleError'
 
 export function formatRateLimitWait(retryAfterMs?: number): string | null {
   if (retryAfterMs == null || retryAfterMs <= 0) return null
@@ -21,40 +24,52 @@ function remainingMs(limit: RateLimitInfo, now: number): number {
 export function formatRateLimitSummary(
   limit: RateLimitInfo,
   now = Date.now(),
+  locale: Locale = 'pt',
 ): string {
+  const t = (
+    key: Parameters<typeof translate>[1],
+    vars?: Record<string, string | number>,
+  ) => translate(locale, key, vars)
   const { limits, usage } = limit
   const leftMs = remainingMs(limit, now)
   const wait = formatRateLimitWait(leftMs)
   const waitSec = Math.ceil(leftMs / 1000)
   const hourCap =
     limits.maxPerHour > 0
-      ? `${usage.searchesThisHour}/${limits.maxPerHour} nesta hora`
-      : `${usage.searchesThisHour} buscas nesta hora`
+      ? t('rate.hourCap', {
+          used: usage.searchesThisHour,
+          max: limits.maxPerHour,
+        })
+      : t('rate.hourOpen', { used: usage.searchesThisHour })
   const dayPart =
     limits.maxPerDay > 0 && usage.remainingToday != null
-      ? ` · ${usage.remainingToday} restantes hoje (teto opcional)`
-      : ` · ${usage.searchesToday} hoje`
+      ? t('rate.dayLeft', { n: usage.remainingToday })
+      : t('rate.dayUsed', { n: usage.searchesToday })
 
   if (!limit.allowed) {
     if (
       limit.source === 'cooldown' ||
-      /anti-spam|entre buscas/i.test(limit.reason ?? '')
+      /anti-spam|entre buscas|between searches|err:cooldown/i.test(
+        limit.reason ?? '',
+      )
     ) {
       return waitSec > 0
-        ? `Aguarde ${waitSec}s entre buscas`
-        : 'Aguarde entre buscas'
+        ? t('rate.waitCooldown', { n: waitSec })
+        : t('rate.waitCooldownShort')
     }
-    if (limit.source === 'linkedin') {
-      return wait ? `${limit.reason} Libera em ~${wait}.` : (limit.reason ?? '')
+    if (limit.reason) {
+      return localizeVisibleError(limit.reason, t)
     }
-    return wait ? `${limit.reason} Libera em ~${wait}.` : (limit.reason ?? '')
+    return wait
+      ? t('rate.freesIn', { reason: '', wait }).trim()
+      : t('rate.exceeded')
   }
 
   return `${hourCap}${dayPart}`
 }
 
 export function isRateLimitError(message: string): boolean {
-  return /limite|aguarde|pausa|rate|intervalo|hora|dia|anti-spam|LinkedIn pediu|HTTP 429|HTTP 999/i.test(
+  return /limite|aguarde|pausa|rate|intervalo|hora|dia|anti-spam|LinkedIn pediu|HTTP 429|HTTP 999|wait|limit|searches|hour|day|err:cooldown|err:local_cap|err:linkedin_|err:rate_/i.test(
     message,
   )
 }

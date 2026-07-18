@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useI18n } from '../i18n'
 import type { WordFilterKey } from '../lib/types'
 import { Button, TextInput } from '../ui'
 import './FilterTags.css'
@@ -22,6 +23,7 @@ export function FilterTags({
   onRemove,
   tone,
 }: Props) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState('')
 
   function commit() {
@@ -53,10 +55,14 @@ export function FilterTags({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Digite e Enter"
+          placeholder={t('filter.placeholder')}
           aria-label={label}
         />
-        <Button type="submit" className="filter-tags__add" aria-label={`Adicionar em ${label}`}>
+        <Button
+          type="submit"
+          className="filter-tags__add"
+          aria-label={t('filter.addAria', { label })}
+        >
           +
         </Button>
       </form>

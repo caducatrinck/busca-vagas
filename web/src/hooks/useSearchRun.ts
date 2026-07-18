@@ -12,6 +12,7 @@ import {
   updateMonitor,
   type RateLimitInfo,
 } from '../lib/api'
+import { useI18n } from '../i18n'
 import { LONG_SEARCH_CHIME_MS, mergeJobs } from '../lib/monitorHelpers'
 import { formatRateLimitSummary } from '../lib/rateLimit'
 import { playSearchCompleteChime } from '../lib/sound'
@@ -45,6 +46,7 @@ export function useSearchRun(params: {
     onPoolingWillEnable,
   } = params
 
+  const { t, locale } = useI18n()
   const [searchProgress, setSearchProgress] = useState<SearchProgress | null>(
     null,
   )
@@ -63,8 +65,8 @@ export function useSearchRun(params: {
     const startedAt = poolingStartedAtRef.current
     return {
       phase: 'listing',
-      label: 'Busca automática em andamento…',
-      message: 'Pooling automático no servidor — aguarde o fim da rodada.',
+      label: t('search.autoLabel'),
+      message: t('search.autoMessage'),
       overallPercent: 18,
       listing: { current: 0, total: null },
       descriptions: { current: 0, total: 0 },
@@ -72,8 +74,7 @@ export function useSearchRun(params: {
       elapsedMs: Date.now() - startedAt,
       etaSeconds: null,
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchProgress, activeMonitor?.ticking, activeMonitor?.id])
+  }, [searchProgress, activeMonitor?.ticking, activeMonitor?.id, t])
 
   async function handleRunMonitorNow() {
     if (!activeMonitorId) return
@@ -82,7 +83,10 @@ export function useSearchRun(params: {
     if (limit && !limit.allowed) {
       // cooldown: só o contador embaixo do botão; não joga erro na lista
       if (limit.source !== 'cooldown') {
-        setError(formatRateLimitSummary(limit) || 'Limite de buscas atingido')
+        setError(
+          formatRateLimitSummary(limit, Date.now(), locale) ||
+            t('search.rateLimitHit'),
+        )
       } else {
         setError(null)
       }
@@ -97,7 +101,7 @@ export function useSearchRun(params: {
     const searchStartedAt = Date.now()
     setSearchProgress({
       phase: 'listing',
-      label: 'Iniciando busca…',
+      label: t('search.starting'),
       overallPercent: 0,
       listing: { current: 0, total: null },
       descriptions: { current: 0, total: 0 },
@@ -115,7 +119,7 @@ export function useSearchRun(params: {
       }
       await updateMonitor(activeMonitorId, {
         search: monitorDraft,
-        name: monitorDraft.query.trim().slice(0, 28) || 'Monitor',
+        name: monitorDraft.query.trim().slice(0, 28) || t('monitor.defaultName'),
         pollingEnabled: true,
         intervalMinutes,
       })
@@ -140,7 +144,7 @@ export function useSearchRun(params: {
         await loadMonitors(activeMonitorId)
         await loadSaved()
       } else {
-        setError(err instanceof Error ? err.message : 'Erro ao buscar agora')
+        setError(err instanceof Error ? err.message : t('search.runError'))
       }
       setRateLimit(await fetchRateLimit())
     } finally {

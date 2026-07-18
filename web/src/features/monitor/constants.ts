@@ -1,15 +1,13 @@
 import type { SearchForm } from '../../lib/types'
-import type { SelectOption } from '../../ui'
 
-export const POSTED_WITHIN_OPTIONS: Array<
-  SelectOption<SearchForm['postedWithin']>
-> = [
-  { value: '30m', label: 'Últimos 30 minutos' },
-  { value: '1h', label: 'Última hora' },
-  { value: '10h', label: 'Últimas 10 horas' },
-  { value: '24h', label: 'Últimas 24 horas' },
-  { value: 'week', label: 'Última semana' },
-  { value: 'month', label: 'Último mês' },
+/** Valores de “Publicadas em” — labels vêm de i18n (`search.posted.*`). */
+export const POSTED_WITHIN_VALUES: Array<SearchForm['postedWithin']> = [
+  '30m',
+  '1h',
+  '10h',
+  '24h',
+  'week',
+  'month',
 ]
 
 export function clampIntervalMinutes(minutes: number): number {
@@ -17,5 +15,7 @@ export function clampIntervalMinutes(minutes: number): number {
 }
 
 export function isCooldownErrorMessage(message: string): boolean {
-  return /anti-spam|entre buscas|Aguarde \d+s/i.test(message)
+  return /anti-spam|entre buscas|between searches|Aguarde \d+s|Wait \d+s|err:cooldown/i.test(
+    message,
+  )
 }

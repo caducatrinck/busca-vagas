@@ -37,22 +37,15 @@ export async function buildCsrfToken(): Promise<string | undefined> {
 }
 
 function formatNetworkError(err: unknown): string {
-  if (!(err instanceof Error)) return 'Falha de rede ao contatar o LinkedIn'
-  const cause = (err as Error & { cause?: unknown }).cause
-  const causeObj =
-    cause && typeof cause === 'object'
-      ? (cause as { code?: string; message?: string })
-      : null
-  const detail =
-    causeObj?.code ||
-    causeObj?.message ||
-    (typeof cause === 'string' ? cause : null)
+  if (!(err instanceof Error)) return 'err:network_linkedin'
   if (err.message === 'fetch failed' || err.name === 'TypeError') {
-    return detail
-      ? `Falha de rede ao contatar o LinkedIn (${detail}). Tente de novo em alguns segundos.`
-      : 'Falha de rede ao contatar o LinkedIn. Tente de novo em alguns segundos.'
+    return 'err:network_linkedin'
   }
-  return detail ? `${err.message} (${detail})` : err.message
+  // erros não-rede: manter mensagem só para log/diagnóstico interno → código genérico de rede se parecer fetch
+  if (/fetch failed|ECONNRESET|ETIMEDOUT|ENOTFOUND/i.test(err.message)) {
+    return 'err:network_linkedin'
+  }
+  return err.message.startsWith('err:') ? err.message : 'err:network_linkedin'
 }
 
 function isRetryableNetworkError(err: unknown): boolean {
@@ -116,24 +109,18 @@ export function linkedInRateHeaders(res: Response): string {
 
 export function throwLinkedInHttpError(res: Response): never {
   const retryAfterMs = parseRetryAfterMs(res)
-  const headersHint = linkedInRateHeaders(res)
+  const waitSec = retryAfterMs ? Math.ceil(retryAfterMs / 1000) : 0
   let message: string
   if (res.status === 429) {
-    const wait = retryAfterMs
-      ? ` Retry-After ~${Math.ceil(retryAfterMs / 1000)}s.`
-      : ''
-    message = `LinkedIn rate limit (HTTP 429).${wait}${headersHint}`
+    message = `err:linkedin_429:${waitSec}`
   } else if (res.status === 401 || res.status === 403) {
-    message = `LinkedIn bloqueou a requisição (HTTP ${res.status}). Atualize o cookie li_at ou aguarde.${headersHint}`
-    markLinkedInSessionAuthFailure(
-      res.status,
-      'Sessão LinkedIn expirada. Atualize li_at e JSESSIONID em Configurações.',
-    )
+    message = 'err:session_expired'
+    markLinkedInSessionAuthFailure(res.status, 'err:session_expired')
     log.warn('linkedin.session.auth_http', { status: res.status })
   } else if (res.status === 999) {
-    message = `LinkedIn respondeu HTTP 999 (anti-bot / bloqueio).${headersHint}`
+    message = `err:linkedin_999:${waitSec}`
   } else {
-    message = `LinkedIn respondeu HTTP ${res.status}.${headersHint}`
+    message = `err:http:${res.status}`
   }
   const err = new Error(message)
   if (retryAfterMs != null) {
@@ -237,9 +224,7 @@ export async function linkedInVoyagerFetch(
   const cookie = await buildCookieHeader()
   const csrf = await buildCsrfToken()
   if (!cookie || !csrf) {
-    throw new Error(
-      'Cookie LinkedIn incompleto para Voyager (li_at + JSESSIONID).',
-    )
+    throw new Error('err:cookie_incomplete')
   }
 
   const url = path.startsWith('http') ? path : `${LINKEDIN_BASE}${path}`

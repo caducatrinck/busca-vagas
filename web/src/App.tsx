@@ -19,6 +19,7 @@ import { useTheme } from './hooks/useTheme'
 import { useI18n } from './i18n'
 import type { MessageKey } from './i18n'
 import { runKey } from './lib/monitorHelpers'
+import { localizeEmptyReason } from './lib/localizeProgress'
 import { ensureNotificationPermission } from './lib/notifications'
 import type { AppNotification } from './lib/notificationsModel'
 import type { JobStatus, Monitor } from './lib/types'
@@ -58,7 +59,10 @@ function monitorListEmptyHint(
       ? t('monitor.emptyFilteredHint', { n: rawCount, q })
       : t('monitor.emptyFilteredHintNoQuery', { n: rawCount })
   }
-  const reason = monitor?.lastRunStats?.emptyReason?.trim()
+  const reason = localizeEmptyReason(
+    monitor?.lastRunStats?.emptyReason,
+    t,
+  )
   if (reason) return reason
   return t('monitor.emptyHint')
 }

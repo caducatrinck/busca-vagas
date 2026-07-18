@@ -24,6 +24,11 @@ describe('formatPostedAt', () => {
     const minsAgo = new Date(now - 37 * 60_000).toISOString()
     assert.equal(formatPostedAt(minsAgo, now), 'há 37 minutos')
   })
+
+  it('locale en: data só-dia e relativo PT parseável', () => {
+    assert.equal(formatPostedAt('2026-07-16', now, 'en'), 'today')
+    assert.equal(formatPostedAt('há 8 horas', now, 'en'), '8 hours ago')
+  })
 })
 
 describe('parsePostedAt', () => {

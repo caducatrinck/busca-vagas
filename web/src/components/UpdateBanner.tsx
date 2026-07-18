@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n'
 import { Button } from '../ui'
 import type { DesktopUpdaterState } from '../desktop'
+import { localizeVisibleError } from '../lib/localizeVisibleError'
 import './UpdateBanner.css'
 
 type Props = {
@@ -102,7 +103,9 @@ export function UpdateBanner({
         <>
           <p className="update-banner__title">{t('update.errorTitle')}</p>
           <p className="update-banner__body">
-            {state.error || t('update.errorBody')}
+            {state.error
+              ? localizeVisibleError(state.error, t)
+              : t('update.errorBody')}
           </p>
           <div className="update-banner__actions">
             <Button size="sm" variant="primary" onClick={onRetry}>

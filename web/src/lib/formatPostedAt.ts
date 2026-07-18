@@ -1,24 +1,29 @@
+import type { Locale } from '../i18n/types'
+import { translate } from '../i18n/messages'
+
+type PostedAtLocale = Locale
 
 export function formatPostedAt(
   postedAt: string | undefined | null,
   now = Date.now(),
+  locale: PostedAtLocale = 'pt',
 ): string | null {
   if (!postedAt?.trim()) return null
 
   const raw = postedAt.trim()
 
-  // LinkedIn costuma mandar só YYYY-MM-DD no datetime — não converter em "N horas".
   if (isDateOnly(raw)) {
-    return formatDateOnlyLabel(raw, now)
+    return formatDateOnlyLabel(raw, now, locale)
   }
 
   const then = parsePostedAt(raw, now)
   if (then == null) {
-    if (/atrás|atras|há\s/i.test(raw)) return normalizePtRelative(raw)
+    // rótulo cru do LinkedIn (conteúdo externo) — não forçar translate
+    if (/atrás|atras|há\s|ago/i.test(raw)) return normalizePtRelative(raw)
     return raw
   }
 
-  return formatRelativeDiff(now - then)
+  return formatRelativeDiff(now - then, locale)
 }
 
 /** Timestamp para ordenar vagas (postedAt → firstSeenAt → lastSeenAt). */
@@ -67,28 +72,40 @@ function startOfLocalDay(ms: number): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
-function formatDateOnlyLabel(ymd: string, now: number): string {
+function formatDateOnlyLabel(
+  ymd: string,
+  now: number,
+  locale: PostedAtLocale,
+): string {
+  const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) =>
+    translate(locale, key, vars)
   const today = ymdLocal(now)
-  if (ymd === today) return 'hoje'
-  if (ymd === ymdLocal(now - 86_400_000)) return 'ontem'
+  if (ymd === today) return t('time.today')
+  if (ymd === ymdLocal(now - 86_400_000)) return t('time.yesterday')
 
   const days = Math.round(
     (startOfLocalDay(now) - startOfLocalDay(localNoonMs(ymd))) / 86_400_000,
   )
-  if (days < 0) return 'hoje'
+  if (days < 0) return t('time.today')
   if (days < 7) {
-    return days === 1 ? '1 dia atrás' : `${days} dias atrás`
+    return days === 1 ? t('time.dayBehind') : t('time.daysBehind', { n: days })
   }
   const weeks = Math.floor(days / 7)
   if (weeks < 5) {
-    return weeks === 1 ? '1 semana atrás' : `${weeks} semanas atrás`
+    return weeks === 1
+      ? t('time.weekBehind')
+      : t('time.weeksBehind', { n: weeks })
   }
   const months = Math.floor(days / 30)
   if (months < 12) {
-    return months <= 1 ? '1 mês atrás' : `${months} meses atrás`
+    return months <= 1
+      ? t('time.monthBehind')
+      : t('time.monthsBehind', { n: months })
   }
   const years = Math.floor(days / 365)
-  return years <= 1 ? '1 ano atrás' : `${years} anos atrás`
+  return years <= 1
+    ? t('time.yearBehind')
+    : t('time.yearsBehind', { n: years })
 }
 
 export function parsePostedAt(raw: string, now: number): number | null {
@@ -148,37 +165,42 @@ function amountToMs(n: number, unitRaw: string): number {
   return n * 60_000
 }
 
-function formatRelativeDiff(diffMs: number): string {
+function formatRelativeDiff(diffMs: number, locale: PostedAtLocale): string {
+  const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) =>
+    translate(locale, key, vars)
   const mins = Math.floor(Math.max(0, diffMs) / 60_000)
 
-  // Estilo LinkedIn PT: "há N minutos/horas/dias"
-  if (mins < 1) return 'agora'
+  if (mins < 1) return t('time.justNow')
   if (mins < 60) {
-    return mins === 1 ? 'há 1 minuto' : `há ${mins} minutos`
+    return mins === 1
+      ? t('time.minuteAgo')
+      : t('time.minutesAgo', { n: mins })
   }
 
   const hours = Math.floor(mins / 60)
   if (hours < 24) {
-    return hours === 1 ? 'há 1 hora' : `há ${hours} horas`
+    return hours === 1 ? t('time.hourAgo') : t('time.hoursAgo', { n: hours })
   }
 
   const days = Math.floor(hours / 24)
   if (days < 7) {
-    return days === 1 ? 'há 1 dia' : `há ${days} dias`
+    return days === 1 ? t('time.dayAgo') : t('time.daysAgo', { n: days })
   }
 
   const weeks = Math.floor(days / 7)
   if (weeks < 5) {
-    return weeks === 1 ? 'há 1 semana' : `há ${weeks} semanas`
+    return weeks === 1 ? t('time.weekAgo') : t('time.weeksAgo', { n: weeks })
   }
 
   const months = Math.floor(days / 30)
   if (months < 12) {
-    return months <= 1 ? 'há 1 mês' : `há ${months} meses`
+    return months <= 1
+      ? t('time.monthAgo')
+      : t('time.monthsAgo', { n: months })
   }
 
   const years = Math.floor(days / 365)
-  return years <= 1 ? 'há 1 ano' : `há ${years} anos`
+  return years <= 1 ? t('time.yearAgo') : t('time.yearsAgo', { n: years })
 }
 
 function normalizePtRelative(raw: string): string {

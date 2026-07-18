@@ -55,20 +55,15 @@ export function MonitorDescriptionSection({
       </label>
 
       {filters.language && !draft.fetchDescriptions ? (
-        <Alert>
-          Para filtrar por idioma com precisão, ative a busca pela descrição.
-        </Alert>
+        <Alert>{t('desc.langAlert')}</Alert>
       ) : null}
 
       {draft.fetchDescriptions ? (
         <>
-          <Alert>
-            Ativado: primeiro lista todas as vagas; depois só busca descrição
-            das que ainda não têm no banco (as já lidas são reaproveitadas).
-          </Alert>
+          <Alert>{t('desc.fetchAlert')}</Alert>
           <FilterTags
             label={t('desc.exclude')}
-            hint="Se a descrição tiver uma destas palavras, some."
+            hint={t('desc.excludeHint')}
             words={filters.excludeDescription}
             filterKey="excludeDescription"
             onAdd={onAddWord}
@@ -77,7 +72,7 @@ export function MonitorDescriptionSection({
           />
           <FilterTags
             label={t('desc.include')}
-            hint="Se preencher, a descrição precisa conter ao menos uma."
+            hint={t('desc.includeHint')}
             words={filters.includeDescription}
             filterKey="includeDescription"
             onAdd={onAddWord}

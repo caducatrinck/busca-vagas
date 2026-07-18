@@ -14,6 +14,7 @@ import {
   type Monitor,
 } from '../lib/types'
 import type { ThemeMode } from './useTheme'
+import { useI18n } from '../i18n'
 
 export function useAppSettings(params: {
   loadMonitors: (preferredId?: string | null) => Promise<Monitor[]>
@@ -35,6 +36,8 @@ export function useAppSettings(params: {
     setTheme,
     clearNotifications,
   } = params
+
+  const { t } = useI18n()
 
   const [tab, setTab] = useState<AppTab>('monitor')
   const [appSettings, setAppSettings] = useState<PublicAppSettings | null>(
@@ -84,7 +87,7 @@ export function useAppSettings(params: {
       try {
         await loadSaved()
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar')
+        setError(err instanceof Error ? err.message : t('err.load'))
       } finally {
         setLoading(false)
       }
@@ -94,7 +97,7 @@ export function useAppSettings(params: {
       try {
         await loadMonitors(activeMonitorId)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar monitores')
+        setError(err instanceof Error ? err.message : t('err.loadMonitors'))
       } finally {
         setLoading(false)
       }
