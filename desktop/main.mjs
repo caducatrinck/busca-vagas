@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell } from 'electron'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import http from 'node:http'
@@ -104,6 +104,7 @@ function startApi() {
 }
 
 async function createWindow() {
+  const iconPath = path.join(__dirname, 'build', 'icon.png')
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 840,
@@ -111,6 +112,7 @@ async function createWindow() {
     minHeight: 600,
     title: 'Busca Vagas',
     show: false,
+    ...(fs.existsSync(iconPath) ? { icon: iconPath } : {}),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -153,6 +155,7 @@ if (!gotLock) {
   })
 
   app.whenReady().then(async () => {
+    Menu.setApplicationMenu(null)
     try {
       startApi()
       await waitForHealth(`http://${API_HOST}:${API_PORT}/health`)

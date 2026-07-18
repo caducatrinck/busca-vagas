@@ -89,7 +89,7 @@
 .job-list__toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
   gap: 0.55rem;
 }
 
@@ -115,12 +115,6 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
-.job-list__language select:focus {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
 .job-list__language {
   display: inline-flex;
   align-items: center;
@@ -132,105 +126,17 @@
   color: var(--ink-soft);
 }
 
-.job-list__language-dropdown {
-  display: inline-flex;
-  align-items: center;
-}
-
-.job-list__language-trigger {
-  min-width: 8.2rem;
-  height: 2.25rem;
-
-  box-sizing: border-box;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0 0.7rem;
-
-  background: var(--panel-solid);
-  color: var(--ink);
-  font: inherit;
-  font-weight: 700;
-  line-height: 1.2;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-
-  cursor: pointer;
-}
-
-.job-list__language-trigger:focus {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.job-list__language-trigger-caret {
-  width: 0.45rem;
-  height: 0.45rem;
-  transform: rotate(45deg);
-  border-right: 2px solid var(--ink-soft);
-  border-bottom: 2px solid var(--ink-soft);
-  margin-top: -2px;
-  flex: 0 0 auto;
-}
-
-.job-list__language-menu {
-  position: absolute;
-  z-index: 80;
-
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--panel-solid);
-  box-shadow: var(--shadow);
-
-  padding: 0.25rem;
-  overflow: hidden;
-}
-
-.job-list__language-option {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-weight: 700;
-
-  padding: 0.55rem 0.7rem;
-  border-radius: 10px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.job-list__language-option:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.job-list__language-option--selected {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
-}
-
-.job-list__language select {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--panel-solid);
-  color: var(--ink);
-  font-weight: 600;
-  padding: 0.55rem 0.7rem;
-}
-
 .job-list__sort {
   flex: 0 0 auto;
   box-sizing: border-box;
-  width: 2.25rem;
-  height: 2.25rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  align-self: stretch;
+  aspect-ratio: 1;
+  height: auto;
+  width: auto;
+  border: 0;
+  border-radius: 0;
   padding: 0;
-  background: var(--panel-solid);
+  background: transparent;
   color: var(--ink);
   font: inherit;
   font-size: 1.05rem;
@@ -240,17 +146,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none;
 }
 
 .job-list__sort:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-color: transparent;
   color: var(--accent);
+  background: transparent;
 }
 
 .job-list__sort:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--accent);
 }
 
 .job-list__discard-all {

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/runServer.ts",
     "build": "tsc",
-    "start": "node dist/runServer.js",
+    "start": "node dist/api/src/runServer.js",
     "test": "tsx --test src/**/*.test.ts src/**/**/*.test.ts"
   },
   "dependencies": {

@@ -155,24 +155,30 @@ async function runMonitor(
       const message = err instanceof Error ? err.message : 'Rate limit'
       const rawRetry =
         (err as Error & { retryAfterMs?: number }).retryAfterMs ?? 30_000
+      const source =
+        (err as Error & { rateLimitSource?: string | null }).rateLimitSource ??
+        null
 
       const retryAfterMs = Math.max(1_000, rawRetry + 500)
 
-      if (mode === 'manual') {
-        callbacks.onProgress?.({
-          phase: 'error',
-          label: 'Limite de buscas',
-          message,
-          overallPercent: 0,
-          listing: { current: 0, total: null },
-          descriptions: { current: 0, total: 0 },
-          startedAt,
-          elapsedMs: Date.now() - startedAt,
-          etaSeconds: null,
-        })
+      // cooldown local: não grava lastError (já tem mensagem com contador na UI)
+      if (source !== 'cooldown') {
+        if (mode === 'manual') {
+          callbacks.onProgress?.({
+            phase: 'error',
+            label: 'Limite de buscas',
+            message,
+            overallPercent: 0,
+            listing: { current: 0, total: null },
+            descriptions: { current: 0, total: 0 },
+            startedAt,
+            elapsedMs: Date.now() - startedAt,
+            etaSeconds: null,
+          })
+        }
         await updateMonitor(id, { lastError: message })
       } else {
-        await updateMonitor(id, { lastError: message })
+        await updateMonitor(id, { lastError: null })
       }
       return { newCount: 0, error: message, retryAfterMs }
     }
@@ -485,7 +491,7 @@ export async function syncSchedulers(): Promise<void> {
 
     if (
       monitor.lastError &&
-      /aguarde|pausa|limite|rate|intervalo|hora|dia|proteção local|nenhuma vaga encontrada/i.test(
+      /aguarde|pausa|limite|rate|intervalo|hora|dia|proteção local|anti-spam|entre buscas|nenhuma vaga encontrada/i.test(
         monitor.lastError,
       )
     ) {

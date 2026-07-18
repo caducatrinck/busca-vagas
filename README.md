@@ -136,9 +136,9 @@ Use **Exportar / Importar** no banner do topo para backup manual.
 
 ## Rate limit
 
-1. Intervalo mínimo entre buscas (padrão 5s; `0` = off)  
+1. Intervalo mínimo entre buscas (padrão 30s; `0` = off)  
 2. Pausas reais do LinkedIn (**HTTP 429** / **999** + `Retry-After`)  
-3. Tetos por hora/dia opcionais (padrão `0` = off)  
+3. Tetos por hora/dia (padrão `30` / `500`; `0` = off)  
 
 Status: `GET http://127.0.0.1:8787/rate-limit`
 
@@ -272,9 +272,9 @@ Use **Export / Import** in the top banner for manual backups.
 
 ## Rate limit
 
-1. Minimum interval between searches (default 5s; `0` = off)  
+1. Minimum interval between searches (default 30s; `0` = off)  
 2. Real LinkedIn pauses (**HTTP 429** / **999** + `Retry-After`)  
-3. Optional hourly/daily caps (default `0` = off)  
+3. Hourly/daily caps (default `30` / `500`; `0` = off)  
 
 Status: `GET http://127.0.0.1:8787/rate-limit`
 

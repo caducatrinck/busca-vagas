@@ -3,6 +3,7 @@
   flex-direction: column;
   gap: 0.65rem;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .app-nav__brand {
@@ -10,7 +11,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0 0.1rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.1rem;
+  overflow: visible;
 }
 
 .app-nav__brand-text {
@@ -38,6 +40,8 @@
   gap: 0.35rem;
   flex-shrink: 0;
   margin-left: auto;
+  padding: 0.35rem;
+  overflow: visible;
 }
 
 .app-nav__icon-btn {
@@ -83,11 +87,9 @@
   0%,
   100% {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--exclude) 28%, transparent);
-    filter: brightness(1);
   }
   50% {
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--exclude) 48%, transparent);
-    filter: brightness(1.08);
   }
 }
 

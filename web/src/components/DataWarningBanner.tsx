@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import './DataWarningBanner.css'
 
+const GITHUB_URL = 'https://github.com/caducatrinck'
+
 type Props = {
   onExport: () => Promise<void>
   onImportFile: (file: File) => Promise<void>
@@ -85,74 +87,88 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
   }
 
   return (
-    <aside className="data-banner" role="note">
-      <div className="data-banner__text">
-        <p className="data-banner__title">Sem banco de dados</p>
-        <p className="data-banner__body">
-          Tudo fica em <strong>JSON local</strong> (
-          <code>api/data/store.json</code>
-          ): vagas, monitores, cookies, filtros e tema. A cada mudança o app
-          guarda até 10 backups em <code>api/data/backups/</code>. Se apagar a
-          pasta/volume, <strong>você perde tudo</strong> — exporte um backup
-          com frequência.
+    <div className="app-top">
+      <div className="app-top__bar">
+        <p className="app-top__credit">
+          created by{' '}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="app-top__credit-link"
+          >
+            caducatrinck
+          </a>
         </p>
+        <div className="app-top__actions">
+          <button
+            type="button"
+            className={[
+              'data-banner__btn',
+              feedback?.action === 'export' && feedback.kind === 'ok'
+                ? 'data-banner__btn--ok'
+                : '',
+              feedback?.action === 'export' && feedback.kind === 'error'
+                ? 'data-banner__btn--err'
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            disabled={busy !== null}
+            title={
+              feedback?.action === 'export' && feedback.kind === 'error'
+                ? feedback.text
+                : 'Exportar backup JSON'
+            }
+            onClick={() => void handleExport()}
+          >
+            {buttonLabel('export', 'Exportar', 'Exportando…')}
+          </button>
+          <button
+            type="button"
+            className={[
+              'data-banner__btn',
+              'data-banner__btn--accent',
+              feedback?.action === 'import' && feedback.kind === 'ok'
+                ? 'data-banner__btn--ok'
+                : '',
+              feedback?.action === 'import' && feedback.kind === 'error'
+                ? 'data-banner__btn--err'
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            disabled={busy !== null}
+            title={
+              feedback?.action === 'import' && feedback.kind === 'error'
+                ? feedback.text
+                : 'Importar backup JSON'
+            }
+            onClick={() => inputRef.current?.click()}
+          >
+            {buttonLabel('import', 'Importar', 'Importando…')}
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => void handleImport(e.target.files?.[0])}
+          />
+        </div>
       </div>
-      <div className="data-banner__actions">
-        <button
-          type="button"
-          className={[
-            'data-banner__btn',
-            feedback?.action === 'export' && feedback.kind === 'ok'
-              ? 'data-banner__btn--ok'
-              : '',
-            feedback?.action === 'export' && feedback.kind === 'error'
-              ? 'data-banner__btn--err'
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          disabled={busy !== null}
-          title={
-            feedback?.action === 'export' && feedback.kind === 'error'
-              ? feedback.text
-              : undefined
-          }
-          onClick={() => void handleExport()}
-        >
-          {buttonLabel('export', 'Exportar', 'Exportando…')}
-        </button>
-        <button
-          type="button"
-          className={[
-            'data-banner__btn',
-            'data-banner__btn--accent',
-            feedback?.action === 'import' && feedback.kind === 'ok'
-              ? 'data-banner__btn--ok'
-              : '',
-            feedback?.action === 'import' && feedback.kind === 'error'
-              ? 'data-banner__btn--err'
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          disabled={busy !== null}
-          title={
-            feedback?.action === 'import' && feedback.kind === 'error'
-              ? feedback.text
-              : undefined
-          }
-          onClick={() => inputRef.current?.click()}
-        >
-          {buttonLabel('import', 'Importar', 'Importando…')}
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => void handleImport(e.target.files?.[0])}
-        />
-      </div>
-    </aside>
+
+      <aside className="linkedin-alert" role="note">
+        <p className="linkedin-alert__title">Cuidado com o LinkedIn</p>
+        <p className="linkedin-alert__body">
+          Muitas requisições seguidas podem fazer o LinkedIn bloquear
+          temporariamente as buscas. Se isso acontecer,{' '}
+          <strong>espere</strong> o bloqueio passar e, nas Configurações,
+          reduza o ritmo: aumente o <strong>intervalo entre buscas</strong> e
+          baixe os tetos por hora/dia. Use o app com parcimônia e evite várias
+          abas buscando ao mesmo tempo.
+        </p>
+      </aside>
+    </div>
   )
 }

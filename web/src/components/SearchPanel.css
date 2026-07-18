@@ -71,13 +71,27 @@
   font: inherit;
 }
 
+.search-panel__form input:disabled,
+.search-panel__form select:disabled {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--panel-solid) 70%, var(--bg));
+  border-color: color-mix(in srgb, var(--line) 70%, transparent);
+  cursor: not-allowed;
+  opacity: 1;
+  -webkit-text-fill-color: var(--ink-soft);
+}
+
 .search-panel__form input:focus,
 .search-panel__form select:focus {
   outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
   border-color: var(--accent);
 }
 
-.search-panel__form button {
+.search-panel__form > button:not(.search-panel__refresh--pause),
+.search-panel__form
+  button:not(.select-dropdown__trigger):not(.select-dropdown__option):not(
+    .search-panel__refresh--pause
+  ) {
   margin-top: 0.25rem;
   border: 0;
   border-radius: 12px;
@@ -89,12 +103,22 @@
   transition: transform 160ms ease, background 160ms ease;
 }
 
-.search-panel__form button:hover:not(:disabled) {
+.search-panel__form
+  > button:not(.search-panel__refresh--pause):hover:not(:disabled),
+.search-panel__form
+  button:not(.select-dropdown__trigger):not(.select-dropdown__option):not(
+    .search-panel__refresh--pause
+  ):hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #0c553c;
+  background: color-mix(in srgb, var(--accent) 82%, #000);
 }
 
-.search-panel__form button:disabled {
+.search-panel__form
+  > button:not(.search-panel__refresh--pause):disabled,
+.search-panel__form
+  button:not(.select-dropdown__trigger):not(.select-dropdown__option):not(
+    .search-panel__refresh--pause
+  ):disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
@@ -148,6 +172,24 @@
   color: var(--accent);
   font-weight: 700;
   cursor: pointer;
+}
+
+.search-panel__refresh--pause,
+.search-panel__form > button.search-panel__refresh--pause,
+.search-panel__form button.search-panel__refresh--pause {
+  background: var(--exclude) !important;
+  color: #fff8f6 !important;
+}
+
+.search-panel__refresh--pause:hover:not(:disabled),
+.search-panel__form > button.search-panel__refresh--pause:hover:not(:disabled),
+.search-panel__form button.search-panel__refresh--pause:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--exclude) 82%, #000) !important;
+}
+
+.search-panel__refresh:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .search-panel__description {

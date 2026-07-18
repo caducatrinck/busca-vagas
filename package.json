@@ -19,7 +19,7 @@
     "build": "npm run build -w web && npm run build -w api",
     "test": "npm run test -w api && npm run test -w web",
     "desktop:prepare": "node scripts/prepare-desktop.mjs",
-    "desktop:dev": "npm run desktop:prepare && npm start -w desktop",
+    "desktop:dev": "node scripts/desktop-dev.mjs",
     "desktop:dist": "npm run desktop:prepare && npm run dist -w desktop",
     "desktop:dist:win": "npm run desktop:prepare && npm run dist:win -w desktop",
     "desktop:dist:linux": "npm run desktop:prepare && npm run dist:linux -w desktop"

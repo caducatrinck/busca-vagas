@@ -12,9 +12,20 @@ export function formatRateLimitWait(retryAfterMs?: number): string | null {
   return `${m}min ${pad(s)}s`
 }
 
-export function formatRateLimitSummary(limit: RateLimitInfo): string {
+function remainingMs(limit: RateLimitInfo, now: number): number {
+  const until = limit.usage?.nextAllowedAt
+  if (until != null && until > 0) return Math.max(0, until - now)
+  return Math.max(0, limit.retryAfterMs ?? 0)
+}
+
+export function formatRateLimitSummary(
+  limit: RateLimitInfo,
+  now = Date.now(),
+): string {
   const { limits, usage } = limit
-  const wait = formatRateLimitWait(limit.retryAfterMs)
+  const leftMs = remainingMs(limit, now)
+  const wait = formatRateLimitWait(leftMs)
+  const waitSec = Math.ceil(leftMs / 1000)
   const hourCap =
     limits.maxPerHour > 0
       ? `${usage.searchesThisHour}/${limits.maxPerHour} nesta hora`
@@ -24,14 +35,19 @@ export function formatRateLimitSummary(limit: RateLimitInfo): string {
       ? ` · ${usage.remainingToday} restantes hoje (teto opcional)`
       : ` · ${usage.searchesToday} hoje`
 
-  if (!limit.allowed && limit.reason) {
+  if (!limit.allowed) {
+    if (
+      limit.source === 'cooldown' ||
+      /anti-spam|entre buscas/i.test(limit.reason ?? '')
+    ) {
+      return waitSec > 0
+        ? `Aguarde ${waitSec}s entre buscas`
+        : 'Aguarde entre buscas'
+    }
     if (limit.source === 'linkedin') {
-      return wait ? `${limit.reason} Libera em ~${wait}.` : limit.reason
+      return wait ? `${limit.reason} Libera em ~${wait}.` : (limit.reason ?? '')
     }
-    if ((limit.retryAfterMs ?? 0) > 0 && (limit.retryAfterMs ?? 0) < 60_000) {
-      return limit.reason
-    }
-    return wait ? `${limit.reason} Libera em ~${wait}.` : limit.reason
+    return wait ? `${limit.reason} Libera em ~${wait}.` : (limit.reason ?? '')
   }
 
   return `${hourCap}${dayPart}`

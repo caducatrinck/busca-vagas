@@ -15,6 +15,7 @@
   "build": {
     "appId": "com.caducatrinck.busca-vagas",
     "productName": "Busca Vagas",
+    "electronVersion": "37.10.3",
     "copyright": "Copyright © Busca Vagas",
     "directories": {
       "output": "release",
@@ -38,20 +39,23 @@
           "arch": ["x64"]
         }
       ],
+      "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}-portable.${ext}"
     },
     "linux": {
       "target": ["AppImage"],
       "category": "Office",
+      "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}.${ext}"
     },
     "mac": {
       "target": ["dmg"],
+      "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}.${ext}"
     }
   },
   "devDependencies": {
-    "electron": "^37.2.0",
+    "electron": "37.10.3",
     "electron-builder": "^26.0.12"
   }
 }

@@ -1,0 +1,113 @@
+.select-dropdown {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.select-dropdown--full {
+  display: flex;
+  width: 100%;
+}
+
+.select-dropdown__trigger {
+  min-width: 8.2rem;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+
+  background: var(--panel-solid);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.45;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+
+  cursor: pointer;
+}
+
+.select-dropdown--full .select-dropdown__trigger {
+  width: 100%;
+  min-width: 0;
+}
+
+.select-dropdown__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* não pega o estilo de botão do form do monitor */
+.search-panel__form .select-dropdown__trigger {
+  margin-top: 0;
+  transform: none;
+  background: var(--panel-solid);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 0.55rem 0.75rem;
+}
+
+.search-panel__form .select-dropdown__trigger:hover:not(:disabled) {
+  transform: none;
+  background: var(--panel-solid);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+
+.select-dropdown__trigger:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.select-dropdown__caret {
+  width: 0.45rem;
+  height: 0.45rem;
+  transform: rotate(45deg);
+  border-right: 2px solid var(--ink-soft);
+  border-bottom: 2px solid var(--ink-soft);
+  margin-top: -2px;
+  flex: 0 0 auto;
+}
+
+.select-dropdown__menu {
+  position: absolute;
+  z-index: 80;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-solid);
+  box-shadow: var(--shadow);
+
+  padding: 0.15rem;
+  overflow: hidden;
+}
+
+.select-dropdown__option {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.3;
+
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-dropdown__option:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.select-dropdown__option--selected {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}

@@ -23,7 +23,8 @@ npm install
 npm run desktop:dev
 ```
 
-Isso gera `desktop/resources/` (UI + API) e abre o Electron.
+Gera `desktop/resources/` e tenta abrir o Electron.  
+No **WSL** (sem libs gráficas), sobe o mesmo bundle no navegador em http://127.0.0.1:8787 — sem precisar do `.exe`.
 
 ## Gerar instalável / portable
 
@@ -52,16 +53,7 @@ Electron (janela)
 ```
 
 No WSL, o binário do Electron pode falhar por libs gráficas (`libnspr4.so`, etc.).  
-Gere o portable no **Windows** (`npm run desktop:dist:win`) ou teste a API empacotada com:
-
-```bash
-npm run desktop:prepare
-BUSCA_VAGAS_STATIC_DIR=$PWD/desktop/resources/web \
-BUSCA_VAGAS_DATA_DIR=/tmp/busca-data \
-API_PORT=8787 node desktop/resources/server.cjs
-```
-
-Depois abra http://127.0.0.1:8787 no navegador.
+`npm run desktop:dev` já cai no modo navegador automaticamente.
 
 ## Scripts
 

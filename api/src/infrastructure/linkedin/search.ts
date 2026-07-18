@@ -28,6 +28,9 @@ export const GEO_IDS: Record<string, string> = {
 }
 
 export const POSTED_WITHIN_TO_TPR: Record<PostedWithin, string> = {
+  '30m': 'r1800',
+  '1h': 'r3600',
+  '10h': 'r36000',
   '24h': 'r86400',
   week: 'r604800',
   month: 'r2592000',

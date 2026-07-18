@@ -8,9 +8,25 @@ import {
 } from '../lib/types'
 import { formatRateLimitSummary } from '../lib/rateLimit'
 import type { RateLimitInfo } from '../lib/api'
+import { poolingWindowMinutes } from '../../../shared/poolingWindow'
 import { FilterTags } from './FilterTags'
+import { LanguageDropdown } from './LanguageDropdown'
+import { NumberInput } from './NumberInput'
+import { SelectDropdown } from './SelectDropdown'
 import './SearchPanel.css'
 import './PollingPanel.css'
+
+const POSTED_WITHIN_OPTIONS: Array<{
+  value: SearchForm['postedWithin']
+  label: string
+}> = [
+  { value: '30m', label: 'Últimos 30 minutos' },
+  { value: '1h', label: 'Última hora' },
+  { value: '10h', label: 'Últimas 10 horas' },
+  { value: '24h', label: 'Últimas 24 horas' },
+  { value: 'week', label: 'Última semana' },
+  { value: 'month', label: 'Último mês' },
+]
 
 function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -23,22 +39,6 @@ function formatCountdown(ms: number): string {
 
 function clampInterval(minutes: number): number {
   return Math.min(Math.max(Number.isFinite(minutes) ? minutes : 20, 1), 120)
-}
-
-function poolingWindowMinutes(
-  intervalMinutes: number,
-  lastRunAt: string | null,
-  now = Date.now(),
-): number {
-  const intervalSec = Math.max(1, intervalMinutes) * 60
-  const waitedSec = lastRunAt
-    ? Math.max(0, Math.floor((now - new Date(lastRunAt).getTime()) / 1000))
-    : intervalSec
-  const coverageSec = Math.max(waitedSec, intervalSec)
-  const bufferSec = Math.max(10 * 60, Math.ceil(coverageSec * 0.5))
-  const windowSec = coverageSec + bufferSec
-  const clamped = Math.min(Math.max(windowSec, 10 * 60), 24 * 60 * 60)
-  return Math.max(1, Math.round(clamped / 60))
 }
 
 function tabCountdownLabel(
@@ -66,7 +66,7 @@ type Props = {
   onClose: (id: string) => void
   onDraftChange: (next: SearchForm) => void
   onLanguageChange: (value: DescriptionLanguage) => void
-  onTogglePolling: (enabled: boolean, intervalMinutes: number) => void
+  onPausePooling: () => void
   onIntervalChange: (minutes: number) => void
   onRunNow: () => void
   onAddWord: (key: WordFilterKey, word: string) => void
@@ -86,7 +86,7 @@ export function PollingPanel({
   onClose,
   onDraftChange,
   onLanguageChange,
-  onTogglePolling,
+  onPausePooling,
   onIntervalChange,
   onRunNow,
   onAddWord,
@@ -102,16 +102,18 @@ export function PollingPanel({
   )
   const [now, setNow] = useState(() => Date.now())
   const anyPolling = monitors.some((m) => m.pollingEnabled)
+  const rateLimitMsg =
+    rateLimit && searchBlocked ? formatRateLimitSummary(rateLimit, now) : null
 
   useEffect(() => {
     if (activeIntervalMinutes != null) setIntervalDraft(activeIntervalMinutes)
   }, [activeId, activeIntervalMinutes])
 
   useEffect(() => {
-    if (!anyPolling) return
+    if (!anyPolling && !searchBlocked) return
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [anyPolling])
+  }, [anyPolling, searchBlocked])
 
   function handleLanguageChange(value: DescriptionLanguage) {
     onLanguageChange(value)
@@ -192,8 +194,20 @@ export function PollingPanel({
           onClick={onAdd}
           disabled={busy}
           title="Adicionar monitor"
+          aria-label="Adicionar monitor"
         >
-          +
+          <svg
+            className="monitor-tabs__add-icon"
+            viewBox="0 0 12 12"
+            width="12"
+            height="12"
+            aria-hidden
+          >
+            <path
+              fill="currentColor"
+              d="M5.25 1.5h1.5v3.75H10.5v1.5H6.75V10.5h-1.5V6.75H1.5v-1.5h3.75V1.5z"
+            />
+          </svg>
         </button>
       </div>
 
@@ -205,34 +219,22 @@ export function PollingPanel({
         <>
           <div className="search-panel__form monitor-poll">
             <div className="monitor-poll__row">
-              <label className="search-panel__check">
-                <input
-                  type="checkbox"
-                  checked={active.pollingEnabled}
-                  disabled={busy || !draft.query.trim()}
-                  onChange={(e) =>
-                    onTogglePolling(e.target.checked, clampInterval(intervalDraft))
-                  }
-                />
-                <span>Ativar pooling</span>
-              </label>
               <label className="monitor-poll__minutes">
-                <span>min</span>
-                <input
-                  type="number"
+                <span>Intervalo</span>
+                <NumberInput
                   min={1}
                   max={120}
                   value={intervalDraft}
+                  emptyValue={20}
                   disabled={busy}
-                  onChange={(e) =>
-                    setIntervalDraft(Number(e.target.value) || 0)
-                  }
-                  onBlur={(e) => commitInterval(Number(e.target.value))}
-                  aria-label="Intervalo em minutos"
+                  onValueChange={(n) => commitInterval(n)}
+                  aria-label="Intervalo do pooling em minutos"
                 />
+                <span>min</span>
               </label>
             </div>
-            {active.lastError ? (
+            {active.lastError &&
+            !/anti-spam|entre buscas|Aguarde \d+s/i.test(active.lastError) ? (
               <p className="monitor-error">{active.lastError}</p>
             ) : null}
           </div>
@@ -255,7 +257,7 @@ export function PollingPanel({
                 onChange={(e) =>
                   onDraftChange({ ...draft, location: e.target.value })
                 }
-                placeholder="Ex: Remoto, São Paulo — vazio = Brasil"
+                placeholder="Ex: Remoto, São Paulo"
               />
             </label>
             <label>
@@ -263,44 +265,57 @@ export function PollingPanel({
               {active.pollingEnabled ? (
                 <input
                   type="text"
-                  readOnly
-                  value={`Últimos ~${poolingWindowMinutes(active.intervalMinutes, active.lastRunAt, now)} min (pooling)`}
-                  title="Janela automática do pooling (intervalo + margem). “Buscar agora” usa a mesma janela enquanto o pooling estiver ativo."
+                  disabled
+                  value={`Últimos ${poolingWindowMinutes(active.intervalMinutes, active.lastRunAt, now)} min`}
+                  aria-label="Publicadas em (definido pelo pooling)"
                 />
               ) : (
-                <select
+                <SelectDropdown
+                  fullWidth
                   value={draft.postedWithin}
-                  onChange={(e) =>
-                    onDraftChange({
-                      ...draft,
-                      postedWithin: e.target.value as SearchForm['postedWithin'],
-                    })
+                  options={POSTED_WITHIN_OPTIONS}
+                  aria-label="Publicadas em"
+                  onChange={(postedWithin) =>
+                    onDraftChange({ ...draft, postedWithin })
                   }
-                >
-                  <option value="24h">Últimas 24 horas</option>
-                  <option value="week">Última semana</option>
-                  <option value="month">Último mês</option>
-                </select>
+                />
               )}
             </label>
 
             <button
               type="button"
-              className="search-panel__refresh"
-              onClick={onRunNow}
-              disabled={busy || !draft.query.trim() || searchBlocked}
+              className={`search-panel__refresh${
+                active.pollingEnabled && !searching
+                  ? ' search-panel__refresh--pause'
+                  : ''
+              }`}
+              onClick={() => {
+                if (active.pollingEnabled && !searching) onPausePooling()
+                else onRunNow()
+              }}
+              disabled={
+                searching ||
+                (!active.pollingEnabled &&
+                  (!draft.query.trim() || searchBlocked))
+              }
               title={
-                searchBlocked && rateLimit
-                  ? formatRateLimitSummary(rateLimit)
-                  : undefined
+                searching
+                  ? 'Busca em andamento'
+                  : active.pollingEnabled
+                    ? 'Pausa o pooling automático'
+                    : rateLimitMsg
+                      ? rateLimitMsg
+                      : 'Busca agora e ativa o pooling automático'
               }
             >
-              {searching ? 'Buscando…' : 'Buscar agora'}
+              {searching
+                ? 'Buscando…'
+                : active.pollingEnabled
+                  ? 'Pausar'
+                  : 'Buscar agora'}
             </button>
-            {searchBlocked && rateLimit ? (
-              <p className="monitor-error monitor-rate-limit">
-                {formatRateLimitSummary(rateLimit)}
-              </p>
+            {rateLimitMsg && !active.pollingEnabled ? (
+              <p className="monitor-error monitor-rate-limit">{rateLimitMsg}</p>
             ) : null}
           </div>
 
@@ -308,16 +323,11 @@ export function PollingPanel({
             <div className="search-panel__form">
               <label>
                 Idioma
-                <select
+                <LanguageDropdown
+                  fullWidth
                   value={filters.language}
-                  onChange={(e) =>
-                    handleLanguageChange(e.target.value as DescriptionLanguage)
-                  }
-                >
-                  <option value="">Qualquer</option>
-                  <option value="pt">Português</option>
-                  <option value="en">Inglês</option>
-                </select>
+                  onChange={handleLanguageChange}
+                />
               </label>
             </div>
 

@@ -77,6 +77,14 @@ function App() {
     setRateLimit: polling.setRateLimit,
     setError: monitors.setError,
     clearPendingDraftSave: monitors.clearPendingDraftSave,
+    onPoolingWillEnable: async () => {
+      for (const m of monitors.monitors) {
+        const key = runKey(m)
+        if (key) notifications.notifiedRunsRef.current.add(key)
+      }
+      notifications.seededNotifyRef.current = true
+      await ensureNotificationPermission()
+    },
   })
 
   function handleSelectMonitor(id: string) {
@@ -98,15 +106,9 @@ function App() {
     monitors.setJobsSubTab(value)
   }
 
-  async function handleTogglePolling(enabled: boolean, intervalMinutes: number) {
-    await monitors.handleTogglePolling(enabled, intervalMinutes, async () => {
-      for (const m of monitors.monitors) {
-        const key = runKey(m)
-        if (key) notifications.notifiedRunsRef.current.add(key)
-      }
-      notifications.seededNotifyRef.current = true
-      await ensureNotificationPermission()
-    })
+  async function handlePausePooling() {
+    const minutes = monitors.activeMonitor?.intervalMinutes ?? 20
+    await monitors.handleTogglePolling(false, minutes)
   }
 
   function clearNotifIfAction(status: 'applied' | 'discarded' | 'viewed') {
@@ -179,7 +181,7 @@ function App() {
             onClose={monitors.handleCloseMonitor}
             onDraftChange={monitors.handleMonitorDraftChange}
             onLanguageChange={monitors.handleMonitorDescriptionLanguage}
-            onTogglePolling={handleTogglePolling}
+            onPausePooling={handlePausePooling}
             onIntervalChange={monitors.handleIntervalChange}
             onRunNow={searchRun.handleRunMonitorNow}
             onAddWord={monitors.handleMonitorDescriptionAddWord}
@@ -235,7 +237,7 @@ function App() {
                 : 'Monitor'
             }
             emptyTitle="Sem vagas neste monitor"
-            emptyHint="Crie uma aba com +, configure a busca e marque pooling ou clique em Buscar agora."
+            emptyHint="Crie uma aba com +, configure a busca e clique em Buscar agora (o pooling liga sozinho)."
             onCancelSearch={searchRun.handleCancelSearch}
             onStatusChange={handleStatusChange}
           />

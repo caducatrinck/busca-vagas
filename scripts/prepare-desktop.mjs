@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Prepara resources do Electron:
- * - web/dist com VITE_API_URL="" (mesma origem)
- * - api empacotada em server.cjs (esbuild bundle)
+ * monta desktop/resources:
+ * - web com VITE_API_URL="" (mesma origem)
+ * - api em server.cjs
  */
 import { build } from 'esbuild'
 import { cpSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs'

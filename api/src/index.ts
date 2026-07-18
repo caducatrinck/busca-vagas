@@ -106,7 +106,8 @@ export async function startServer(
     await app.register(fastifyStatic, {
       root: path.resolve(staticDir),
       prefix: '/',
-      wildcard: false,
+      // wildcard: pega asset novo sem precisar reiniciar
+      wildcard: true,
     })
     app.setNotFoundHandler((request, reply) => {
       if (request.method === 'GET' && !request.url.startsWith('/api')) {
@@ -121,6 +122,11 @@ export async function startServer(
           '/rate-limit',
         ]
         if (apiPrefixes.some((p) => request.url === p || request.url.startsWith(`${p}/`) || request.url.startsWith(`${p}?`))) {
+          return reply.status(404).send({ error: 'Not found' })
+        }
+        // .js/.css faltando → 404 JSON, não o index.html (senão MIME explode)
+        const pathOnly = request.url.split('?')[0] ?? request.url
+        if (/\.(?:js|mjs|css|map|svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf)$/i.test(pathOnly)) {
           return reply.status(404).send({ error: 'Not found' })
         }
         return reply.sendFile('index.html')

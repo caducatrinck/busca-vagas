@@ -10,7 +10,7 @@ import type {
 } from './types'
 
 const rawApiUrl = import.meta.env.VITE_API_URL
-/** Vazio = mesma origem (app desktop). Sem env = API local de desenvolvimento. */
+/** '' = mesma origem (desktop). sem env = API local */
 const API_URL =
   rawApiUrl === '' ? '' : rawApiUrl || 'http://127.0.0.1:8787'
 

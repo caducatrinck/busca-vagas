@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
   <defs>
     <linearGradient id="bv-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#12805b"/>
-      <stop offset="1" stop-color="#0c5238"/>
+      <stop offset="0" stop-color="#2f68e0"/>
+      <stop offset="1" stop-color="#1a4aad"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="16" fill="url(#bv-bg)"/>
   <text x="50%" y="50%" dy="0.02em" text-anchor="middle" dominant-baseline="central"
-    font-family="'Fraunces', 'DM Sans', Georgia, serif" font-size="30" font-weight="650"
+    font-family="system-ui, sans-serif" font-size="30" font-weight="650"
     letter-spacing="-0.02em" fill="#f4fff9">BV</text>
 </svg>

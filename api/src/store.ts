@@ -86,7 +86,12 @@ export type AppSettings = {
   maxSearchesPerHour: number
   maxSearchesPerDay: number
   jobDetailConcurrency: number
+  /** bump pra atualizar defaults velhos de rate limit */
+  rateLimitDefaultsRev: number
 }
+
+/** rev 2 → 30s, 30/hora, 500/dia */
+export const RATE_LIMIT_DEFAULTS_REV = 2
 
 export type JobFilters = {
   excludeTitle: string[]
@@ -193,10 +198,11 @@ export function defaultAppSettings(): AppSettings {
     linkedinLiAt: '',
     linkedinJsessionId: '',
     linkedinMaxPages: 1000,
-    searchCooldownMs: 5_000,
-    maxSearchesPerHour: 0,
-    maxSearchesPerDay: 0,
+    searchCooldownMs: 30_000,
+    maxSearchesPerHour: 30,
+    maxSearchesPerDay: 500,
     jobDetailConcurrency: 5,
+    rateLimitDefaultsRev: RATE_LIMIT_DEFAULTS_REV,
   }
 }
 
@@ -213,9 +219,18 @@ function migrateCookiesFromLegacyEnv(settings: AppSettings): AppSettings {
   return { ...settings, linkedinLiAt: liAt, linkedinJsessionId: jsession }
 }
 
-function normalizeSettings(raw?: Partial<AppSettings> | null): AppSettings {
+function normalizeSettings(
+  raw?: (Partial<AppSettings> & { rateLimitDefaultsRev?: number }) | null,
+): AppSettings {
   const base = defaultAppSettings()
   if (!raw || typeof raw !== 'object') return base
+
+  const prevRev = Number(
+    (raw as { rateLimitDefaultsRev?: number }).rateLimitDefaultsRev,
+  )
+  const needsRateLimitDefaults =
+    !Number.isFinite(prevRev) || prevRev < RATE_LIMIT_DEFAULTS_REV
+
   return {
     linkedinLiAt:
       typeof raw.linkedinLiAt === 'string' ? raw.linkedinLiAt.trim() : base.linkedinLiAt,
@@ -227,22 +242,47 @@ function normalizeSettings(raw?: Partial<AppSettings> | null): AppSettings {
       Math.max(Number(raw.linkedinMaxPages) || base.linkedinMaxPages, 1),
       5000,
     ),
-    searchCooldownMs: Math.min(
-      Math.max(Number(raw.searchCooldownMs) || base.searchCooldownMs, 0),
-      600_000,
-    ),
-    maxSearchesPerHour: Math.min(
-      Math.max(Number(raw.maxSearchesPerHour) || 0, 0),
-      500,
-    ),
-    maxSearchesPerDay: Math.min(
-      Math.max(Number(raw.maxSearchesPerDay) || 0, 0),
-      2000,
-    ),
+    searchCooldownMs: needsRateLimitDefaults
+      ? base.searchCooldownMs
+      : (() => {
+          if (raw.searchCooldownMs === undefined || raw.searchCooldownMs === null) {
+            return base.searchCooldownMs
+          }
+          const n = Number(raw.searchCooldownMs)
+          if (!Number.isFinite(n)) return base.searchCooldownMs
+          return Math.min(Math.max(n, 0), 600_000)
+        })(),
+    maxSearchesPerHour: needsRateLimitDefaults
+      ? base.maxSearchesPerHour
+      : (() => {
+          if (
+            raw.maxSearchesPerHour === undefined ||
+            raw.maxSearchesPerHour === null
+          ) {
+            return base.maxSearchesPerHour
+          }
+          const n = Number(raw.maxSearchesPerHour)
+          if (!Number.isFinite(n)) return base.maxSearchesPerHour
+          return Math.min(Math.max(n, 0), 500)
+        })(),
+    maxSearchesPerDay: needsRateLimitDefaults
+      ? base.maxSearchesPerDay
+      : (() => {
+          if (
+            raw.maxSearchesPerDay === undefined ||
+            raw.maxSearchesPerDay === null
+          ) {
+            return base.maxSearchesPerDay
+          }
+          const n = Number(raw.maxSearchesPerDay)
+          if (!Number.isFinite(n)) return base.maxSearchesPerDay
+          return Math.min(Math.max(n, 0), 2000)
+        })(),
     jobDetailConcurrency: Math.min(
       Math.max(Number(raw.jobDetailConcurrency) || base.jobDetailConcurrency, 1),
       20,
     ),
+    rateLimitDefaultsRev: RATE_LIMIT_DEFAULTS_REV,
   }
 }
 
@@ -254,10 +294,11 @@ const DEFAULT_STORE: StoreData = {
     linkedinLiAt: '',
     linkedinJsessionId: '',
     linkedinMaxPages: 1000,
-    searchCooldownMs: 5_000,
-    maxSearchesPerHour: 0,
-    maxSearchesPerDay: 0,
+    searchCooldownMs: 30_000,
+    maxSearchesPerHour: 30,
+    maxSearchesPerDay: 500,
     jobDetailConcurrency: 5,
+    rateLimitDefaultsRev: RATE_LIMIT_DEFAULTS_REV,
   },
   filters: defaultJobFilters(),
   theme: 'light',
@@ -309,7 +350,7 @@ function createMonitor(partial?: Partial<Monitor>): Monitor {
     name: partial?.name?.trim() || 'Monitor',
     search: {
       query: partial?.search?.query ?? '',
-      location: partial?.search?.location,
+      location: partial?.search?.location?.trim() || 'Brasil',
       postedWithin: partial?.search?.postedWithin ?? 'week',
       fetchDescriptions: Boolean(partial?.search?.fetchDescriptions),
     },
@@ -449,6 +490,22 @@ async function ensureStore(): Promise<StoreData> {
   try {
     const raw = await readFile(STORE_PATH, 'utf8')
     cache = parseStoreRaw(raw)
+    let fileRev: number | null = null
+    try {
+      const parsed = JSON.parse(raw) as {
+        settings?: { rateLimitDefaultsRev?: number }
+      }
+      fileRev = Number(parsed.settings?.rateLimitDefaultsRev)
+      if (!Number.isFinite(fileRev)) fileRev = null
+    } catch {
+      fileRev = null
+    }
+    if (fileRev == null || fileRev < RATE_LIMIT_DEFAULTS_REV) {
+      await writeStoreAtomic(STORE_PATH, JSON.stringify(cache, null, 2))
+      console.log(
+        '[store] rate limit atualizado: 30s / 30 por hora / 500 por dia',
+      )
+    }
     return cache
   } catch (err) {
     const isMissing =
@@ -822,16 +879,13 @@ export async function updateAppSettings(
 
   let linkedinLiAt = current.linkedinLiAt
   if (patch.clearLinkedinLiAt) linkedinLiAt = ''
-  else if (typeof patch.linkedinLiAt === 'string' && patch.linkedinLiAt.trim()) {
+  else if (typeof patch.linkedinLiAt === 'string') {
     linkedinLiAt = patch.linkedinLiAt.trim()
   }
 
   let linkedinJsessionId = current.linkedinJsessionId
   if (patch.clearLinkedinJsessionId) linkedinJsessionId = ''
-  else if (
-    typeof patch.linkedinJsessionId === 'string' &&
-    patch.linkedinJsessionId.trim()
-  ) {
+  else if (typeof patch.linkedinJsessionId === 'string') {
     linkedinJsessionId = patch.linkedinJsessionId.trim()
   }
 
