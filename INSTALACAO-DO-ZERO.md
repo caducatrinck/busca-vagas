@@ -21,7 +21,7 @@ Só quer **baixar o .exe / AppImage**? Use o [README](./README.md) e os [Release
 | Programa | Para quê |
 |----------|----------|
 | **Git** | Baixar o código deste projeto |
-| **Node.js 20+** (vem com **npm**) | Rodar o app |
+| **Node.js 22+** (vem com **npm**) | Rodar o app |
 
 Não precisa de Docker neste guia.  
 Você também precisa de uma **conta no LinkedIn** (para o cookie `li_at` no primeiro uso).

@@ -4,7 +4,7 @@ Para clonar, rodar e abrir PR. Usuário final: [README](../README.md) e [Release
 
 ## Setup
 
-- Node 20+ (ou Docker)
+- Node 22+ (ou Docker)
 - Do zero: [INSTALACAO-DO-ZERO.md](../INSTALACAO-DO-ZERO.md)
 
 ```bash
