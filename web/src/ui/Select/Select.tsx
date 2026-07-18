@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import './SelectDropdown.css'
+import { cx } from '../cx'
+import './Select.css'
 
 export type SelectOption<T extends string = string> = {
   value: T
@@ -17,7 +18,7 @@ type Props<T extends string> = {
   disabled?: boolean
 }
 
-export function SelectDropdown<T extends string>({
+export function Select<T extends string>({
   value,
   options,
   onChange,
@@ -85,29 +86,27 @@ export function SelectDropdown<T extends string>({
   }, [open])
 
   return (
-    <div
-      className={`select-dropdown${fullWidth ? ' select-dropdown--full' : ''}`}
-    >
+    <div className={cx('ui-select', fullWidth && 'ui-select--full')}>
       <button
         ref={triggerRef}
         id={id}
         type="button"
-        className="select-dropdown__trigger"
+        className="ui-select__trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="select-dropdown__trigger-text">{selectedLabel}</span>
-        <span className="select-dropdown__caret" aria-hidden />
+        <span className="ui-select__trigger-text">{selectedLabel}</span>
+        <span className="ui-select__caret" aria-hidden />
       </button>
 
       {open
         ? createPortal(
             <div
               ref={menuRef}
-              className="select-dropdown__menu"
+              className="ui-select__menu"
               role="listbox"
               aria-label={ariaLabel}
               style={{
@@ -122,9 +121,10 @@ export function SelectDropdown<T extends string>({
                   <button
                     key={opt.value || 'empty'}
                     type="button"
-                    className={`select-dropdown__option${
-                      selected ? ' select-dropdown__option--selected' : ''
-                    }`}
+                    className={cx(
+                      'ui-select__option',
+                      selected && 'ui-select__option--selected',
+                    )}
                     role="option"
                     aria-selected={selected}
                     onClick={() => {
@@ -143,3 +143,4 @@ export function SelectDropdown<T extends string>({
     </div>
   )
 }
+

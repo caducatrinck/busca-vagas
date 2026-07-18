@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Button, cx } from '../ui'
 import './DataWarningBanner.css'
 
 const GITHUB_URL = 'https://github.com/caducatrinck'
@@ -86,6 +87,13 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
     return idle
   }
 
+  function feedbackClass(action: 'export' | 'import') {
+    if (feedback?.action !== action) return undefined
+    return feedback.kind === 'ok'
+      ? 'data-banner__btn--ok'
+      : 'data-banner__btn--err'
+  }
+
   return (
     <div className="app-top">
       <div className="app-top__bar">
@@ -101,19 +109,10 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
           </a>
         </p>
         <div className="app-top__actions">
-          <button
-            type="button"
-            className={[
-              'data-banner__btn',
-              feedback?.action === 'export' && feedback.kind === 'ok'
-                ? 'data-banner__btn--ok'
-                : '',
-              feedback?.action === 'export' && feedback.kind === 'error'
-                ? 'data-banner__btn--err'
-                : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cx('data-banner__btn', feedbackClass('export'))}
             disabled={busy !== null}
             title={
               feedback?.action === 'export' && feedback.kind === 'error'
@@ -123,21 +122,15 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
             onClick={() => void handleExport()}
           >
             {buttonLabel('export', 'Exportar', 'Exportando…')}
-          </button>
-          <button
-            type="button"
-            className={[
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            className={cx(
               'data-banner__btn',
               'data-banner__btn--accent',
-              feedback?.action === 'import' && feedback.kind === 'ok'
-                ? 'data-banner__btn--ok'
-                : '',
-              feedback?.action === 'import' && feedback.kind === 'error'
-                ? 'data-banner__btn--err'
-                : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+              feedbackClass('import'),
+            )}
             disabled={busy !== null}
             title={
               feedback?.action === 'import' && feedback.kind === 'error'
@@ -147,7 +140,7 @@ export function DataWarningBanner({ onExport, onImportFile }: Props) {
             onClick={() => inputRef.current?.click()}
           >
             {buttonLabel('import', 'Importar', 'Importando…')}
-          </button>
+          </Button>
           <input
             ref={inputRef}
             type="file"

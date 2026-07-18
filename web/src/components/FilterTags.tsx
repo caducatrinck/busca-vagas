@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import type { WordFilterKey } from '../lib/types'
+import { Button, TextInput } from '../ui'
 import './FilterTags.css'
 
 type Props = {
@@ -48,14 +49,16 @@ export function FilterTags({
         <p>{hint}</p>
       </div>
       <form className="filter-tags__form" onSubmit={onSubmit}>
-        <input
+        <TextInput
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Digite e Enter"
           aria-label={label}
         />
-        <button type="submit">+</button>
+        <Button type="submit" className="filter-tags__add" aria-label={`Adicionar em ${label}`}>
+          +
+        </Button>
       </form>
       <ul className="filter-tags__list">
         {words.map((word) => (

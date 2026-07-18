@@ -44,52 +44,51 @@
   overflow: visible;
 }
 
-.app-nav__icon-btn {
+.app-nav__icon-btn.ui-btn {
   width: 2.35rem;
   height: 2.35rem;
+  min-width: 2.35rem;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--panel-solid);
   color: var(--ink-soft);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, border-color 160ms ease,
-    box-shadow 160ms ease;
+  box-shadow: none;
 }
 
-.app-nav__icon-btn:hover {
+.app-nav__icon-btn.ui-btn:hover:not(:disabled) {
+  transform: none;
   background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
   color: var(--ink);
 }
 
-.app-nav__icon-btn--active {
+.app-nav__icon-btn--active.ui-btn,
+.app-nav__icon-btn--active.ui-btn:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
-  color: #f4fff9;
+  color: var(--accent-contrast);
 }
 
-.app-nav__settings--need {
-  background: color-mix(in srgb, var(--exclude-soft) 85%, var(--panel-solid));
-  border-color: var(--exclude);
-  color: var(--exclude);
+.app-nav__settings--need.ui-btn {
+  background: color-mix(in srgb, var(--danger-soft) 85%, var(--panel-solid));
+  border-color: var(--danger);
+  color: var(--danger);
   animation: settings-pulse-red 1.35s ease-in-out infinite;
 }
 
-.app-nav__settings--need.app-nav__icon-btn--active {
-  background: color-mix(in srgb, var(--exclude) 88%, #000);
-  border-color: var(--exclude);
+.app-nav__settings--need.app-nav__icon-btn--active.ui-btn {
+  background: color-mix(in srgb, var(--danger) 88%, #000);
+  border-color: var(--danger);
   color: #fff;
 }
 
 @keyframes settings-pulse-red {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--exclude) 28%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 28%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--exclude) 48%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 48%, transparent);
   }
 }
 

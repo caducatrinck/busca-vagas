@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatBadgeCount } from '../lib/notificationsModel'
 import type { JobStatus } from '../lib/types'
+import { Button } from '../ui'
 import './SearchPanel.css'
 import './JobsPanel.css'
 
@@ -86,8 +87,9 @@ export function JobsPanel({
       </div>
 
       <div className="jobs-clear">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           className="jobs-clear__btn"
           disabled={counts.applied <= 0 || clearing !== null}
           onClick={() => void handleClear('applied')}
@@ -95,9 +97,10 @@ export function JobsPanel({
           {clearing === 'applied'
             ? 'Limpando…'
             : `Limpar aplicadas (${counts.applied})`}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           className="jobs-clear__btn"
           disabled={counts.discarded <= 0 || clearing !== null}
           onClick={() => void handleClear('discarded')}
@@ -105,12 +108,12 @@ export function JobsPanel({
           {clearing === 'discarded'
             ? 'Limpando…'
             : `Limpar descartadas (${counts.discarded})`}
-        </button>
+        </Button>
       </div>
 
-      <button type="button" className="search-panel__refresh" onClick={onRefresh}>
+      <Button fullWidth variant="soft" onClick={onRefresh}>
         Recarregar vagas
-      </button>
+      </Button>
     </aside>
   )
 }

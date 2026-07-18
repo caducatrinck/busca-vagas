@@ -300,25 +300,13 @@
 }
 
 .monitor-rate-limit {
-  margin: 0.55rem 0 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  line-height: 1.35;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-snug);
 }
 
-.monitor-rate-limit.monitor-error {
-  color: var(--exclude);
-}
-
-/* Pausar: vermelho, ganha do azul do form */
-.search-panel__form > button.search-panel__refresh--pause,
-.search-panel__form button.search-panel__refresh--pause {
-  background: var(--exclude) !important;
-  color: #fff8f6 !important;
-}
-
-.search-panel__form > button.search-panel__refresh--pause:hover:not(:disabled),
-.search-panel__form button.search-panel__refresh--pause:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--exclude) 82%, #000) !important;
+.monitor-rate-limit.monitor-error,
+.ui-alert.monitor-rate-limit {
+  color: var(--danger);
 }

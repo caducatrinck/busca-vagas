@@ -113,114 +113,43 @@
 .settings-panel__form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 32rem;
+  gap: var(--space-7);
+  max-width: 36rem;
 }
 
 .settings-panel__form fieldset {
   margin: 0;
   padding: 0.9rem 1rem 1rem;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-4);
   background: var(--panel-solid);
 }
 
 .settings-panel__form legend {
   padding: 0 0.35rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   font-size: 0.88rem;
 }
 
-.settings-panel__form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
 .settings-panel__hint {
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
   opacity: 0.9;
-}
-
-.settings-panel__form input[type='text'],
-.settings-panel__form input[type='password'],
-.settings-panel__form input[type='number'] {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--line);
-  background: var(--panel-solid);
-  border-radius: 12px;
-  padding: 0.65rem 0.8rem;
-  color: var(--ink);
-  font: inherit;
-}
-
-.settings-panel__form input:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  border-color: var(--accent);
-}
-
-.settings-panel__form input:disabled {
-  opacity: 0.5;
-}
-
-.settings-panel__form > button {
-  align-self: flex-start;
-  border: 0;
-  border-radius: 12px;
-  padding: 0.85rem 1.15rem;
-  background: var(--accent);
-  color: #f4fff9;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease;
-}
-
-.settings-panel__form > button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: #0c553c;
-}
-
-.settings-panel__form > button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
 }
 
 .settings-panel__error {
   margin: 0;
-  color: var(--exclude);
+  color: var(--danger);
   font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.settings-panel__retry {
-  align-self: flex-start;
-  margin-top: 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.7rem 1rem;
-  background: var(--panel-solid);
-  color: var(--ink);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.settings-panel__retry:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  font-weight: var(--font-semibold);
 }
 
 .settings-panel__ok {
   margin: 0;
   color: var(--accent);
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
 }

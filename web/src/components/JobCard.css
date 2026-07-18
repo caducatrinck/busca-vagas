@@ -210,28 +210,26 @@
   color: var(--accent);
 }
 
-.job-card__action-btn {
+.job-card__action-btn.ui-btn {
+  padding: var(--space-2) 0.7rem;
+  font-size: var(--text-sm);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0.35rem 0.7rem;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  background: var(--panel-solid);
-  color: var(--ink-soft);
 }
 
-.job-card__action-btn--discard {
-  background: var(--exclude-soft);
-  border-color: color-mix(in srgb, var(--exclude) 28%, var(--line));
-  color: var(--exclude);
-}
-
-.job-card__action-btn--restore {
+.job-card__action-btn.ui-btn--soft {
   background: var(--accent-soft);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
   color: var(--accent);
+}
+
+.job-card__action-btn--discard.ui-btn {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
+  color: var(--danger);
+}
+
+.job-card__action-btn.ui-btn:hover:not(:disabled) {
+  transform: none;
 }
 
 .job-card__link {

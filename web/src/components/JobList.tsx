@@ -13,6 +13,7 @@ import { isRateLimitError } from '../lib/rateLimit'
 import { JobCard } from './JobCard'
 import { LanguageDropdown } from './LanguageDropdown'
 import { SearchProgressCard } from './SearchProgressCard'
+import { Button, TextInput } from '../ui'
 import './JobList.css'
 
 type Props = {
@@ -189,7 +190,7 @@ export function JobList({
         {showTopFilters ? (
           <div className="job-list__toolbar">
             <label className="job-list__search">
-              <input
+              <TextInput
                 type="search"
                 value={titleQuery}
                 onChange={(e) => setTitleQuery(e.target.value)}
@@ -199,7 +200,7 @@ export function JobList({
               />
             </label>
             <label className="job-list__search">
-              <input
+              <TextInput
                 type="search"
                 value={descriptionQuery}
                 onChange={(e) => setDescriptionQuery(e.target.value)}
@@ -217,8 +218,9 @@ export function JobList({
                 />
               </label>
             ) : null}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               className="job-list__sort"
               onClick={() => setNewestFirst((v) => !v)}
               aria-label={
@@ -233,10 +235,11 @@ export function JobList({
               }
             >
               {newestFirst ? '↓' : '↑'}
-            </button>
+            </Button>
             {onDiscardAll ? (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="sm"
                 className="job-list__discard-all"
                 disabled={discardCount === 0 || discarding || searching}
                 onClick={() => setConfirmDiscard(true)}
@@ -244,7 +247,7 @@ export function JobList({
                 {discarding
                   ? 'Descartando…'
                   : `Descartar todas${discardCount > 0 ? ` (${discardCount})` : ''}`}
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}
@@ -308,20 +311,15 @@ export function JobList({
               Monitor e vão para a aba Descartadas.
             </p>
             <div className="job-list__modal-actions">
-              <button
-                type="button"
-                className="job-list__modal-cancel"
+              <Button
+                variant="ghost"
                 onClick={() => setConfirmDiscard(false)}
               >
                 Cancelar
-              </button>
-              <button
-                type="button"
-                className="job-list__modal-confirm"
-                onClick={() => void confirmDiscardAll()}
-              >
+              </Button>
+              <Button variant="danger" onClick={() => void confirmDiscardAll()}>
                 Sim, descartar
-              </button>
+              </Button>
             </div>
           </div>
         </div>

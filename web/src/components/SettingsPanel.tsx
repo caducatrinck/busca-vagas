@@ -5,7 +5,7 @@ import {
   type PublicAppSettings,
   type SettingsPatch,
 } from '../lib/api'
-import { NumberInput } from './NumberInput'
+import { Alert, Button, Field, NumberInput, TextInput } from '../ui'
 import './SettingsPanel.css'
 
 const COOKIE_MASK = '********'
@@ -152,20 +152,14 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
           <p className="settings-panel__mark">Configurações</p>
           <h1>Não foi possível carregar</h1>
         </header>
-        <p className="settings-panel__error">
-          {error || 'API indisponível. Confira se o serviço está no ar.'}
-        </p>
+        <Alert tone="danger">{error || 'API indisponível. Confira se o serviço está no ar.'}</Alert>
         <p className="settings-panel__lead">
           Em desenvolvimento a API precisa estar em{' '}
           <code>http://127.0.0.1:8787</code>.
         </p>
-        <button
-          type="button"
-          className="settings-panel__retry"
-          onClick={() => setReloadKey((n) => n + 1)}
-        >
+        <Button variant="ghost" onClick={() => setReloadKey((n) => n + 1)}>
           Tentar de novo
-        </button>
+        </Button>
       </section>
     )
   }
@@ -186,9 +180,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       <aside className="settings-guide" aria-labelledby="settings-guide-title">
         <h2 id="settings-guide-title">Como pegar os cookies</h2>
         <ol>
-          <li>
-            Abra o LinkedIn no navegador e faça login na sua conta.
-          </li>
+          <li>Abra o LinkedIn no navegador e faça login na sua conta.</li>
           <li>
             Pressione <kbd>F12</kbd> (ou clique com o botão direito → Inspecionar)
             para abrir as DevTools.
@@ -205,8 +197,8 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
             <code>JSESSIONID</code> (sem as aspas).
           </li>
           <li>
-            Cole abaixo e salve. Cookies expiram — se a busca começar a
-            falhar com 401/403, atualize o <code>li_at</code>.
+            Cole abaixo e salve. Cookies expiram — se a busca começar a falhar
+            com 401/403, atualize o <code>li_at</code>.
           </li>
         </ol>
         <p className="settings-guide__note">
@@ -219,9 +211,8 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         <fieldset>
           <legend>LinkedIn</legend>
 
-          <label>
-            Cookie li_at
-            <input
+          <Field label="Cookie li_at">
+            <TextInput
               type="password"
               autoComplete="off"
               spellCheck={false}
@@ -232,11 +223,10 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
               }}
               onChange={(e) => onCookieChange('linkedinLiAt', e.target.value)}
             />
-          </label>
+          </Field>
 
-          <label>
-            Cookie JSESSIONID
-            <input
+          <Field label="Cookie JSESSIONID">
+            <TextInput
               type="password"
               autoComplete="off"
               spellCheck={false}
@@ -249,10 +239,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 onCookieChange('linkedinJsessionId', e.target.value)
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Máx. páginas por busca
+          <Field label="Máx. páginas por busca">
             <NumberInput
               min={1}
               max={5000}
@@ -262,14 +251,13 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 setForm({ ...form, linkedinMaxPages })
               }
             />
-          </label>
+          </Field>
         </fieldset>
 
         <fieldset>
           <legend>Rate limit</legend>
 
-          <label>
-            Intervalo mínimo entre buscas (segundos)
+          <Field label="Intervalo mínimo entre buscas (segundos)">
             <NumberInput
               min={0}
               max={600}
@@ -280,10 +268,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 setForm({ ...form, searchCooldownSec })
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Máx. buscas por hora
+          <Field label="Máx. buscas por hora">
             <NumberInput
               min={0}
               max={500}
@@ -293,10 +280,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 setForm({ ...form, maxSearchesPerHour })
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Máx. buscas por dia
+          <Field label="Máx. buscas por dia">
             <NumberInput
               min={0}
               max={2000}
@@ -306,10 +292,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 setForm({ ...form, maxSearchesPerDay })
               }
             />
-          </label>
+          </Field>
 
-          <label>
-            Concorrência de descrições
+          <Field label="Concorrência de descrições">
             <NumberInput
               min={1}
               max={20}
@@ -319,15 +304,15 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                 setForm({ ...form, jobDetailConcurrency })
               }
             />
-          </label>
+          </Field>
         </fieldset>
 
-        {error ? <p className="settings-panel__error">{error}</p> : null}
+        {error ? <Alert tone="danger">{error}</Alert> : null}
         {okMsg ? <p className="settings-panel__ok">{okMsg}</p> : null}
 
-        <button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? 'Salvando…' : 'Salvar configurações'}
-        </button>
+        </Button>
       </form>
     </section>
   )

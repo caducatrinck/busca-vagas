@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { cx } from '../cx'
+import '../TextInput/TextInput.css'
 
 type Props = {
   value: number
@@ -59,7 +61,7 @@ export function NumberInput({
       type="text"
       inputMode="numeric"
       pattern="[0-9]*"
-      className={className}
+      className={cx('ui-input', 'ui-number-input', className)}
       min={min}
       max={max}
       step={step}

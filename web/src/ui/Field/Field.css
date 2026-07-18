@@ -1,0 +1,33 @@
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--ink-soft);
+}
+
+.ui-field--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: var(--font-semibold);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.ui-field__label {
+  display: block;
+}
+
+.ui-field__hint {
+  font-size: var(--text-xs);
+  font-weight: var(--font-regular);
+  color: var(--ink-soft);
+  line-height: var(--leading-snug);
+}
+
+.ui-field .ui-input,
+.ui-field .ui-number-input {
+  font-weight: var(--font-regular);
+}

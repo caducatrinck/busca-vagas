@@ -7,6 +7,7 @@ import {
   parseContractTags,
   resolveWorkplaceType,
 } from '../shared/domain'
+import { Button } from '../ui'
 import './JobCard.css'
 
 type Props = {
@@ -111,21 +112,23 @@ export function JobCard({
             <span>Já apliquei</span>
           </label>
           {status === 'discarded' ? (
-            <button
-              type="button"
-              className="job-card__action-btn job-card__action-btn--restore"
+            <Button
+              size="sm"
+              variant="soft"
+              className="job-card__action-btn"
               onClick={() => onStatusChange?.(job, 'viewed')}
             >
               Restaurar
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
+              size="sm"
+              variant="danger"
               className="job-card__action-btn job-card__action-btn--discard"
               onClick={() => onStatusChange?.(job, 'discarded')}
             >
               Descartar
-            </button>
+            </Button>
           )}
         </div>
         <a

@@ -99,20 +99,8 @@
   margin: 0;
 }
 
-.job-list__search input {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+.job-list__search .ui-input {
   padding: 0.55rem 0.75rem;
-  background: var(--panel-solid);
-  color: var(--ink);
-}
-
-.job-list__search input:focus {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .job-list__language {
@@ -122,66 +110,33 @@
   margin: 0;
   flex: 0 0 auto;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: var(--font-bold);
   color: var(--ink-soft);
 }
 
-.job-list__sort {
+.job-list__sort.ui-btn {
   flex: 0 0 auto;
   box-sizing: border-box;
   align-self: stretch;
   aspect-ratio: 1;
-  height: auto;
-  width: auto;
-  border: 0;
-  border-radius: 0;
+  min-width: 2.4rem;
   padding: 0;
+  border: 0;
   background: transparent;
   color: var(--ink);
-  font: inherit;
   font-size: 1.05rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: none;
 }
 
-.job-list__sort:hover {
-  border-color: transparent;
-  color: var(--accent);
+.job-list__sort.ui-btn:hover:not(:disabled) {
+  transform: none;
   background: transparent;
-}
-
-.job-list__sort:focus {
-  outline: none;
-  border-color: transparent;
-  box-shadow: none;
   color: var(--accent);
 }
 
-.job-list__discard-all {
+.job-list__discard-all.ui-btn {
   flex: 0 0 auto;
-  border: 1px solid color-mix(in srgb, var(--exclude) 28%, var(--line));
-  border-radius: 12px;
-  padding: 0.55rem 0.85rem;
-  background: var(--exclude-soft);
-  color: var(--exclude);
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.job-list__discard-all:hover:not(:disabled) {
-  filter: brightness(0.97);
-}
-
-.job-list__discard-all:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  font-size: var(--text-sm);
 }
 
 .job-list--state-inline {
@@ -225,31 +180,9 @@
 .job-list__modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.55rem;
+  gap: var(--space-3);
   margin-top: 1.15rem;
   flex-wrap: wrap;
-}
-
-.job-list__modal-cancel,
-.job-list__modal-confirm {
-  border-radius: 12px;
-  padding: 0.55rem 0.9rem;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.job-list__modal-cancel {
-  border: 1px solid var(--line);
-  background: var(--panel-solid);
-  color: var(--ink-soft);
-}
-
-.job-list__modal-confirm {
-  border: 1px solid color-mix(in srgb, var(--exclude) 28%, var(--line));
-  background: var(--exclude-soft);
-  color: var(--exclude);
 }
 
 .job-list__grid {

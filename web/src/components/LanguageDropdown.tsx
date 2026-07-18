@@ -1,5 +1,5 @@
 import type { DescriptionLanguage } from '../lib/types'
-import { SelectDropdown } from './SelectDropdown'
+import { Select } from '../ui'
 
 const LANGUAGE_OPTIONS: Array<{ value: DescriptionLanguage; label: string }> =
   [
@@ -24,7 +24,7 @@ export function LanguageDropdown({
   'aria-label': ariaLabel = 'Filtrar por idioma',
 }: Props) {
   return (
-    <SelectDropdown
+    <Select
       value={value}
       options={LANGUAGE_OPTIONS}
       onChange={onChange}

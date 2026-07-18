@@ -1,6 +1,7 @@
 import type { AppTab, JobStatus, Monitor } from '../lib/types'
 import { formatBadgeCount } from '../lib/notificationsModel'
 import type { ThemeMode } from '../hooks/useTheme'
+import { Button, cx } from '../ui'
 import './Tabs.css'
 
 type Props = {
@@ -109,8 +110,9 @@ export function Tabs({
           <p className="app-nav__mark">Busca Vagas</p>
         </div>
         <div className="app-nav__actions">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             className="app-nav__icon-btn"
             aria-label={
               theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'
@@ -119,17 +121,23 @@ export function Tabs({
             onClick={onToggleTheme}
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-          </button>
-          <button
-            type="button"
-            className={`app-nav__icon-btn app-nav__settings${setupRequired ? ' app-nav__settings--need' : ''}${tab === 'settings' ? ' app-nav__icon-btn--active' : ''}`}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cx(
+              'app-nav__icon-btn',
+              'app-nav__settings',
+              setupRequired && 'app-nav__settings--need',
+              tab === 'settings' && 'app-nav__icon-btn--active',
+            )}
             aria-label="Configurações"
             aria-pressed={tab === 'settings'}
             title="Configurações"
             onClick={() => onChange('settings')}
           >
             <GearIcon />
-          </button>
+          </Button>
         </div>
       </div>
 

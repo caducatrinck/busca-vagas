@@ -4,6 +4,7 @@ import {
   formatEta,
   type SearchProgress,
 } from '../lib/types'
+import { Button } from '../ui'
 import './SearchProgressCard.css'
 
 type Props = {
@@ -182,13 +183,14 @@ export function SearchProgressCard({
           <span />
         )}
         {canCancel ? (
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="ghost"
             className="search-progress__cancel"
             onClick={onCancel}
           >
             Cancelar
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>
