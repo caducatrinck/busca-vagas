@@ -6,6 +6,9 @@ contextBridge.exposeInMainWorld('buscaVagasDesktop', {
     const n = Number(count)
     ipcRenderer.send('tray:setBadge', Number.isFinite(n) ? Math.max(0, n) : 0)
   },
+  linkedinLogin() {
+    return ipcRenderer.invoke('linkedin:login')
+  },
   updater: {
     getState() {
       return ipcRenderer.invoke('updater:getState')

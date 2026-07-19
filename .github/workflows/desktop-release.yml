@@ -103,6 +103,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Busca Vagas ${{ github.ref_name }}
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-test') || contains(github.ref_name, '-beta') }}
           files: |
             dist/BuscaVagas-*-win-x64-portable.exe
             dist/BuscaVagas-*-linux-x64.AppImage

@@ -26,6 +26,14 @@ declare global {
     buscaVagasDesktop?: {
       isDesktop: boolean
       setTrayBadge: (count: number) => void
+      linkedinLogin?: () => Promise<{
+        ok: boolean
+        cancelled?: boolean
+        timedOut?: boolean
+        linkedinLiAt?: string
+        linkedinJsessionId?: string
+        error?: string
+      }>
       updater?: {
         getState: () => Promise<DesktopUpdaterState>
         check: () => Promise<DesktopUpdaterState>

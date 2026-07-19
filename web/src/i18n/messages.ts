@@ -127,6 +127,14 @@ const pt = {
     'Cole o cookie li_at do LinkedIn para liberar buscas e o monitor.',
   'settings.howto':
     'No Chrome: F12 → Application → Cookies → selecione https://www.linkedin.com.',
+  'settings.loginButton': 'Entrar com LinkedIn',
+  'settings.loginWorking': 'Aguardando login…',
+  'settings.loginHint':
+    'Abre o LinkedIn neste app, captura li_at e JSESSIONID e salva automaticamente. Você ainda pode colar os cookies manualmente abaixo.',
+  'settings.loginSavedOk': 'Login LinkedIn salvo. Buscas liberadas.',
+  'settings.loginCancelled': 'Login cancelado.',
+  'settings.loginTimeout': 'Tempo esgotado no login LinkedIn. Tente de novo.',
+  'settings.loginFailed': 'Não foi possível capturar a sessão LinkedIn.',
   'settings.liAt': 'Cookie li_at',
   'settings.jsession': 'Cookie JSESSIONID',
   'settings.maxPages': 'Máx. páginas por busca',
@@ -540,6 +548,14 @@ const en: Record<MessageKey, string> = {
     'Paste the LinkedIn li_at cookie to unlock searches and the monitor.',
   'settings.howto':
     'In Chrome: F12 → Application → Cookies → select https://www.linkedin.com.',
+  'settings.loginButton': 'Sign in with LinkedIn',
+  'settings.loginWorking': 'Waiting for login…',
+  'settings.loginHint':
+    'Opens LinkedIn in this app, captures li_at and JSESSIONID, and saves them. You can still paste cookies manually below.',
+  'settings.loginSavedOk': 'LinkedIn login saved. Searches unlocked.',
+  'settings.loginCancelled': 'Login cancelled.',
+  'settings.loginTimeout': 'LinkedIn login timed out. Try again.',
+  'settings.loginFailed': 'Could not capture the LinkedIn session.',
   'settings.liAt': 'li_at cookie',
   'settings.jsession': 'JSESSIONID cookie',
   'settings.maxPages': 'Max pages per search',

@@ -15,6 +15,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { withTrayBadge } from './trayBadge.mjs'
 import { registerUpdater, scheduleUpdateCheck } from './updater.mjs'
+import { registerLinkedInLogin } from './linkedinLogin.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -393,6 +394,7 @@ if (!gotLock) {
     ensureWindowsNotificationIdentity()
     Menu.setApplicationMenu(null)
     registerUpdater(() => mainWindow)
+    registerLinkedInLogin(() => mainWindow)
     ipcMain.on('tray:setBadge', (_event, count) => {
       applyTrayBadge(count)
     })

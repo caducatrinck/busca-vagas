@@ -80,6 +80,10 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   const [resetCode, setResetCode] = useState('')
   const [resetting, setResetting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
+  const [linkedinLoggingIn, setLinkedinLoggingIn] = useState(false)
+  const canLinkedInLogin =
+    typeof window !== 'undefined' &&
+    typeof window.buscaVagasDesktop?.linkedinLogin === 'function'
 
   useEffect(() => {
     let cancelled = false
@@ -175,6 +179,54 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     setForm({ ...form, [field]: next })
   }
 
+  async function handleLinkedInLogin() {
+    const login = window.buscaVagasDesktop?.linkedinLogin
+    if (!login || !form || !current) return
+    setLinkedinLoggingIn(true)
+    setError(null)
+    setOkMsg(null)
+    try {
+      const result = await login()
+      if (result.cancelled) {
+        setOkMsg(t('settings.loginCancelled'))
+        return
+      }
+      if (result.timedOut) {
+        setError(t('settings.loginTimeout'))
+        return
+      }
+      if (!result.ok || !result.linkedinLiAt || !result.linkedinJsessionId) {
+        setError(
+          result.error
+            ? localizeVisibleError(result.error, t)
+            : t('settings.loginFailed'),
+        )
+        return
+      }
+
+      const patch: SettingsPatch = {
+        linkedinLiAt: stripCookieQuotes(result.linkedinLiAt),
+        linkedinJsessionId: stripCookieQuotes(result.linkedinJsessionId),
+        linkedinMaxPages: form.linkedinMaxPages,
+        searchCooldownMs: Math.max(0, Math.round(form.searchCooldownSec * 1000)),
+        maxSearchesPerHour: form.maxSearchesPerHour,
+        maxSearchesPerDay: form.maxSearchesPerDay,
+        jobDetailConcurrency: form.jobDetailConcurrency,
+      }
+      const next = await saveSettings(patch)
+      setCurrent(next)
+      setForm(formFromSettings(next))
+      setOkMsg(
+        next.ready ? t('settings.loginSavedOk') : t('settings.savedBlocked'),
+      )
+      onSaved?.(next)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.loginFailed'))
+    } finally {
+      setLinkedinLoggingIn(false)
+    }
+  }
+
   async function handleFactoryReset() {
     if (resetCode !== DELETE_ALL_CODE) {
       setResetError(t('settings.dangerMismatch'))
@@ -250,6 +302,24 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       <form className="settings-panel__form" onSubmit={handleSubmit}>
         <fieldset>
           <legend>{t('settings.legendLinkedIn')}</legend>
+
+          {canLinkedInLogin ? (
+            <div className="settings-panel__login">
+              <Button
+                type="button"
+                variant="primary"
+                disabled={linkedinLoggingIn || saving}
+                onClick={() => void handleLinkedInLogin()}
+              >
+                {linkedinLoggingIn
+                  ? t('settings.loginWorking')
+                  : t('settings.loginButton')}
+              </Button>
+              <p className="settings-panel__login-hint">
+                {t('settings.loginHint')}
+              </p>
+            </div>
+          ) : null}
 
           <Field label={t('settings.liAt')}>
             <TextInput
