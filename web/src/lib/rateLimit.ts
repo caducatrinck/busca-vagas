@@ -57,6 +57,19 @@ export function formatRateLimitSummary(
         ? t('rate.waitCooldown', { n: waitSec })
         : t('rate.waitCooldownShort')
     }
+    if (
+      limit.source === 'linkedin' ||
+      /err:linkedin_(429|999|pause)/i.test(limit.reason ?? '')
+    ) {
+      const n = Math.max(waitSec, 1)
+      if (/err:linkedin_999/i.test(limit.reason ?? '')) {
+        return t('rate.linkedin999', { n })
+      }
+      if (/err:linkedin_429/i.test(limit.reason ?? '')) {
+        return t('rate.linkedin429', { n })
+      }
+      return t('rate.linkedinPause', { n })
+    }
     if (limit.reason) {
       return localizeVisibleError(limit.reason, t)
     }

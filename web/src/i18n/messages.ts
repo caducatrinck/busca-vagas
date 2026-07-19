@@ -346,6 +346,8 @@ const pt = {
   'err.jsessionInvalid':
     'JSESSIONID inválido. Em Cookies do LinkedIn, copie o valor do cookie chamado JSESSIONID (começa com ajax:). Não use outros cookies.',
   'err.http': 'Erro HTTP {n}',
+  'err.httpGateway':
+    'LinkedIn falhou temporariamente (HTTP {n}). Tente de novo em instantes.',
   'err.invalidResponse': 'Resposta inválida',
   'err.streamEmpty': 'Resposta sem corpo (stream indisponível)',
   'err.searchNoResult': 'Busca encerrada sem resultado',
@@ -757,6 +759,8 @@ const en: Record<MessageKey, string> = {
   'err.jsessionInvalid':
     'Invalid JSESSIONID. In LinkedIn Cookies, copy the cookie named JSESSIONID (starts with ajax:). Do not use other cookies.',
   'err.http': 'HTTP error {n}',
+  'err.httpGateway':
+    'LinkedIn failed temporarily (HTTP {n}). Try again in a moment.',
   'err.invalidResponse': 'Invalid response',
   'err.streamEmpty': 'Empty response (stream unavailable)',
   'err.searchNoResult': 'Search ended with no result',

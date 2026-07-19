@@ -35,16 +35,3 @@ export function markLinkedInSessionOk(): void {
     httpStatus: null,
   }
 }
-
-export function markLinkedInSessionAuthFailure(
-  httpStatus: number | null,
-  detail?: string,
-): void {
-  status = {
-    ok: false,
-    code: 'expired',
-    message: detail?.trim() || 'err:session_expired',
-    checkedAt: new Date().toISOString(),
-    httpStatus,
-  }
-}

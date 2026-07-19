@@ -3,8 +3,8 @@ import type { StoreRepository } from '../../application/ports.js'
 import { setMonitorPolling, syncSchedulers } from '../../poller.js'
 import { searchRateLimiter } from '../../rateLimit.js'
 import {
-  getLinkedInSessionStatus,
   probeLinkedInSession,
+  syncLinkedInSessionFromCookies,
 } from '../../linkedinSession.js'
 import { setLinkedInSessionStatus } from '../../linkedinSessionState.js'
 import { clearLinkedInFetchGuards } from '../../infrastructure/linkedin/client.js'
@@ -20,7 +20,7 @@ export function registerSettingsRoutes(
 
   app.get('/rate-limit', async () => searchRateLimiter.snapshot())
 
-  app.get('/linkedin/session', async () => getLinkedInSessionStatus())
+  app.get('/linkedin/session', async () => syncLinkedInSessionFromCookies())
 
   app.post<{
     Body: { clearGuards?: boolean }

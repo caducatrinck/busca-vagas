@@ -139,13 +139,12 @@ export function useSearchRun(params: {
       await loadSaved()
       setRateLimit(await fetchRateLimit())
     } catch (err) {
-      if (ac.signal.aborted) {
-        await loadMonitorJobs(activeMonitorId)
-        await loadMonitors(activeMonitorId)
-        await loadSaved()
-      } else {
+      if (!ac.signal.aborted) {
         setError(err instanceof Error ? err.message : t('search.runError'))
       }
+      await loadMonitorJobs(activeMonitorId)
+      await loadMonitors(activeMonitorId)
+      await loadSaved()
       setRateLimit(await fetchRateLimit())
     } finally {
       if (searchAbortRef.current === ac) searchAbortRef.current = null

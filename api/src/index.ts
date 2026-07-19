@@ -140,6 +140,12 @@ export async function startServer(
 
   await restoreRateLimitFromDisk()
   await restoreSchedulersFromDisk()
+
+  // Sessão UI = cookies; sync antes de aceitar requests (sem Voyager).
+  const { syncLinkedInSessionFromCookies, probeLinkedInSession } =
+    await import('./linkedinSession.js')
+  await syncLinkedInSessionFromCookies()
+
   await app.listen({ port: PORT, host: HOST })
   log.info('api.started', {
     host: HOST,
@@ -151,15 +157,10 @@ export async function startServer(
       .length,
   })
 
-  // valida cookie em background (não bloqueia o boot)
-  void import('./linkedinSession.js').then(({ probeLinkedInSession }) =>
-    probeLinkedInSession({ force: true, clearGuards: false }),
-  )
+  void probeLinkedInSession({ force: true, clearGuards: false })
   setInterval(
     () => {
-      void import('./linkedinSession.js').then(({ probeLinkedInSession }) =>
-        probeLinkedInSession({ force: false }),
-      )
+      void probeLinkedInSession({ force: false })
     },
     30 * 60 * 1000,
   )

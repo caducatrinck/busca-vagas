@@ -1,4 +1,5 @@
 import { getScrapeDelayConfig, randomDelay } from '../../rateLimit.js'
+import { log } from '../../logger.js'
 import { getAppSettings } from '../../store.js'
 import type {
   Job,
@@ -265,7 +266,8 @@ export async function enrichDescriptions(
     })
     await onJobsBatch?.(results)
     if (i + detailConcurrency < needingFetch.length) {
-      await randomDelay(200, 450)
+      // 1–2s entre lotes: Voyager 403/429 sobe muito com rajada.
+      await randomDelay(1000, 2000)
       throwIfAborted(signal, working)
     }
   }
@@ -341,6 +343,19 @@ export async function searchLinkedInJobs(
         if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
           throw new SearchCancelledError(jobs)
         }
+        // 502/503/rede no meio da listagem: mantém o que já veio.
+        const msg = err instanceof Error ? err.message : String(err)
+        if (
+          jobs.length > 0 &&
+          (/err:http:(502|503)/.test(msg) || /err:network_linkedin/.test(msg))
+        ) {
+          log.warn('linkedin.listing.partial_stop', {
+            page: page + 1,
+            jobs: jobs.length,
+            error: msg,
+          })
+          break
+        }
         throw err
       }
       const batch = parseJobsFromSearchHtml(html)
@@ -399,7 +414,7 @@ export async function searchLinkedInJobs(
       }
 
       if (page < maxPages - 1) {
-        await randomDelay(500, 1100)
+        await randomDelay(1000, 2000)
         throwIfAborted(signal, jobs)
       }
     }

@@ -67,11 +67,17 @@ function matchErrorCode(text: string, t: TFn): string | null {
       case 'local_cap_day':
         return t('rate.localDay', { n: Number(param) || 0 })
       case 'linkedin_429':
-        return t('rate.linkedin429', { n: Number(param) || 0 })
+        return t('rate.linkedin429', {
+          n: Math.max(Number(param) || 0, 60),
+        })
       case 'linkedin_999':
-        return t('rate.linkedin999', { n: Number(param) || 0 })
+        return t('rate.linkedin999', {
+          n: Math.max(Number(param) || 0, 60),
+        })
       case 'linkedin_pause':
-        return t('rate.linkedinPause', { n: Number(param) || 0 })
+        return t('rate.linkedinPause', {
+          n: Math.max(Number(param) || 0, 60),
+        })
       case 'rate_exceeded':
         return t('rate.exceeded')
       case 'network_linkedin':
@@ -81,6 +87,9 @@ function matchErrorCode(text: string, t: TFn): string | null {
       case 'jsession_invalid':
         return t('err.jsessionInvalid')
       case 'http':
+        if (param === '502' || param === '503') {
+          return t('err.httpGateway', { n: param })
+        }
         return t('err.http', { n: param || '?' })
       case 'invalid_response':
         return t('err.invalidResponse')
@@ -127,7 +136,7 @@ function matchLegacyError(text: string, t: TFn): string | null {
   const li429 = text.match(/HTTP 429.*?(?:~|Aguarde\s*|Pausando\s*~?)(\d+)/i)
   if (/HTTP 429|rate limit/i.test(text) && /LinkedIn/i.test(text)) {
     const n = li429?.[1] ? Number(li429[1]) : 0
-    return t('rate.linkedin429', { n })
+    return t('rate.linkedin429', { n: Math.max(n, 60) })
   }
   if (/HTTP 999|anti-bot/i.test(text) && /LinkedIn/i.test(text)) {
     const n = text.match(/~(\d+)/)?.[1]

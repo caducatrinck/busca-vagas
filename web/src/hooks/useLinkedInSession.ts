@@ -43,8 +43,8 @@ export function useLinkedInSession(enabled: boolean) {
       setSession(null)
       return
     }
-    // Mount: probe sem limpar guards (respeita cooldown do Voyager).
-    void refresh({ force: true, clearGuards: false })
+    // Só lê cache — não martela Voyager no mount (isso “derrubava” a sessão).
+    void refresh({ force: false })
     const id = window.setInterval(() => {
       void refresh({ force: false })
     }, POLL_MS)
@@ -55,9 +55,7 @@ export function useLinkedInSession(enabled: boolean) {
     enabled &&
     session != null &&
     !session.ok &&
-    (session.code === 'expired' ||
-      session.code === 'incomplete' ||
-      session.code === 'missing')
+    (session.code === 'incomplete' || session.code === 'missing')
 
   return {
     session,

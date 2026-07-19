@@ -220,6 +220,16 @@
   color: var(--exclude);
 }
 
+.job-list__inline-error {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--exclude) 12%, transparent);
+  color: var(--exclude);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
 .job-list__pulse {
   width: 42px;
   height: 42px;

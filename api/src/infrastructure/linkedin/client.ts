@@ -1,7 +1,6 @@
-import { randomDelay } from '../../rateLimit.js'
+import { randomDelay, DEFAULT_LINKEDIN_429_MS, DEFAULT_LINKEDIN_999_MS } from '../../rateLimit.js'
 import { log } from '../../logger.js'
 import {
-  markLinkedInSessionAuthFailure,
   markLinkedInSessionOk,
 } from '../../linkedinSessionState.js'
 import { getAppSettings } from '../../store.js'
@@ -14,7 +13,10 @@ export const USER_AGENT =
 
 export const FETCH_TIMEOUT_MS = 25_000
 
-/** Após 401/403/redirect no Voyager, não martela li_at (desloga o browser). */
+/**
+ * Após redirect/401 no Voyager, pausa Voyager (não martela li_at).
+ * Cooldown curto: 302/anti-bot é comum e não deve “derrubar” o LinkedIn por 15 min.
+ */
 let voyagerAuthBlockedUntil = 0
 /**
  * Se guest+cookie devolve redirect várias vezes, pausa cookie na listagem
@@ -23,11 +25,14 @@ let voyagerAuthBlockedUntil = 0
 let guestCookieBlockedUntil = 0
 let guestCookieRedirectStreak = 0
 
+const VOYAGER_SOFT_BLOCK_MS = 3 * 60 * 1000
+const VOYAGER_AUTH_BLOCK_MS = 5 * 60 * 1000
+
 export function isVoyagerAuthBlocked(): boolean {
   return Date.now() < voyagerAuthBlockedUntil
 }
 
-function blockVoyagerAuth(ms = 15 * 60 * 1000): void {
+function blockVoyagerAuth(ms = VOYAGER_SOFT_BLOCK_MS): void {
   voyagerAuthBlockedUntil = Math.max(voyagerAuthBlockedUntil, Date.now() + ms)
 }
 
@@ -157,6 +162,16 @@ export function parseRetryAfterMs(res: Response): number | undefined {
   return undefined
 }
 
+/** Retry-After do LinkedIn ou default (nunca 0 — senão a UI mostra “Pausando ~0s”). */
+export function resolveLinkedInThrottleMs(
+  res: Response,
+  fallbackMs: number,
+): number {
+  const parsed = parseRetryAfterMs(res)
+  if (parsed != null && parsed > 0) return Math.max(parsed, 5_000)
+  return Math.max(fallbackMs, 5_000)
+}
+
 export function linkedInRateHeaders(res: Response): string {
   const interesting = [
     'retry-after',
@@ -178,7 +193,16 @@ export function throwLinkedInHttpError(
   options: { markSessionAuthFailure?: boolean } = {},
 ): never {
   const markSession = options.markSessionAuthFailure === true
-  const retryAfterMs = parseRetryAfterMs(res)
+  let retryAfterMs: number | undefined
+  if (res.status === 429) {
+    retryAfterMs = resolveLinkedInThrottleMs(res, DEFAULT_LINKEDIN_429_MS)
+  } else if (res.status === 999) {
+    retryAfterMs = resolveLinkedInThrottleMs(res, DEFAULT_LINKEDIN_999_MS)
+  } else {
+    const parsed = parseRetryAfterMs(res)
+    retryAfterMs =
+      parsed != null && parsed > 0 ? parsed : undefined
+  }
   const waitSec = retryAfterMs ? Math.ceil(retryAfterMs / 1000) : 0
   let message: string
   if (res.status === 429) {
@@ -186,11 +210,10 @@ export function throwLinkedInHttpError(
   } else if (res.status === 401 || res.status === 403) {
     message = 'err:session_expired'
     if (markSession) {
-      if (!isVoyagerAuthBlocked()) {
-        markLinkedInSessionAuthFailure(res.status, 'err:session_expired')
-        log.warn('linkedin.session.auth_http', { status: res.status })
-      }
-      blockVoyagerAuth()
+      // Não marca banner de sessão: Voyager 401/403 ≠ cookie morto (anti-bot).
+      // Só pausa Voyager para não martelar li_at.
+      log.warn('linkedin.voyager.auth_pause', { status: res.status })
+      blockVoyagerAuth(VOYAGER_AUTH_BLOCK_MS)
     }
   } else if (res.status === 999) {
     message = `err:linkedin_999:${waitSec}`
@@ -228,6 +251,10 @@ async function fetchGuestHtml(
   })
 }
 
+function isTransientLinkedInStatus(status: number): boolean {
+  return status === 429 || status === 502 || status === 503
+}
+
 /**
  * Listagem guest: tenta cookie sem follow; se redirect/401/403 → mesma página sem cookie.
  */
@@ -256,12 +283,19 @@ export async function linkedInFetch(
         } else if (authed.ok) {
           noteGuestCookieOk()
           return authed.text()
-        } else if (authed.status === 429 && attempt < maxAttempts) {
-          const wait = parseRetryAfterMs(authed) ?? 1500 * attempt
+        } else if (
+          isTransientLinkedInStatus(authed.status) &&
+          attempt < maxAttempts
+        ) {
+          const wait =
+            authed.status === 429
+              ? resolveLinkedInThrottleMs(authed, 1500 * attempt)
+              : 1500 * attempt
           console.warn(
-            `[linkedin] HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
+            `[linkedin] HTTP ${authed.status} · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
           )
-          log.warn('linkedin.http.429', {
+          log.warn('linkedin.http.transient', {
+            status: authed.status,
             attempt,
             maxAttempts,
             waitMs: wait,
@@ -282,12 +316,16 @@ export async function linkedInFetch(
       const res = await fetchGuestHtml(url, undefined, signal)
 
       if (!res.ok) {
-        if (res.status === 429 && attempt < maxAttempts) {
-          const wait = parseRetryAfterMs(res) ?? 1500 * attempt
+        if (isTransientLinkedInStatus(res.status) && attempt < maxAttempts) {
+          const wait =
+            res.status === 429
+              ? resolveLinkedInThrottleMs(res, 1500 * attempt)
+              : 1500 * attempt
           console.warn(
-            `[linkedin] HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
+            `[linkedin] HTTP ${res.status} · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
           )
-          log.warn('linkedin.http.429', {
+          log.warn('linkedin.http.transient', {
+            status: res.status,
             attempt,
             maxAttempts,
             waitMs: wait,
@@ -340,13 +378,17 @@ export async function linkedInFetch(
 
 /**
  * Voyager autenticado. Nunca segue redirect (login/logout com cookie desloga o browser).
- * Na 1ª falha de auth, bloqueia Voyager por um tempo e o enrich cai no guest.
+ * Na falha soft (302), pausa Voyager por pouco tempo e o enrich cai no guest.
+ * `probe: true` = check de sessão: não arma circuit breaker nem marca expired.
  */
 export async function linkedInVoyagerFetch(
   path: string,
   signal?: AbortSignal,
+  options?: { probe?: boolean },
 ): Promise<unknown> {
-  if (isVoyagerAuthBlocked()) {
+  const probe = options?.probe === true
+
+  if (!probe && isVoyagerAuthBlocked()) {
     const err = new Error('err:voyager_blocked')
     ;(err as Error & { linkedInStatus?: number }).linkedInStatus = 302
     throw err
@@ -364,7 +406,7 @@ export async function linkedInVoyagerFetch(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     if (signal?.aborted) throw new SearchCancelledError([])
-    if (isVoyagerAuthBlocked()) {
+    if (!probe && isVoyagerAuthBlocked()) {
       const err = new Error('err:voyager_blocked')
       ;(err as Error & { linkedInStatus?: number }).linkedInStatus = 302
       throw err
@@ -393,9 +435,10 @@ export async function linkedInVoyagerFetch(
         log.warn('linkedin.voyager.redirect_blocked', {
           status: res.status,
           location: res.headers.get('location'),
+          probe,
         })
-        // Redirect ≠ cookie inválido: não marcar sessão como expirada (evita falso positivo).
-        blockVoyagerAuth()
+        // Redirect ≠ cookie inválido. Probe nunca arma o breaker.
+        if (!probe) blockVoyagerAuth(VOYAGER_SOFT_BLOCK_MS)
         const err = new Error('err:voyager_redirect')
         ;(err as Error & { linkedInStatus?: number }).linkedInStatus = res.status
         throw err
@@ -403,7 +446,7 @@ export async function linkedInVoyagerFetch(
 
       if (!res.ok) {
         if (res.status === 429 && attempt < maxAttempts) {
-          const wait = parseRetryAfterMs(res) ?? 1500 * attempt
+          const wait = resolveLinkedInThrottleMs(res, 1500 * attempt)
           console.warn(
             `[linkedin] Voyager HTTP 429 · tentativa ${attempt}/${maxAttempts} · aguardando ${Math.ceil(wait / 1000)}s`,
           )
@@ -415,7 +458,7 @@ export async function linkedInVoyagerFetch(
           await randomDelay(wait, wait + 500)
           continue
         }
-        throwLinkedInHttpError(res, { markSessionAuthFailure: true })
+        throwLinkedInHttpError(res, { markSessionAuthFailure: !probe })
       }
 
       voyagerAuthBlockedUntil = 0
@@ -451,7 +494,7 @@ export async function linkedInVoyagerFetch(
       }
 
       if (redirectLoopCause(err)) {
-        blockVoyagerAuth()
+        if (!probe) blockVoyagerAuth(VOYAGER_SOFT_BLOCK_MS)
         throw new Error(formatNetworkError(err))
       }
 

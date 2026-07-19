@@ -125,7 +125,7 @@ export function JobList({
     }
   }
 
-  if (error && !loading && !searching) {
+  if (error && !loading && !searching && safeJobs.length === 0 && totalCount === 0) {
     const errorTitle = isRateLimitError(error)
       ? t('list.blocked')
       : t('list.loadFailed')
@@ -190,6 +190,12 @@ export function JobList({
           fetchDescriptions={fetchDescriptions}
           onCancel={onCancelSearch}
         />
+      ) : null}
+
+      {error && !searching ? (
+        <p className="job-list__inline-error" role="alert">
+          {localizeVisibleError(error, t)}
+        </p>
       ) : null}
 
       <header className="job-list__header">

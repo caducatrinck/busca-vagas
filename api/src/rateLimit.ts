@@ -37,8 +37,9 @@ type SearchEvent = {
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
-const DEFAULT_LINKEDIN_429_MS = 15 * 60_000
-const DEFAULT_LINKEDIN_999_MS = 30 * 60_000
+/** Sem Retry-After no 429, pausa padrão (LinkedIn costuma omitir o header). */
+export const DEFAULT_LINKEDIN_429_MS = 15 * 60_000
+export const DEFAULT_LINKEDIN_999_MS = 30 * 60_000
 
 export function getRateLimitConfig(): RateLimitConfig {
   return {
@@ -216,9 +217,20 @@ export class SearchRateLimiter {
       source: 'linkedin' | 'cooldown' | 'local-cap'
     }> = []
     if (linkedInUntil) {
+      const waitSec = Math.max(1, Math.ceil((linkedInUntil - now) / 1000))
+      const base =
+        this.blockReason?.replace(/:\d+$/, '') ||
+        (this.lastLinkedInStatus === 999
+          ? 'err:linkedin_999'
+          : this.lastLinkedInStatus === 429
+            ? 'err:linkedin_429'
+            : 'err:linkedin_pause')
+      const reason = /err:linkedin_(429|999|pause)/.test(base)
+        ? `${base}:${waitSec}`
+        : this.blockReason || `err:linkedin_pause:${waitSec}`
       candidates.push({
         until: linkedInUntil,
-        reason: this.blockReason || 'err:linkedin_pause:0',
+        reason,
         source: 'linkedin',
       })
     }
