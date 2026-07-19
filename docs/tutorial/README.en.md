@@ -28,11 +28,26 @@ The screenshot below is the everyday outcome that matters:
    - Linux: `BuscaVagas-*-linux-x64.AppImage`
 3. Open the file (on Linux, allow execution if the OS asks)
 
-## 2. Configure
+## 2. Connect LinkedIn
 
-On first launch, open **Settings** and follow the in-app guide (LinkedIn `li_at` cookie).
+On first launch the app asks you to connect LinkedIn. Pick one option (data stays on this PC only):
 
-![Settings](./screenshots/01-configuracao.png)
+1. **Sign in with LinkedIn** — opens LinkedIn in the app; you sign in (email, Google, etc.) and cookies are captured
+2. **Configure manually** — paste `li_at` and `JSESSIONID` from the browser
+
+![Choose how to connect](./screenshots/01-conectar-opcoes.png)
+
+### Option A — Sign in in the app
+
+Under **Sign in with LinkedIn**, use the button to open the login window. After you sign in, login windows should close and you return to **Settings** with the session saved.
+
+### Option B — Manual
+
+![Configure manually](./screenshots/01b-opcao-manual.png)
+
+Follow the in-app guide (F12 → Application → Cookies) and paste `li_at` and `JSESSIONID`.
+
+![Cookie fields](./screenshots/01-configuracao.png)
 
 ![Saved](./screenshots/02-configuracao-salva.png)
 

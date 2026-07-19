@@ -208,15 +208,22 @@
   text-align: left;
   padding: 0.9rem 1rem;
   border-radius: 12px;
-  border: 1px solid var(--line);
+  border: 2px solid var(--accent);
   background: var(--panel-solid);
   color: inherit;
   cursor: pointer;
   font: inherit;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .settings-panel__option:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-color: color-mix(in srgb, var(--accent) 82%, #000);
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel-solid));
+}
+
+.settings-panel__option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .settings-panel__option-title {

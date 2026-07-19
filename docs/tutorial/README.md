@@ -28,11 +28,26 @@ O print abaixo é o resultado que importa no dia a dia:
    - Linux: `BuscaVagas-*-linux-x64.AppImage`
 3. Abra o arquivo (no Linux, permita execução se o sistema pedir)
 
-## 2. Configurar
+## 2. Configurar o LinkedIn
 
-Na primeira abertura, use **Configurações** e siga o que o próprio app mostrar (cookie `li_at` do LinkedIn).
+Na primeira abertura o app pede para conectar o LinkedIn. Escolha uma opção (os dados ficam só neste PC):
 
-![Configuração](./screenshots/01-configuracao.png)
+1. **Logar com LinkedIn** — abre o LinkedIn no app; você entra (e-mail, Google, etc.) e os cookies são capturados
+2. **Configurar manualmente** — cola `li_at` e `JSESSIONID` do navegador
+
+![Escolher como conectar](./screenshots/01-conectar-opcoes.png)
+
+### Opção A — Logar no app
+
+Em **Logar com LinkedIn**, use o botão para abrir a janela de login. Depois de entrar, as janelas de login devem fechar sozinhas e você volta para **Configurações** com a sessão salva.
+
+### Opção B — Manual
+
+![Configurar manualmente](./screenshots/01b-opcao-manual.png)
+
+Siga o guia no app (F12 → Application → Cookies) e cole `li_at` e `JSESSIONID`.
+
+![Campos de cookie](./screenshots/01-configuracao.png)
 
 ![Salvo](./screenshots/02-configuracao-salva.png)
 

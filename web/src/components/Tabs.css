@@ -76,25 +76,25 @@
 }
 
 .app-nav__settings--need.ui-btn {
-  background: color-mix(in srgb, var(--danger-soft) 85%, var(--panel-solid));
-  border-color: var(--danger);
-  color: var(--danger);
-  animation: settings-pulse-red 1.35s ease-in-out infinite;
+  background: color-mix(in srgb, var(--accent-soft) 85%, var(--panel-solid));
+  border-color: var(--accent);
+  color: var(--accent);
+  animation: settings-pulse-accent 1.35s ease-in-out infinite;
 }
 
 .app-nav__settings--need.app-nav__icon-btn--active.ui-btn {
-  background: color-mix(in srgb, var(--danger) 88%, #000);
-  border-color: var(--danger);
+  background: color-mix(in srgb, var(--accent) 88%, #000);
+  border-color: var(--accent);
   color: #fff;
 }
 
-@keyframes settings-pulse-red {
+@keyframes settings-pulse-accent {
   0%,
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 28%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 48%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 48%, transparent);
   }
 }
 

@@ -97,11 +97,31 @@ jobs:
       - name: List artifacts
         run: ls -lah dist
 
+      - name: Build release notes body
+        id: notes
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          WIN="BuscaVagas-${VER}-win-x64-portable.exe"
+          LIN="BuscaVagas-${VER}-linux-x64.AppImage"
+          REPO="${{ github.repository }}"
+          TAG="${{ github.ref_name }}"
+          {
+            echo "## Download"
+            echo ""
+            echo "- **Windows:** [${WIN}](https://github.com/${REPO}/releases/download/${TAG}/${WIN})"
+            echo "- **Linux:** [${LIN}](https://github.com/${REPO}/releases/download/${TAG}/${LIN})"
+            echo ""
+            echo "> Os arquivos também estão em **Assets** (a interface do GitHub pode recolher essa seção)."
+          } > release-body.md
+          cat release-body.md
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Busca Vagas ${{ github.ref_name }}
+          draft: false
+          body_path: release-body.md
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-test') || contains(github.ref_name, '-beta') }}
           files: |
