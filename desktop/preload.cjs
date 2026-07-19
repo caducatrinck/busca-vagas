@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('buscaVagasDesktop', {
   linkedinLogin() {
     return ipcRenderer.invoke('linkedin:login')
   },
+  linkedinLogout() {
+    return ipcRenderer.invoke('linkedin:logout')
+  },
   updater: {
     getState() {
       return ipcRenderer.invoke('updater:getState')

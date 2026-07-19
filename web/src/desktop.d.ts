@@ -34,6 +34,7 @@ declare global {
         linkedinJsessionId?: string
         error?: string
       }>
+      linkedinLogout?: () => Promise<{ ok: boolean; error?: string }>
       updater?: {
         getState: () => Promise<DesktopUpdaterState>
         check: () => Promise<DesktopUpdaterState>

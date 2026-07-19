@@ -137,6 +137,25 @@ const pt = {
   'settings.loginFailed': 'Não foi possível capturar a sessão LinkedIn.',
   'settings.privacyNote':
     'Este app roda só no seu computador. O código é aberto e auditável — não temos acesso aos seus dados pessoais, cookies nem senha do LinkedIn.',
+  'settings.chooseTitle': 'Como conectar o LinkedIn',
+  'settings.chooseLead':
+    'Escolha uma opção. Em ambos os casos os dados ficam só neste PC.',
+  'settings.chooseLogin': 'Logar com LinkedIn',
+  'settings.chooseLoginBody':
+    'Abre o LinkedIn neste app. Você entra na sua conta (e-mail, Google, etc.) e os cookies são capturados automaticamente.',
+  'settings.chooseManual': 'Configurar manualmente',
+  'settings.chooseManualBody':
+    'Copia li_at e JSESSIONID do navegador e cola aqui — útil se preferir não logar pela janela do app.',
+  'settings.chooseBack': 'Voltar às opções',
+  'settings.chooseSwitchManual': 'Prefiro configurar manualmente',
+  'settings.loginDesktopOnly':
+    'Login in-app só no app desktop (Electron). Aqui use a configuração manual.',
+  'settings.connected': 'LinkedIn conectado neste computador.',
+  'settings.loginAgain': 'Entrar de novo no LinkedIn',
+  'settings.logoutButton': 'Deslogar do LinkedIn',
+  'settings.logoutWorking': 'Deslogando…',
+  'settings.logoutOk': 'Sessão LinkedIn removida deste app.',
+  'settings.logoutFailed': 'Não foi possível deslogar.',
   'settings.liAt': 'Cookie li_at',
   'settings.jsession': 'Cookie JSESSIONID',
   'settings.maxPages': 'Máx. páginas por busca',
@@ -560,6 +579,25 @@ const en: Record<MessageKey, string> = {
   'settings.loginFailed': 'Could not capture the LinkedIn session.',
   'settings.privacyNote':
     'This app runs only on your computer. The code is open and auditable — we have no access to your personal data, cookies, or LinkedIn password.',
+  'settings.chooseTitle': 'How to connect LinkedIn',
+  'settings.chooseLead':
+    'Pick an option. Either way, data stays only on this PC.',
+  'settings.chooseLogin': 'Sign in with LinkedIn',
+  'settings.chooseLoginBody':
+    'Opens LinkedIn in this app. You sign in (email, Google, etc.) and cookies are captured automatically.',
+  'settings.chooseManual': 'Configure manually',
+  'settings.chooseManualBody':
+    'Copy li_at and JSESSIONID from the browser and paste them here — useful if you prefer not to sign in via the app window.',
+  'settings.chooseBack': 'Back to options',
+  'settings.chooseSwitchManual': 'I prefer manual setup',
+  'settings.loginDesktopOnly':
+    'In-app login is only available in the desktop app (Electron). Use manual setup here.',
+  'settings.connected': 'LinkedIn is connected on this computer.',
+  'settings.loginAgain': 'Sign in to LinkedIn again',
+  'settings.logoutButton': 'Sign out of LinkedIn',
+  'settings.logoutWorking': 'Signing out…',
+  'settings.logoutOk': 'LinkedIn session removed from this app.',
+  'settings.logoutFailed': 'Could not sign out.',
   'settings.liAt': 'li_at cookie',
   'settings.jsession': 'JSESSIONID cookie',
   'settings.maxPages': 'Max pages per search',

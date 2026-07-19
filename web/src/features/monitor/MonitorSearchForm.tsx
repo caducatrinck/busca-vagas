@@ -47,7 +47,14 @@ export function MonitorSearchForm({
   )
 
   return (
-    <div className="search-panel__form">
+    <form
+      className="search-panel__form"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (pauseMode) onPausePooling()
+        else if (!searching && draft.query.trim() && !searchBlocked) onRunNow()
+      }}
+    >
       <Field label={t('search.query')}>
         <TextInput
           value={draft.query}
@@ -99,6 +106,7 @@ export function MonitorSearchForm({
 
       <Button
         fullWidth
+        type="submit"
         variant={pauseMode ? 'danger' : 'primary'}
         disabled={
           searching || (!pooling && (!draft.query.trim() || searchBlocked))
@@ -112,10 +120,6 @@ export function MonitorSearchForm({
                 ? rateLimitMsg
                 : t('search.titleRun')
         }
-        onClick={() => {
-          if (pauseMode) onPausePooling()
-          else onRunNow()
-        }}
       >
         {searching
           ? t('search.searching')
@@ -129,6 +133,6 @@ export function MonitorSearchForm({
           {rateLimitMsg}
         </Alert>
       ) : null}
-    </div>
+    </form>
   )
 }

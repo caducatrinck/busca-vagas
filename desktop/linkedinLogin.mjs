@@ -1,9 +1,12 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, ipcMain, session } from 'electron'
 
 const LOGIN_URL = 'https://www.linkedin.com/login'
 const PARTITION = 'persist:linkedin-login'
-const POLL_MS = 1_200
+const POLL_MS = 1_000
 const TIMEOUT_MS = 10 * 60_000
+
+const AUTH_HOST_RE =
+  /(^|\.)linkedin\.com$|(^|\.)google\.com$|(^|\.)googleusercontent\.com$|(^|\.)gstatic\.com$/i
 
 /**
  * @param {string | undefined} value
@@ -25,10 +28,22 @@ function stripCookieQuotes(value) {
 }
 
 /**
- * @param {import('electron').Session} session
+ * @param {string} url
  */
-async function readLinkedInCookies(session) {
-  const cookies = await session.cookies.get({ url: 'https://www.linkedin.com' })
+function isAuthRelatedUrl(url) {
+  try {
+    const host = new URL(url).hostname
+    return AUTH_HOST_RE.test(host)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * @param {import('electron').Session} ses
+ */
+async function readLinkedInCookies(ses) {
+  const cookies = await ses.cookies.get({ url: 'https://www.linkedin.com' })
   const byName = new Map(cookies.map((c) => [c.name, c.value]))
   const liAt = stripCookieQuotes(byName.get('li_at'))
   const jsession = stripCookieQuotes(byName.get('JSESSIONID'))
@@ -37,28 +52,38 @@ async function readLinkedInCookies(session) {
 }
 
 /**
- * Abre janela de login do LinkedIn e devolve li_at + JSESSIONID.
  * @param {() => BrowserWindow | null} getMainWindow
  */
 export function registerLinkedInLogin(getMainWindow) {
   ipcMain.removeHandler('linkedin:login')
+  ipcMain.removeHandler('linkedin:logout')
   ipcMain.handle('linkedin:login', async () => openLinkedInLogin(getMainWindow))
+  ipcMain.handle('linkedin:logout', async () => clearLinkedInLoginSession())
+}
+
+async function clearLinkedInLoginSession() {
+  try {
+    const ses = session.fromPartition(PARTITION)
+    await ses.clearStorageData()
+    return { ok: true }
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    }
+  }
 }
 
 /**
  * @param {() => BrowserWindow | null} getMainWindow
- * @returns {Promise<{
- *   ok: boolean
- *   cancelled?: boolean
- *   timedOut?: boolean
- *   linkedinLiAt?: string
- *   linkedinJsessionId?: string
- *   error?: string
- * }>}
  */
 function openLinkedInLogin(getMainWindow) {
   return new Promise((resolve) => {
     const parent = getMainWindow?.() ?? undefined
+    const ses = session.fromPartition(PARTITION)
+    /** @type {Set<BrowserWindow>} */
+    const windows = new Set()
+
     /** @type {BrowserWindow | null} */
     let win = new BrowserWindow({
       width: 560,
@@ -67,16 +92,16 @@ function openLinkedInLogin(getMainWindow) {
       minHeight: 560,
       title: 'LinkedIn',
       autoHideMenuBar: true,
-      ...(parent && !parent.isDestroyed()
-        ? { parent, modal: false }
-        : {}),
+      ...(parent && !parent.isDestroyed() ? { parent, modal: false } : {}),
       webPreferences: {
+        session: ses,
         partition: PARTITION,
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: true,
       },
     })
+    windows.add(win)
 
     let settled = false
     /** @type {ReturnType<typeof setInterval> | null} */
@@ -84,11 +109,22 @@ function openLinkedInLogin(getMainWindow) {
     /** @type {ReturnType<typeof setTimeout> | null} */
     let timeout = null
 
-    const cleanup = () => {
+    const cleanupTimers = () => {
       if (timer) clearInterval(timer)
       timer = null
       if (timeout) clearTimeout(timeout)
       timeout = null
+    }
+
+    const closeAllWindows = () => {
+      for (const w of [...windows]) {
+        windows.delete(w)
+        if (!w.isDestroyed()) {
+          w.removeAllListeners('closed')
+          w.close()
+        }
+      }
+      win = null
     }
 
     /**
@@ -104,20 +140,15 @@ function openLinkedInLogin(getMainWindow) {
     const finish = (result) => {
       if (settled) return
       settled = true
-      cleanup()
-      const target = win
-      win = null
-      if (target && !target.isDestroyed()) {
-        target.removeAllListeners('closed')
-        target.close()
-      }
+      cleanupTimers()
+      closeAllWindows()
       resolve(result)
     }
 
     const tryCapture = async () => {
-      if (settled || !win || win.isDestroyed()) return
+      if (settled) return
       try {
-        const cookies = await readLinkedInCookies(win.webContents.session)
+        const cookies = await readLinkedInCookies(ses)
         if (!cookies) return
         finish({ ok: true, ...cookies })
       } catch (err) {
@@ -125,19 +156,72 @@ function openLinkedInLogin(getMainWindow) {
       }
     }
 
-    win.on('closed', () => {
-      win = null
-      finish({ ok: false, cancelled: true })
-    })
+    /**
+     * Popups do Google/LinkedIn (Sign in with Google) — mesma session/partition.
+     * Sem isso a janela fica branca após o OAuth.
+     * @param {BrowserWindow} host
+     */
+    const wireWindow = (host) => {
+      host.webContents.setWindowOpenHandler(({ url }) => {
+        if (!isAuthRelatedUrl(url)) {
+          return { action: 'deny' }
+        }
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 520,
+            height: 720,
+            autoHideMenuBar: true,
+            parent: host,
+            webPreferences: {
+              session: ses,
+              partition: PARTITION,
+              nodeIntegration: false,
+              contextIsolation: true,
+              sandbox: true,
+            },
+          },
+        }
+      })
 
-    win.webContents.on('did-navigate', () => {
-      void tryCapture()
-    })
-    win.webContents.on('did-navigate-in-page', () => {
-      void tryCapture()
-    })
-    win.webContents.on('did-finish-load', () => {
-      void tryCapture()
+      host.webContents.on('did-create-window', (child) => {
+        windows.add(child)
+        wireWindow(child)
+        child.on('closed', () => {
+          windows.delete(child)
+          void tryCapture()
+        })
+        child.webContents.on('did-finish-load', () => {
+          void tryCapture()
+        })
+        child.webContents.on('did-navigate', () => {
+          void tryCapture()
+        })
+      })
+
+      host.webContents.on('did-navigate', () => {
+        void tryCapture()
+      })
+      host.webContents.on('did-navigate-in-page', () => {
+        void tryCapture()
+      })
+      host.webContents.on('did-finish-load', () => {
+        void tryCapture()
+      })
+      host.webContents.on('will-redirect', () => {
+        void tryCapture()
+      })
+    }
+
+    wireWindow(win)
+
+    win.on('closed', () => {
+      windows.delete(win)
+      win = null
+      // Só cancela se nenhuma popup OAuth ainda estiver aberta.
+      if (![...windows].some((w) => !w.isDestroyed())) {
+        finish({ ok: false, cancelled: true })
+      }
     })
 
     timer = setInterval(() => {

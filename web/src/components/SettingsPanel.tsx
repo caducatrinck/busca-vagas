@@ -81,6 +81,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   const [resetting, setResetting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
   const [linkedinLoggingIn, setLinkedinLoggingIn] = useState(false)
+  const [linkedinLoggingOut, setLinkedinLoggingOut] = useState(false)
+  /** null = escolher; login | manual = caminho escolhido (setup). */
+  const [setupPath, setSetupPath] = useState<null | 'login' | 'manual'>(null)
   const canLinkedInLogin =
     typeof window !== 'undefined' &&
     typeof window.buscaVagasDesktop?.linkedinLogin === 'function'
@@ -227,6 +230,36 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     }
   }
 
+  async function handleLinkedInLogout() {
+    setLinkedinLoggingOut(true)
+    setError(null)
+    setOkMsg(null)
+    try {
+      await window.buscaVagasDesktop?.linkedinLogout?.()
+      const patch: SettingsPatch = {
+        clearLinkedinLiAt: true,
+        clearLinkedinJsessionId: true,
+        linkedinMaxPages: form?.linkedinMaxPages,
+        searchCooldownMs: form
+          ? Math.max(0, Math.round(form.searchCooldownSec * 1000))
+          : undefined,
+        maxSearchesPerHour: form?.maxSearchesPerHour,
+        maxSearchesPerDay: form?.maxSearchesPerDay,
+        jobDetailConcurrency: form?.jobDetailConcurrency,
+      }
+      const next = await saveSettings(patch)
+      setCurrent(next)
+      setForm(formFromSettings(next))
+      setSetupPath(null)
+      setOkMsg(t('settings.logoutOk'))
+      onSaved?.(next)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('settings.logoutFailed'))
+    } finally {
+      setLinkedinLoggingOut(false)
+    }
+  }
+
   async function handleFactoryReset() {
     if (resetCode !== DELETE_ALL_CODE) {
       setResetError(t('settings.dangerMismatch'))
@@ -271,6 +304,12 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
     )
   }
 
+  const showSetupChooser = setupRequired && setupPath === null
+  const showManualFields =
+    !setupRequired ||
+    setupPath === 'manual' ||
+    (!canLinkedInLogin && setupRequired)
+
   return (
     <section className="settings-panel">
       <header className="settings-panel__header">
@@ -278,159 +317,292 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         <h1>
           {setupRequired ? t('settings.setupTitle') : t('settings.title')}
         </h1>
-        {setupRequired ? (
+        {setupRequired && !showSetupChooser ? (
           <p className="settings-panel__banner" role="alert">
             {t('settings.setupLead')}
           </p>
         ) : null}
       </header>
 
-      <aside className="settings-guide" aria-labelledby="settings-guide-title">
-        <h2 id="settings-guide-title">{t('settings.guideTitle')}</h2>
-        <p className="settings-guide__howto">{t('settings.howto')}</p>
-        <ol>
-          <li>{t('settings.guideStep1')}</li>
-          <li>{t('settings.guideStep2')}</li>
-          <li>{t('settings.guideStep3')}</li>
-          <li>{t('settings.guideStep4')}</li>
-          <li>{t('settings.guideStep5')}</li>
-          <li>{t('settings.guideStep6')}</li>
-        </ol>
-        <p className="settings-guide__note">{t('settings.guideNote')}</p>
-      </aside>
+      <p className="settings-panel__privacy" role="note">
+        {t('settings.privacyNote')}
+      </p>
 
-      <form className="settings-panel__form" onSubmit={handleSubmit}>
-        <fieldset>
-          <legend>{t('settings.legendLinkedIn')}</legend>
-
-          <p className="settings-panel__privacy" role="note">
-            {t('settings.privacyNote')}
-          </p>
-
-          {canLinkedInLogin ? (
-            <div className="settings-panel__login">
-              <Button
+      {showSetupChooser ? (
+        <div className="settings-panel__chooser">
+          <h2>{t('settings.chooseTitle')}</h2>
+          <p className="settings-panel__chooser-lead">{t('settings.chooseLead')}</p>
+          <div className="settings-panel__chooser-options">
+            {canLinkedInLogin ? (
+              <button
                 type="button"
-                variant="primary"
-                disabled={linkedinLoggingIn || saving}
-                onClick={() => void handleLinkedInLogin()}
+                className="settings-panel__option"
+                onClick={() => setSetupPath('login')}
               >
-                {linkedinLoggingIn
-                  ? t('settings.loginWorking')
-                  : t('settings.loginButton')}
-              </Button>
-              <p className="settings-panel__login-hint">
-                {t('settings.loginHint')}
-              </p>
-            </div>
+                <span className="settings-panel__option-title">
+                  {t('settings.chooseLogin')}
+                </span>
+                <span className="settings-panel__option-body">
+                  {t('settings.chooseLoginBody')}
+                </span>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="settings-panel__option"
+              onClick={() => setSetupPath('manual')}
+            >
+              <span className="settings-panel__option-title">
+                {t('settings.chooseManual')}
+              </span>
+              <span className="settings-panel__option-body">
+                {t('settings.chooseManualBody')}
+              </span>
+            </button>
+          </div>
+          {!canLinkedInLogin ? (
+            <p className="settings-panel__login-hint">{t('settings.loginDesktopOnly')}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {setupPath === 'login' && canLinkedInLogin ? (
+        <div className="settings-panel__login">
+          <h2 className="settings-panel__path-title">{t('settings.chooseLogin')}</h2>
+          <p className="settings-panel__login-hint">{t('settings.loginHint')}</p>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={linkedinLoggingIn || saving}
+            onClick={() => void handleLinkedInLogin()}
+          >
+            {linkedinLoggingIn
+              ? t('settings.loginWorking')
+              : t('settings.loginButton')}
+          </Button>
+          {setupRequired ? (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={linkedinLoggingIn}
+              onClick={() => setSetupPath(null)}
+            >
+              {t('settings.chooseBack')}
+            </Button>
+          ) : null}
+          <button
+            type="button"
+            className="settings-panel__linkish"
+            onClick={() => setSetupPath('manual')}
+          >
+            {t('settings.chooseSwitchManual')}
+          </button>
+        </div>
+      ) : null}
+
+      {error && (setupPath === 'login' || showSetupChooser) ? (
+        <Alert tone="danger">{localizeVisibleError(error, t)}</Alert>
+      ) : null}
+      {okMsg && (setupPath === 'login' || showSetupChooser) ? (
+        <p className="settings-panel__ok">{okMsg}</p>
+      ) : null}
+
+      {showManualFields || (!setupRequired && current.ready) ? (
+        <>
+          {setupPath === 'manual' || (!canLinkedInLogin && setupRequired) ? (
+            <aside className="settings-guide" aria-labelledby="settings-guide-title">
+              <h2 id="settings-guide-title">{t('settings.guideTitle')}</h2>
+              <p className="settings-guide__howto">{t('settings.howto')}</p>
+              <ol>
+                <li>{t('settings.guideStep1')}</li>
+                <li>{t('settings.guideStep2')}</li>
+                <li>{t('settings.guideStep3')}</li>
+                <li>{t('settings.guideStep4')}</li>
+                <li>{t('settings.guideStep5')}</li>
+                <li>{t('settings.guideStep6')}</li>
+              </ol>
+              <p className="settings-guide__note">{t('settings.guideNote')}</p>
+              {setupRequired && canLinkedInLogin ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setSetupPath(null)}
+                >
+                  {t('settings.chooseBack')}
+                </Button>
+              ) : null}
+            </aside>
           ) : null}
 
-          <Field label={t('settings.liAt')}>
-            <TextInput
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={t('settings.liAtPh')}
-              value={form.linkedinLiAt}
-              onFocus={(e) => {
-                if (form.linkedinLiAt === COOKIE_MASK) e.target.select()
-              }}
-              onChange={(e) => onCookieChange('linkedinLiAt', e.target.value)}
-            />
-          </Field>
+          <form className="settings-panel__form" onSubmit={handleSubmit}>
+            <fieldset>
+              <legend>{t('settings.legendLinkedIn')}</legend>
 
-          <Field label={t('settings.jsession')}>
-            <TextInput
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={t('settings.jsessionPh')}
-              value={form.linkedinJsessionId}
-              onFocus={(e) => {
-                if (form.linkedinJsessionId === COOKIE_MASK) e.target.select()
-              }}
-              onChange={(e) =>
-                onCookieChange('linkedinJsessionId', e.target.value)
-              }
-            />
-          </Field>
+              {!setupRequired && current.ready ? (
+                <div className="settings-panel__login">
+                  <p className="settings-panel__connected">{t('settings.connected')}</p>
+                  {canLinkedInLogin ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        disabled={linkedinLoggingIn || linkedinLoggingOut || saving}
+                        onClick={() => void handleLinkedInLogin()}
+                      >
+                        {linkedinLoggingIn
+                          ? t('settings.loginWorking')
+                          : t('settings.loginAgain')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        disabled={linkedinLoggingIn || linkedinLoggingOut || saving}
+                        onClick={() => void handleLinkedInLogout()}
+                      >
+                        {linkedinLoggingOut
+                          ? t('settings.logoutWorking')
+                          : t('settings.logoutButton')}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      disabled={linkedinLoggingOut || saving}
+                      onClick={() => void handleLinkedInLogout()}
+                    >
+                      {linkedinLoggingOut
+                        ? t('settings.logoutWorking')
+                        : t('settings.logoutButton')}
+                    </Button>
+                  )}
+                </div>
+              ) : null}
 
-          <Field label={t('settings.maxPages')}>
-            <NumberInput
-              min={1}
-              max={5000}
-              value={form.linkedinMaxPages}
-              emptyValue={1}
-              onValueChange={(linkedinMaxPages) =>
-                setForm({ ...form, linkedinMaxPages })
-              }
-            />
-          </Field>
-        </fieldset>
+              {(setupPath === 'manual' ||
+                (!canLinkedInLogin && setupRequired) ||
+                !setupRequired) && (
+                <>
+                  <Field label={t('settings.liAt')}>
+                    <TextInput
+                      type="password"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder={t('settings.liAtPh')}
+                      value={form.linkedinLiAt}
+                      onFocus={(e) => {
+                        if (form.linkedinLiAt === COOKIE_MASK) e.target.select()
+                      }}
+                      onChange={(e) =>
+                        onCookieChange('linkedinLiAt', e.target.value)
+                      }
+                    />
+                  </Field>
 
-        <fieldset>
-          <legend>{t('settings.legendRateLimit')}</legend>
+                  <Field label={t('settings.jsession')}>
+                    <TextInput
+                      type="password"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder={t('settings.jsessionPh')}
+                      value={form.linkedinJsessionId}
+                      onFocus={(e) => {
+                        if (form.linkedinJsessionId === COOKIE_MASK)
+                          e.target.select()
+                      }}
+                      onChange={(e) =>
+                        onCookieChange('linkedinJsessionId', e.target.value)
+                      }
+                    />
+                  </Field>
+                </>
+              )}
 
-          <Field label={t('settings.cooldown')}>
-            <NumberInput
-              min={0}
-              max={600}
-              step={1}
-              value={form.searchCooldownSec}
-              emptyValue={0}
-              onValueChange={(searchCooldownSec) =>
-                setForm({ ...form, searchCooldownSec })
-              }
-            />
-          </Field>
+              {!setupRequired || setupPath === 'manual' || !canLinkedInLogin ? (
+                <Field label={t('settings.maxPages')}>
+                  <NumberInput
+                    min={1}
+                    max={5000}
+                    value={form.linkedinMaxPages}
+                    emptyValue={1}
+                    onValueChange={(linkedinMaxPages) =>
+                      setForm({ ...form, linkedinMaxPages })
+                    }
+                  />
+                </Field>
+              ) : null}
+            </fieldset>
 
-          <Field label={t('settings.maxHour')}>
-            <NumberInput
-              min={0}
-              max={500}
-              value={form.maxSearchesPerHour}
-              emptyValue={0}
-              onValueChange={(maxSearchesPerHour) =>
-                setForm({ ...form, maxSearchesPerHour })
-              }
-            />
-          </Field>
+            {!setupRequired || setupPath === 'manual' || !canLinkedInLogin ? (
+              <fieldset>
+                <legend>{t('settings.legendRateLimit')}</legend>
 
-          <Field label={t('settings.maxDay')}>
-            <NumberInput
-              min={0}
-              max={2000}
-              value={form.maxSearchesPerDay}
-              emptyValue={0}
-              onValueChange={(maxSearchesPerDay) =>
-                setForm({ ...form, maxSearchesPerDay })
-              }
-            />
-          </Field>
+                <Field label={t('settings.cooldown')}>
+                  <NumberInput
+                    min={0}
+                    max={600}
+                    step={1}
+                    value={form.searchCooldownSec}
+                    emptyValue={0}
+                    onValueChange={(searchCooldownSec) =>
+                      setForm({ ...form, searchCooldownSec })
+                    }
+                  />
+                </Field>
 
-          <Field label={t('settings.concurrency')}>
-            <NumberInput
-              min={1}
-              max={20}
-              value={form.jobDetailConcurrency}
-              emptyValue={1}
-              onValueChange={(jobDetailConcurrency) =>
-                setForm({ ...form, jobDetailConcurrency })
-              }
-            />
-          </Field>
-        </fieldset>
+                <Field label={t('settings.maxHour')}>
+                  <NumberInput
+                    min={0}
+                    max={500}
+                    value={form.maxSearchesPerHour}
+                    emptyValue={0}
+                    onValueChange={(maxSearchesPerHour) =>
+                      setForm({ ...form, maxSearchesPerHour })
+                    }
+                  />
+                </Field>
 
-        {error ? (
-          <Alert tone="danger">{localizeVisibleError(error, t)}</Alert>
-        ) : null}
-        {okMsg ? <p className="settings-panel__ok">{okMsg}</p> : null}
+                <Field label={t('settings.maxDay')}>
+                  <NumberInput
+                    min={0}
+                    max={2000}
+                    value={form.maxSearchesPerDay}
+                    emptyValue={0}
+                    onValueChange={(maxSearchesPerDay) =>
+                      setForm({ ...form, maxSearchesPerDay })
+                    }
+                  />
+                </Field>
 
-        <Button type="submit" disabled={saving}>
-          {saving ? t('settings.saving') : t('settings.save')}
-        </Button>
-      </form>
+                <Field label={t('settings.concurrency')}>
+                  <NumberInput
+                    min={1}
+                    max={20}
+                    value={form.jobDetailConcurrency}
+                    emptyValue={1}
+                    onValueChange={(jobDetailConcurrency) =>
+                      setForm({ ...form, jobDetailConcurrency })
+                    }
+                  />
+                </Field>
+              </fieldset>
+            ) : null}
 
+            {error ? (
+              <Alert tone="danger">{localizeVisibleError(error, t)}</Alert>
+            ) : null}
+            {okMsg ? <p className="settings-panel__ok">{okMsg}</p> : null}
+
+            {!setupRequired || setupPath === 'manual' || !canLinkedInLogin ? (
+              <Button type="submit" disabled={saving || linkedinLoggingOut}>
+                {saving ? t('settings.saving') : t('settings.save')}
+              </Button>
+            ) : null}
+          </form>
+        </>
+      ) : null}
+
+      {!setupRequired ? (
       <div className="settings-panel__danger">
         <h2>{t('settings.dangerTitle')}</h2>
         <p>{t('settings.dangerLead')}</p>
@@ -446,6 +618,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
           {t('settings.dangerButton')}
         </Button>
       </div>
+      ) : null}
 
       {confirmReset ? (
         <div
