@@ -303,6 +303,10 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         <fieldset>
           <legend>{t('settings.legendLinkedIn')}</legend>
 
+          <p className="settings-panel__privacy" role="note">
+            {t('settings.privacyNote')}
+          </p>
+
           {canLinkedInLogin ? (
             <div className="settings-panel__login">
               <Button

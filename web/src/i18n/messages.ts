@@ -135,6 +135,8 @@ const pt = {
   'settings.loginCancelled': 'Login cancelado.',
   'settings.loginTimeout': 'Tempo esgotado no login LinkedIn. Tente de novo.',
   'settings.loginFailed': 'Não foi possível capturar a sessão LinkedIn.',
+  'settings.privacyNote':
+    'Este app roda só no seu computador. O código é aberto e auditável — não temos acesso aos seus dados pessoais, cookies nem senha do LinkedIn.',
   'settings.liAt': 'Cookie li_at',
   'settings.jsession': 'Cookie JSESSIONID',
   'settings.maxPages': 'Máx. páginas por busca',
@@ -556,6 +558,8 @@ const en: Record<MessageKey, string> = {
   'settings.loginCancelled': 'Login cancelled.',
   'settings.loginTimeout': 'LinkedIn login timed out. Try again.',
   'settings.loginFailed': 'Could not capture the LinkedIn session.',
+  'settings.privacyNote':
+    'This app runs only on your computer. The code is open and auditable — we have no access to your personal data, cookies, or LinkedIn password.',
   'settings.liAt': 'li_at cookie',
   'settings.jsession': 'JSESSIONID cookie',
   'settings.maxPages': 'Max pages per search',
