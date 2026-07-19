@@ -10,7 +10,7 @@ export const emptyFilters = {
 
 export const demoSettings = {
   linkedinLiAt: 'demo-li-at-for-screenshots',
-  linkedinJsessionId: 'demo-jsession',
+  linkedinJsessionId: 'ajax:demo-jsession',
   linkedinMaxPages: 3,
   searchCooldownMs: 30_000,
   maxSearchesPerHour: 30,

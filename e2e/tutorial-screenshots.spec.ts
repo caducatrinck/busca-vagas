@@ -47,7 +47,7 @@ test('01 configuração (settings)', async ({ page }) => {
   await expect(page.getByText('Configure para continuar')).toBeVisible()
 
   await page.getByPlaceholder('Cole o li_at').fill('demo-li-at-for-screenshots')
-  await page.getByPlaceholder('Cole o JSESSIONID').fill('demo-jsession')
+  await page.getByPlaceholder('Cole o JSESSIONID').fill('ajax:demo-jsession')
   await shot(page, '01-configuracao.png')
 
   await page.getByRole('button', { name: 'Salvar' }).click()
