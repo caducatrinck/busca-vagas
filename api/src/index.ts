@@ -153,7 +153,7 @@ export async function startServer(
 
   // valida cookie em background (não bloqueia o boot)
   void import('./linkedinSession.js').then(({ probeLinkedInSession }) =>
-    probeLinkedInSession({ force: true }),
+    probeLinkedInSession({ force: true, clearGuards: false }),
   )
   setInterval(
     () => {

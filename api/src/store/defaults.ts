@@ -87,6 +87,35 @@ export function normalizeLocale(raw?: unknown): import('./types.js').AppLocale {
   return raw === 'en' ? 'en' : 'pt'
 }
 
+/**
+ * DevTools às vezes copia o valor com aspas (`"ajax:…"`).
+ * Remove aspas externas (retas ou tipográficas) sem alterar o miolo.
+ */
+export function normalizeCookieValue(raw?: string | null): string {
+  let value = typeof raw === 'string' ? raw.trim() : ''
+  if (!value) return ''
+
+  for (let i = 0; i < 4; i++) {
+    const first = value[0]
+    const last = value[value.length - 1]
+    const paired =
+      (first === '"' && last === '"') ||
+      (first === "'" && last === "'") ||
+      (first === '\u201C' && last === '\u201D') ||
+      (first === '\u2018' && last === '\u2019')
+    if (!paired || value.length < 2) break
+    value = value.slice(1, -1).trim()
+  }
+  return value
+}
+
+/** JSESSIONID do LinkedIn costuma ser `ajax:…` (DevTools pode vir com aspas). */
+export function isLikelyLinkedInJsessionId(raw?: string | null): boolean {
+  const value = normalizeCookieValue(raw)
+  if (!value) return true // vazio = opcional no form; probe trata incomplete
+  return /^ajax:\S+$/i.test(value)
+}
+
 export function defaultAppSettings(): AppSettings {
   return {
     linkedinLiAt: '',
@@ -102,10 +131,12 @@ export function defaultAppSettings(): AppSettings {
 
 export function migrateCookiesFromLegacyEnv(settings: AppSettings): AppSettings {
   const liAt =
-    settings.linkedinLiAt.trim() || process.env.LINKEDIN_LI_AT?.trim() || ''
+    normalizeCookieValue(settings.linkedinLiAt) ||
+    normalizeCookieValue(process.env.LINKEDIN_LI_AT) ||
+    ''
   const jsession =
-    settings.linkedinJsessionId.trim() ||
-    process.env.LINKEDIN_JSESSIONID?.trim().replace(/^"|"$/g, '') ||
+    normalizeCookieValue(settings.linkedinJsessionId) ||
+    normalizeCookieValue(process.env.LINKEDIN_JSESSIONID) ||
     ''
   if (liAt === settings.linkedinLiAt && jsession === settings.linkedinJsessionId) {
     return settings
@@ -127,10 +158,12 @@ export function normalizeSettings(
 
   return {
     linkedinLiAt:
-      typeof raw.linkedinLiAt === 'string' ? raw.linkedinLiAt.trim() : base.linkedinLiAt,
+      typeof raw.linkedinLiAt === 'string'
+        ? normalizeCookieValue(raw.linkedinLiAt)
+        : base.linkedinLiAt,
     linkedinJsessionId:
       typeof raw.linkedinJsessionId === 'string'
-        ? raw.linkedinJsessionId.trim()
+        ? normalizeCookieValue(raw.linkedinJsessionId)
         : base.linkedinJsessionId,
     linkedinMaxPages: Math.min(
       Math.max(Number(raw.linkedinMaxPages) || base.linkedinMaxPages, 1),
@@ -224,8 +257,8 @@ export function createMonitor(partial?: Partial<Monitor>): Monitor {
     search: {
       query: partial?.search?.query ?? '',
       location: partial?.search?.location?.trim() || 'Brasil',
-      postedWithin: partial?.search?.postedWithin ?? 'week',
-      fetchDescriptions: Boolean(partial?.search?.fetchDescriptions),
+      postedWithin: partial?.search?.postedWithin ?? '3d',
+      fetchDescriptions: partial?.search?.fetchDescriptions ?? true,
     },
     pollingEnabled: Boolean(partial?.pollingEnabled),
     intervalMinutes: Math.min(Math.max(partial?.intervalMinutes ?? 20, 1), 120),

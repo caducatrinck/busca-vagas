@@ -39,6 +39,7 @@ export function MonitorSearchForm({
       { value: '1h', label: t('search.posted.1h') },
       { value: '10h', label: t('search.posted.10h') },
       { value: '24h', label: t('search.posted.24h') },
+      { value: '3d', label: t('search.posted.3d') },
       { value: 'week', label: t('search.posted.week') },
       { value: 'month', label: t('search.posted.month') },
     ],

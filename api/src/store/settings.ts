@@ -9,6 +9,11 @@ import type {
 } from './types.js'
 import {
   createMonitor,
+  DEFAULT_RATE_LIMIT,
+  defaultAppSettings,
+  defaultJobFilters,
+  isLikelyLinkedInJsessionId,
+  normalizeCookieValue,
   normalizeJob,
   normalizeJobFilters,
   normalizeRateLimit,
@@ -16,7 +21,7 @@ import {
   normalizeTheme,
   normalizeLocale,
 } from './defaults.js'
-import { ensureStore, persist } from './persistence.js'
+import { ensureStore, persist, clearInternalStoreBackups } from './persistence.js'
 
 export async function getAppSettings(): Promise<AppSettings> {
   const store = await ensureStore()
@@ -60,13 +65,17 @@ export async function updateAppSettings(
   let linkedinLiAt = current.linkedinLiAt
   if (patch.clearLinkedinLiAt) linkedinLiAt = ''
   else if (typeof patch.linkedinLiAt === 'string') {
-    linkedinLiAt = patch.linkedinLiAt.trim()
+    linkedinLiAt = normalizeCookieValue(patch.linkedinLiAt)
   }
 
   let linkedinJsessionId = current.linkedinJsessionId
   if (patch.clearLinkedinJsessionId) linkedinJsessionId = ''
   else if (typeof patch.linkedinJsessionId === 'string') {
-    linkedinJsessionId = patch.linkedinJsessionId.trim()
+    linkedinJsessionId = normalizeCookieValue(patch.linkedinJsessionId)
+    if (linkedinJsessionId && !isLikelyLinkedInJsessionId(linkedinJsessionId)) {
+      const err = new Error('err:jsession_invalid')
+      throw err
+    }
   }
 
   store.settings = normalizeSettings({
@@ -151,5 +160,22 @@ export async function replaceStoreData(
     ),
   }
   await persist(next, { allowEmptyOverwrite: true })
+  return next
+}
+
+/** Zera o store como instalação nova (sem puxar cookies de env).
+ *  Não toca nos JSON exportados em Downloads — só limpa store + backups internos. */
+export async function resetStoreToFactory(): Promise<StoreData> {
+  const next: StoreData = {
+    jobs: {},
+    monitors: [],
+    rateLimit: { ...DEFAULT_RATE_LIMIT },
+    settings: defaultAppSettings(),
+    filters: defaultJobFilters(),
+    theme: 'light',
+    locale: 'pt',
+  }
+  await persist(next, { allowEmptyOverwrite: true, skipBackup: true })
+  await clearInternalStoreBackups()
   return next
 }

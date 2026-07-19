@@ -85,8 +85,8 @@ export const EMPTY_FILTERS: JobFilters = {
 export const EMPTY_SEARCH: SearchForm = {
   query: '',
   location: 'Brasil',
-  postedWithin: 'week',
-  fetchDescriptions: false,
+  postedWithin: '3d',
+  fetchDescriptions: true,
 }
 
 export function monitorToSearch(monitor: Monitor | null | undefined): SearchForm {
@@ -94,8 +94,8 @@ export function monitorToSearch(monitor: Monitor | null | undefined): SearchForm
   return {
     query: monitor.search.query ?? '',
     location: monitor.search.location?.trim() || 'Brasil',
-    postedWithin: monitor.search.postedWithin ?? 'week',
-    fetchDescriptions: Boolean(monitor.search.fetchDescriptions),
+    postedWithin: monitor.search.postedWithin ?? '3d',
+    fetchDescriptions: true,
   }
 }
 

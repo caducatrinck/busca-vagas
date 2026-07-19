@@ -53,9 +53,13 @@ export async function fetchLinkedInSession(): Promise<LinkedInSessionStatus> {
   return parseJson(res)
 }
 
-export async function checkLinkedInSession(): Promise<LinkedInSessionStatus> {
+export async function checkLinkedInSession(
+  options: { clearGuards?: boolean } = {},
+): Promise<LinkedInSessionStatus> {
   const res = await fetch(`${API_URL}/linkedin/session/check`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clearGuards: Boolean(options.clearGuards) }),
   })
   if (!res.ok) throw new Error('err:session_check')
   return parseJson(res)
@@ -140,7 +144,7 @@ export async function searchJobs(form: SearchForm): Promise<{
       query: form.query,
       location: form.location || undefined,
       postedWithin: form.postedWithin,
-      fetchDescriptions: form.fetchDescriptions,
+      fetchDescriptions: true,
     }),
   })
 
@@ -206,6 +210,23 @@ export async function clearJobsByStatus(
   })
   const data = await parseJson<{ removed?: number; error?: string }>(res)
   if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  return data.removed ?? 0
+}
+
+export async function deleteAllJobs(): Promise<number> {
+  const res = await fetch(`${API_URL}/jobs/delete-all`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmation: 'DELETE' }),
+  })
+  const data = await parseJson<{ removed?: number; error?: string }>(res)
+  if (!res.ok) {
+    const code =
+      typeof data.error === 'string' && data.error.startsWith('err:')
+        ? data.error
+        : data.error || `err:http:${res.status}`
+    throw new Error(code)
+  }
   return data.removed ?? 0
 }
 
@@ -342,6 +363,24 @@ export async function importAppData(backup: DataBackup): Promise<{
   return {
     jobs: data.jobs ?? 0,
     monitors: data.monitors ?? 0,
+  }
+}
+
+export async function resetAppData(): Promise<void> {
+  const res = await fetch(`${API_URL}/data/reset-all`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirmation: 'DELETEALL' }),
+  })
+  const data = await parseJson<{ ok?: boolean; error?: string }>(res).catch(() => ({
+    error: undefined as string | undefined,
+  }))
+  if (!res.ok) {
+    const code =
+      typeof data.error === 'string' && data.error.startsWith('err:')
+        ? data.error
+        : `err:http:${res.status}`
+    throw new Error(code)
   }
 }
 

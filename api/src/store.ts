@@ -20,6 +20,7 @@ export {
   defaultAppSettings,
   defaultDescriptionFilters,
   defaultJobFilters,
+  normalizeCookieValue,
   normalizeDescriptionFilters,
   normalizeJobFilters,
   normalizeTheme,
@@ -28,6 +29,7 @@ export {
 export { getStore } from './store/persistence.js'
 
 export {
+  deleteAllJobs,
   deleteJobsByStatus,
   getJobSearchHints,
   listJobs,
@@ -52,6 +54,7 @@ export {
   getUiPrefs,
   isAppConfigured,
   replaceStoreData,
+  resetStoreToFactory,
   saveRateLimitState,
   toPublicSettings,
   updateAppSettings,

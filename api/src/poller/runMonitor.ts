@@ -129,12 +129,12 @@ export async function runMonitor(
       callbacks.onProgress?.({
         phase: 'listing',
         label: `Listagem pronta · ${listed.length} vaga(s)`,
-        overallPercent: Boolean(monitor.search.fetchDescriptions) ? 48 : 92,
+        overallPercent: 48,
         listing: { current: listed.length, total: listed.length },
         descriptions: { current: 0, total: 0 },
         startedAt,
         elapsedMs: Date.now() - startedAt,
-        etaSeconds: Boolean(monitor.search.fetchDescriptions) ? null : 0,
+        etaSeconds: null,
         message:
           newCount > 0
             ? `${newCount} nova(s) — buscando descrições…`
@@ -162,14 +162,14 @@ export async function runMonitor(
         location: monitor.search.location,
         postedWithin: monitor.search.postedWithin,
         postedWithinSeconds: postedWithinSeconds ?? null,
-        fetchDescriptions: Boolean(monitor.search.fetchDescriptions),
+        fetchDescriptions: true,
         discardedKnown: hints.discardedIds.size,
       })
 
       const found = await searchLinkedInJobs(
         {
           ...monitor.search,
-          fetchDescriptions: Boolean(monitor.search.fetchDescriptions),
+          fetchDescriptions: true,
           ...(postedWithinSeconds != null ? { postedWithinSeconds } : {}),
         },
         {

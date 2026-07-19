@@ -6,7 +6,11 @@ import {
   getLinkedInSessionStatus,
   probeLinkedInSession,
 } from '../../linkedinSession.js'
+import { setLinkedInSessionStatus } from '../../linkedinSessionState.js'
+import { clearLinkedInFetchGuards } from '../../infrastructure/linkedin/client.js'
 import type { AppSettings, JobFilters, StoreData, ThemeMode } from '../../store.js'
+
+const FACTORY_RESET_CONFIRMATION = 'DELETEALL'
 
 export function registerSettingsRoutes(
   app: FastifyInstance,
@@ -18,8 +22,13 @@ export function registerSettingsRoutes(
 
   app.get('/linkedin/session', async () => getLinkedInSessionStatus())
 
-  app.post('/linkedin/session/check', async () =>
-    probeLinkedInSession({ force: true }),
+  app.post<{
+    Body: { clearGuards?: boolean }
+  }>('/linkedin/session/check', async (request) =>
+    probeLinkedInSession({
+      force: true,
+      clearGuards: Boolean(request.body?.clearGuards),
+    }),
   )
 
   app.get('/settings', async () => {
@@ -32,29 +41,37 @@ export function registerSettingsRoutes(
       clearLinkedinLiAt?: boolean
       clearLinkedinJsessionId?: boolean
     }
-  }>('/settings', async (request) => {
+  }>('/settings', async (request, reply) => {
     const body = request.body ?? {}
-    const settings = await repo.updateAppSettings(body)
-    searchRateLimiter.updateConfig({
-      minIntervalMs: settings.searchCooldownMs,
-      maxPerHour: settings.maxSearchesPerHour,
-      maxPerDay: settings.maxSearchesPerDay,
-    })
-    if (!(await Promise.resolve(repo.isAppConfigured(settings)))) {
-      const monitors = await repo.listMonitors()
-      for (const m of monitors) {
-        if (m.pollingEnabled) await setMonitorPolling(m.id, false)
+    try {
+      const settings = await repo.updateAppSettings(body)
+      searchRateLimiter.updateConfig({
+        minIntervalMs: settings.searchCooldownMs,
+        maxPerHour: settings.maxSearchesPerHour,
+        maxPerDay: settings.maxSearchesPerDay,
+      })
+      if (!(await Promise.resolve(repo.isAppConfigured(settings)))) {
+        const monitors = await repo.listMonitors()
+        for (const m of monitors) {
+          if (m.pollingEnabled) await setMonitorPolling(m.id, false)
+        }
+      } else if (
+        typeof body.linkedinLiAt === 'string' ||
+        typeof body.linkedinJsessionId === 'string' ||
+        body.clearLinkedinLiAt ||
+        body.clearLinkedinJsessionId
+      ) {
+        clearLinkedInFetchGuards()
+        void probeLinkedInSession({ force: true, clearGuards: true })
       }
-    } else if (
-      typeof body.linkedinLiAt === 'string' ||
-      typeof body.linkedinJsessionId === 'string' ||
-      body.clearLinkedinLiAt ||
-      body.clearLinkedinJsessionId
-    ) {
-      // cookie mudou — revalida sessão
-      void probeLinkedInSession({ force: true })
+      return repo.toPublicSettings(settings)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.startsWith('err:')) {
+        return reply.status(400).send({ error: message })
+      }
+      throw err
     }
-    return repo.toPublicSettings(settings)
   })
 
   app.get('/prefs', async () => repo.getUiPrefs())
@@ -129,5 +146,32 @@ export function registerSettingsRoutes(
       jobs: Object.keys(store.jobs).length,
       monitors: store.monitors.length,
     }
+  })
+
+  app.post<{
+    Body: { confirmation?: string }
+  }>('/data/reset-all', async (request, reply) => {
+    const confirmation = request.body?.confirmation
+    if (confirmation !== FACTORY_RESET_CONFIRMATION) {
+      return reply.status(400).send({ error: 'err:reset_confirm' })
+    }
+
+    const store = await repo.resetStoreToFactory()
+    searchRateLimiter.hydrate(store.rateLimit)
+    searchRateLimiter.updateConfig({
+      minIntervalMs: store.settings.searchCooldownMs,
+      maxPerHour: store.settings.maxSearchesPerHour,
+      maxPerDay: store.settings.maxSearchesPerDay,
+    })
+    setLinkedInSessionStatus({
+      ok: false,
+      code: 'missing',
+      message: 'err:session_unchecked',
+      checkedAt: null,
+      httpStatus: null,
+    })
+    clearLinkedInFetchGuards()
+    await syncSchedulers()
+    return { ok: true }
   })
 }

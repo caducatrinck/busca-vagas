@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   fetchSettings,
+  resetAppData,
   saveSettings,
   type PublicAppSettings,
   type SettingsPatch,
@@ -11,6 +12,7 @@ import { Alert, Button, Field, NumberInput, TextInput } from '../ui'
 import './SettingsPanel.css'
 
 const COOKIE_MASK = '********'
+const DELETE_ALL_CODE = 'DELETEALL'
 
 type Props = {
   setupRequired?: boolean
@@ -39,12 +41,28 @@ function formFromSettings(s: PublicAppSettings): FormState {
   }
 }
 
+function stripCookieQuotes(value: string): string {
+  let next = value.trim()
+  for (let i = 0; i < 4; i++) {
+    const first = next[0]
+    const last = next[next.length - 1]
+    const paired =
+      (first === '"' && last === '"') ||
+      (first === "'" && last === "'") ||
+      (first === '\u201C' && last === '\u201D') ||
+      (first === '\u2018' && last === '\u2019')
+    if (!paired || next.length < 2) break
+    next = next.slice(1, -1).trim()
+  }
+  return next
+}
+
 function cookiePatchValue(
   value: string,
   alreadySet: boolean,
 ): 'keep' | 'clear' | { set: string } {
-  const trimmed = value.trim()
-  if (alreadySet && trimmed === COOKIE_MASK) return 'keep'
+  const trimmed = stripCookieQuotes(value)
+  if (alreadySet && value.trim() === COOKIE_MASK) return 'keep'
   if (!trimmed) return 'clear'
   return { set: trimmed }
 }
@@ -58,6 +76,10 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [okMsg, setOkMsg] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [resetCode, setResetCode] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -83,6 +105,19 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       cancelled = true
     }
   }, [reloadKey, t])
+
+  useEffect(() => {
+    if (!confirmReset) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !resetting) {
+        setConfirmReset(false)
+        setResetCode('')
+        setResetError(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [confirmReset, resetting])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -138,6 +173,24 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
       return
     }
     setForm({ ...form, [field]: next })
+  }
+
+  async function handleFactoryReset() {
+    if (resetCode !== DELETE_ALL_CODE) {
+      setResetError(t('settings.dangerMismatch'))
+      return
+    }
+    setResetting(true)
+    setResetError(null)
+    try {
+      await resetAppData()
+      window.location.reload()
+    } catch (err) {
+      setResetError(
+        err instanceof Error ? err.message : t('settings.saveError'),
+      )
+      setResetting(false)
+    }
   }
 
   if (loading) {
@@ -303,6 +356,87 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
           {saving ? t('settings.saving') : t('settings.save')}
         </Button>
       </form>
+
+      <div className="settings-panel__danger">
+        <h2>{t('settings.dangerTitle')}</h2>
+        <p>{t('settings.dangerLead')}</p>
+        <Button
+          type="button"
+          variant="danger"
+          onClick={() => {
+            setConfirmReset(true)
+            setResetCode('')
+            setResetError(null)
+          }}
+        >
+          {t('settings.dangerButton')}
+        </Button>
+      </div>
+
+      {confirmReset ? (
+        <div
+          className="settings-panel__modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (resetting) return
+            setConfirmReset(false)
+            setResetCode('')
+            setResetError(null)
+          }}
+        >
+          <div
+            className="settings-panel__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="factory-reset-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="factory-reset-title">{t('settings.dangerConfirmTitle')}</h3>
+            <p>
+              {t('settings.dangerConfirmBody', { code: DELETE_ALL_CODE })}
+            </p>
+            <Field label={t('settings.dangerConfirmPh')}>
+              <TextInput
+                value={resetCode}
+                placeholder={DELETE_ALL_CODE}
+                autoComplete="off"
+                spellCheck={false}
+                autoFocus
+                disabled={resetting}
+                onChange={(e) => {
+                  setResetCode(e.target.value)
+                  setResetError(null)
+                }}
+              />
+            </Field>
+            {resetError ? (
+              <Alert tone="danger">{localizeVisibleError(resetError, t)}</Alert>
+            ) : null}
+            <div className="settings-panel__modal-actions">
+              <Button
+                variant="ghost"
+                disabled={resetting}
+                onClick={() => {
+                  setConfirmReset(false)
+                  setResetCode('')
+                  setResetError(null)
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="danger"
+                disabled={resetting || resetCode !== DELETE_ALL_CODE}
+                onClick={() => void handleFactoryReset()}
+              >
+                {resetting
+                  ? t('settings.dangerResetting')
+                  : t('settings.dangerConfirmYes')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

@@ -19,6 +19,7 @@ export type JobRepository = {
   setJobStatus(id: string, status: JobStatus): Promise<StoredJob | null>
   setJobApplied(id: string, applied: boolean): Promise<StoredJob | null>
   deleteJobsByStatus(status: JobStatus): Promise<number>
+  deleteAllJobs(): Promise<number>
   upsertSearchResults(
     jobs: Job[],
     monitorId?: string,
@@ -59,6 +60,7 @@ export type StoreRepository = JobRepository &
   SettingsRepository & {
     exportStoreData(): Promise<StoreData>
     replaceStoreData(incoming: Partial<StoreData>): Promise<StoreData>
+    resetStoreToFactory(): Promise<StoreData>
     getRateLimitState(): Promise<StoredRateLimit>
     saveRateLimitState(state: StoredRateLimit): Promise<void>
     getStore(): Promise<StoreData>

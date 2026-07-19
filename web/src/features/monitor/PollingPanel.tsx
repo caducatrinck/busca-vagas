@@ -129,9 +129,7 @@ export function PollingPanel({
           />
 
           <MonitorDescriptionSection
-            draft={draft}
             filters={filters}
-            onDraftChange={onDraftChange}
             onLanguageChange={onLanguageChange}
             onAddWord={onAddWord}
             onRemoveWord={onRemoveWord}

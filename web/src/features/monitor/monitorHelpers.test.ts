@@ -35,6 +35,7 @@ describe('POSTED_WITHIN_VALUES', () => {
     assert.ok(POSTED_WITHIN_VALUES.includes('30m'))
     assert.ok(POSTED_WITHIN_VALUES.includes('1h'))
     assert.ok(POSTED_WITHIN_VALUES.includes('10h'))
+    assert.ok(POSTED_WITHIN_VALUES.includes('3d'))
   })
 })
 

@@ -1,5 +1,8 @@
 import { log } from './logger.js'
-import { linkedInVoyagerFetch } from './infrastructure/linkedin/client.js'
+import {
+  clearLinkedInFetchGuards,
+  linkedInVoyagerFetch,
+} from './infrastructure/linkedin/client.js'
 import {
   getLinkedInSessionStatus,
   markLinkedInSessionAuthFailure,
@@ -20,16 +23,20 @@ let probeInFlight: Promise<LinkedInSessionStatus> | null = null
 let lastProbeAt = 0
 
 export async function probeLinkedInSession(
-  options: { force?: boolean } = {},
+  options: { force?: boolean; clearGuards?: boolean } = {},
 ): Promise<LinkedInSessionStatus> {
   const now = Date.now()
-  if (!options.force && probeInFlight) return probeInFlight
+  // Serializa probes (incluindo force) para evitar race no status.
+  if (probeInFlight) return probeInFlight
   if (!options.force && now - lastProbeAt < 15_000) {
     return getLinkedInSessionStatus()
   }
 
   probeInFlight = (async () => {
     lastProbeAt = Date.now()
+    // Só limpa circuit breaker em recheck explícito / cookies novos — não no poll do mount.
+    if (options.clearGuards) clearLinkedInFetchGuards()
+
     const settings = await getAppSettings()
     if (!isAppConfigured(settings)) {
       return setLinkedInSessionStatus({
@@ -62,13 +69,19 @@ export async function probeLinkedInSession(
           : null
       const message = err instanceof Error ? err.message : String(err)
       const prev = getLinkedInSessionStatus()
+      const softFailure =
+        message === 'err:voyager_redirect' ||
+        message === 'err:voyager_blocked' ||
+        message === 'err:network_linkedin' ||
+        httpStatus === 429 ||
+        httpStatus === 302
 
       if (httpStatus === 401 || httpStatus === 403) {
-        markLinkedInSessionAuthFailure(
-          httpStatus,
-          'err:session_expired',
-        )
-      } else if (/Cookie LinkedIn incompleto/i.test(message)) {
+        markLinkedInSessionAuthFailure(httpStatus, 'err:session_expired')
+      } else if (
+        message === 'err:cookie_incomplete' ||
+        /Cookie LinkedIn incompleto/i.test(message)
+      ) {
         setLinkedInSessionStatus({
           ok: false,
           code: 'incomplete',
@@ -76,13 +89,21 @@ export async function probeLinkedInSession(
           checkedAt: new Date().toISOString(),
           httpStatus: null,
         })
-      } else if (httpStatus === 429) {
+      } else if (softFailure) {
+        // Redirect/cooldown/rede: não derruba sessão “ok” (como 429).
         if (!prev.ok) {
           setLinkedInSessionStatus({
             ...prev,
             checkedAt: new Date().toISOString(),
-            message: 'err:session_rate_limited',
-            httpStatus: 429,
+            message:
+              httpStatus === 429 ? 'err:session_rate_limited' : message,
+            httpStatus,
+            code:
+              httpStatus === 429
+                ? prev.code
+                : /network|timeout/i.test(message)
+                  ? 'network'
+                  : 'unknown',
           })
         } else {
           setLinkedInSessionStatus({

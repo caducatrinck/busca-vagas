@@ -3,6 +3,7 @@ import { jobStatus } from '../lib/jobStatus'
 import {
   clearJobsByStatus,
   createMonitor,
+  deleteAllJobs,
   fetchMonitors,
   fetchSavedJobs,
   removeMonitor,
@@ -128,16 +129,10 @@ export function useMonitors(params: { filters: JobFilters }) {
       activeMonitor?.descriptionFilters,
     )
     return filterJobs(marked, merged, {
-      useDescriptionFilters: monitorDraft.fetchDescriptions,
+      useDescriptionFilters: true,
       requireQueryInTitle: monitorDraft.query,
     })
-  }, [
-    safeMonitorJobs,
-    filters,
-    activeMonitor,
-    monitorDraft.fetchDescriptions,
-    monitorDraft.query,
-  ])
+  }, [safeMonitorJobs, filters, activeMonitor, monitorDraft.query])
 
   const activeMonitorFilters = useMemo(
     () => mergeMonitorFilters(filters, activeMonitor?.descriptionFilters),
@@ -322,9 +317,6 @@ export function useMonitors(params: { filters: JobFilters }) {
 
   function handleMonitorDescriptionLanguage(language: DescriptionLanguage) {
     patchActiveDescriptionFilters((prev) => ({ ...prev, language }))
-    if (language && !monitorDraft.fetchDescriptions) {
-      handleMonitorDraftChange({ ...monitorDraft, fetchDescriptions: true })
-    }
   }
 
   function handleMonitorDescriptionAddWord(key: WordFilterKey, word: string) {
@@ -426,6 +418,18 @@ export function useMonitors(params: { filters: JobFilters }) {
     }
   }
 
+  async function handleDeleteAllJobs() {
+    setError(null)
+    try {
+      await deleteAllJobs()
+      await loadSaved()
+      if (activeMonitorId) await loadMonitorJobs(activeMonitorId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('err.clearJobs'))
+      throw err
+    }
+  }
+
   return {
     monitors: safeMonitors,
     setMonitors,
@@ -466,5 +470,6 @@ export function useMonitors(params: { filters: JobFilters }) {
     handleCloseMonitor,
     handleRefreshJobs,
     handleClearJobsStatus,
+    handleDeleteAllJobs,
   }
 }

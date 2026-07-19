@@ -55,7 +55,7 @@ export function JobList({
   showLanguageFilter = false,
   title,
   searchProgress = null,
-  fetchDescriptions = false,
+  fetchDescriptions = true,
   onCancelSearch,
   onStatusChange,
   onDiscardAll,

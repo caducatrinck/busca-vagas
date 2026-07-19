@@ -73,4 +73,15 @@ export function registerJobRoutes(
     const removed = await repo.deleteJobsByStatus(status)
     return { ok: true, removed, status }
   })
+
+  app.post<{
+    Body: { confirmation?: string }
+  }>('/jobs/delete-all', async (request, reply) => {
+    const confirmation = String(request.body?.confirmation ?? '').trim()
+    if (confirmation !== 'DELETE') {
+      return reply.status(400).send({ error: 'err:delete_jobs_confirm' })
+    }
+    const removed = await repo.deleteAllJobs()
+    return { ok: true, removed }
+  })
 }

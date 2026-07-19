@@ -36,6 +36,14 @@ const pt = {
     'Remover permanentemente {n} vaga(s) {label} do JSON local? Essa ação não pode ser desfeita.',
   'jobs.labelApplied': 'aplicadas',
   'jobs.labelDiscarded': 'descartadas',
+  'jobs.deleteAll': 'Apagar todas ({n})',
+  'jobs.deleteAllTitle': 'Apagar todas as vagas?',
+  'jobs.deleteAllBody':
+    'Isso remove permanentemente as {n} vaga(s) salvas (pendentes, aplicadas e descartadas). Digite {code} para confirmar.',
+  'jobs.deleteAllPh': 'DELETE',
+  'jobs.deleteAllMismatch': 'Digite exatamente DELETE em maiúsculas.',
+  'jobs.deleteAllConfirm': 'Apagar tudo',
+  'jobs.deleting': 'Apagando…',
 
   'jobsTitle.viewed': 'Vagas pendentes',
   'jobsEmpty.viewed': 'Nenhuma vaga pendente',
@@ -82,6 +90,7 @@ const pt = {
   'search.posted.1h': 'Última hora',
   'search.posted.10h': 'Últimas 10 horas',
   'search.posted.24h': 'Últimas 24 horas',
+  'search.posted.3d': 'Últimos 3 dias',
   'search.posted.week': 'Última semana',
   'search.posted.month': 'Último mês',
 
@@ -89,7 +98,6 @@ const pt = {
   'poll.intervalAria': 'Intervalo do pooling em minutos',
 
   'desc.title': 'Filtros da descrição',
-  'desc.fetch': 'Buscar e filtrar pela descrição',
   'desc.include': 'Incluir (descrição)',
   'desc.exclude': 'Excluir (descrição)',
   'desc.language': 'Idioma da descrição',
@@ -177,7 +185,7 @@ const pt = {
   'settings.guideStep2': 'Pressione F12 (ou clique com o botão direito → Inspecionar) para abrir as DevTools.',
   'settings.guideStep3': 'Vá em Application (Chrome/Edge) ou Armazenamento (Firefox).',
   'settings.guideStep4': 'Em Cookies, selecione https://www.linkedin.com.',
-  'settings.guideStep5': 'Copie o valor de li_at (obrigatório) e, se existir, de JSESSIONID (sem as aspas).',
+  'settings.guideStep5': 'Copie o valor de li_at (obrigatório) e de JSESSIONID (começa com ajax: — pode colar com ou sem aspas).',
   'settings.guideStep6': 'Cole abaixo e salve. Cookies expiram — se a busca falhar com 401/403, atualize o li_at.',
   'settings.guideNote': 'Não compartilhe esses valores. Eles equivalem a estar logado na sua conta.',
   'settings.liAtPh': 'Cole o li_at',
@@ -188,6 +196,17 @@ const pt = {
   'settings.savedBlocked': 'Salvo. Sem cookie li_at — o app fica bloqueado até você colar um.',
   'settings.apiDown': 'API indisponível. Confira se o serviço está no ar.',
   'settings.retry': 'Tentar de novo',
+  'settings.dangerTitle': 'Zona de perigo',
+  'settings.dangerLead':
+    'Apaga cookies, monitores, vagas, filtros, preferências e backups internos do app. Arquivos Exportar em Downloads não são apagados. O app volta ao estado de um usuário novo.',
+  'settings.dangerButton': 'Apagar tudo',
+  'settings.dangerConfirmTitle': 'Apagar todos os dados?',
+  'settings.dangerConfirmBody':
+    'Esta ação não tem volta (exceto se você tiver um Exportar em Downloads). Digite {code} em maiúsculas para confirmar.',
+  'settings.dangerConfirmPh': 'DELETEALL',
+  'settings.dangerConfirmYes': 'Apagar tudo de verdade',
+  'settings.dangerResetting': 'Apagando…',
+  'settings.dangerMismatch': 'Digite exatamente DELETEALL em maiúsculas.',
 
   'card.noDescription': 'Descrição não disponível nesta busca.',
   'card.seenBefore': 'Já apareceu em buscas anteriores',
@@ -227,10 +246,6 @@ const pt = {
   'workplace.remote': 'Remoto',
 
   'monitor.add': 'Adicionar monitor',
-
-
-  'desc.langAlert': 'Para filtrar por idioma com precisão, ative a busca pela descrição.',
-  'desc.fetchAlert': 'Ativado: primeiro lista todas as vagas; depois só busca descrição das que ainda não têm no banco (as já lidas são reaproveitadas).',
 
   'tab.searching': 'buscando',
   'tab.now': 'agora',
@@ -290,6 +305,7 @@ const pt = {
   'err.changeInterval': 'Erro ao alterar intervalo',
   'err.removeMonitor': 'Erro ao remover monitor',
   'err.clearJobs': 'Erro ao limpar vagas',
+  'err.deleteJobsConfirm': 'Confirmação inválida. Digite DELETE em maiúsculas.',
 
   'empty.allDiscarded': 'Todas as vagas encontradas já estavam descartadas — limpe descartadas ou aguarde novas publicações.',
   'empty.linkedinEmpty': 'LinkedIn respondeu vazio para essa janela de tempo (sem vagas recentes). Tente pausar o pooling e buscar com “Publicadas em” mais amplo (ex.: semana).',
@@ -323,9 +339,12 @@ const pt = {
   'err.jobNotFound': 'Vaga não encontrada no banco local',
   'err.clearStatusInvalid': 'Só é possível limpar aplicadas ou descartadas',
   'err.invalidBackup': 'Arquivo inválido: esperado store.jobs (objeto)',
+  'err.resetConfirm': 'Confirmação inválida. Digite DELETEALL em maiúsculas.',
   'err.poolingUnexpected': 'Falha inesperada no pooling',
   'err.networkLinkedIn': 'Falha de rede ao contatar o LinkedIn. Tente de novo em alguns segundos.',
   'err.cookieIncomplete': 'Cookie LinkedIn incompleto (li_at + JSESSIONID). Atualize em Configurações.',
+  'err.jsessionInvalid':
+    'JSESSIONID inválido. Em Cookies do LinkedIn, copie o valor do cookie chamado JSESSIONID (começa com ajax:). Não use outros cookies.',
   'err.http': 'Erro HTTP {n}',
   'err.invalidResponse': 'Resposta inválida',
   'err.streamEmpty': 'Resposta sem corpo (stream indisponível)',
@@ -429,6 +448,14 @@ const en: Record<MessageKey, string> = {
     'Permanently remove {n} {label} job(s) from local JSON? This cannot be undone.',
   'jobs.labelApplied': 'applied',
   'jobs.labelDiscarded': 'discarded',
+  'jobs.deleteAll': 'Delete all ({n})',
+  'jobs.deleteAllTitle': 'Delete all jobs?',
+  'jobs.deleteAllBody':
+    'This permanently removes the {n} saved job(s) (pending, applied, and discarded). Type {code} to confirm.',
+  'jobs.deleteAllPh': 'DELETE',
+  'jobs.deleteAllMismatch': 'Type exactly DELETE in uppercase.',
+  'jobs.deleteAllConfirm': 'Delete all',
+  'jobs.deleting': 'Deleting…',
 
   'jobsTitle.viewed': 'Pending jobs',
   'jobsEmpty.viewed': 'No pending jobs',
@@ -474,6 +501,7 @@ const en: Record<MessageKey, string> = {
   'search.posted.1h': 'Last hour',
   'search.posted.10h': 'Last 10 hours',
   'search.posted.24h': 'Last 24 hours',
+  'search.posted.3d': 'Last 3 days',
   'search.posted.week': 'Last week',
   'search.posted.month': 'Last month',
 
@@ -481,7 +509,6 @@ const en: Record<MessageKey, string> = {
   'poll.intervalAria': 'Pooling interval in minutes',
 
   'desc.title': 'Description filters',
-  'desc.fetch': 'Fetch and filter by description',
   'desc.include': 'Include (description)',
   'desc.exclude': 'Exclude (description)',
   'desc.language': 'Description language',
@@ -569,7 +596,7 @@ const en: Record<MessageKey, string> = {
   'settings.guideStep2': 'Press F12 (or right-click → Inspect) to open DevTools.',
   'settings.guideStep3': 'Go to Application (Chrome/Edge) or Storage (Firefox).',
   'settings.guideStep4': 'Under Cookies, select https://www.linkedin.com.',
-  'settings.guideStep5': 'Copy the li_at value (required) and JSESSIONID if present (without quotes).',
+  'settings.guideStep5': 'Copy the li_at value (required) and JSESSIONID (starts with ajax: — quotes optional).',
   'settings.guideStep6': 'Paste below and save. Cookies expire — if searches fail with 401/403, update li_at.',
   'settings.guideNote': 'Do not share these values. They are equivalent to being logged into your account.',
   'settings.liAtPh': 'Paste li_at',
@@ -580,6 +607,17 @@ const en: Record<MessageKey, string> = {
   'settings.savedBlocked': 'Saved. Without li_at the app stays locked until you paste one.',
   'settings.apiDown': 'API unavailable. Check if the service is running.',
   'settings.retry': 'Try again',
+  'settings.dangerTitle': 'Danger zone',
+  'settings.dangerLead':
+    'Deletes cookies, monitors, jobs, filters, preferences, and the app’s internal backups. Export files in Downloads are kept. The app returns to a brand-new user state.',
+  'settings.dangerButton': 'Delete everything',
+  'settings.dangerConfirmTitle': 'Delete all data?',
+  'settings.dangerConfirmBody':
+    'This cannot be undone (unless you have an Export file in Downloads). Type {code} in uppercase to confirm.',
+  'settings.dangerConfirmPh': 'DELETEALL',
+  'settings.dangerConfirmYes': 'Really delete everything',
+  'settings.dangerResetting': 'Deleting…',
+  'settings.dangerMismatch': 'Type exactly DELETEALL in uppercase.',
 
   'card.noDescription': 'Description not available in this search.',
   'card.seenBefore': 'Already seen in previous searches',
@@ -619,10 +657,6 @@ const en: Record<MessageKey, string> = {
   'workplace.remote': 'Remote',
 
   'monitor.add': 'Add monitor',
-
-
-  'desc.langAlert': 'To filter by language accurately, enable description search.',
-  'desc.fetchAlert': 'Enabled: first lists all jobs; then fetches descriptions only for those not yet in the database (cached ones are reused).',
 
   'tab.searching': 'searching',
   'tab.now': 'now',
@@ -682,6 +716,7 @@ const en: Record<MessageKey, string> = {
   'err.changeInterval': 'Failed to change interval',
   'err.removeMonitor': 'Failed to remove monitor',
   'err.clearJobs': 'Failed to clear jobs',
+  'err.deleteJobsConfirm': 'Invalid confirmation. Type DELETE in uppercase.',
 
   'empty.allDiscarded': 'All jobs found were already discarded — clear discarded or wait for new postings.',
   'empty.linkedinEmpty': 'LinkedIn returned empty for this time window (no recent jobs). Pause pooling and search with a wider “Posted” window (e.g. week).',
@@ -715,9 +750,12 @@ const en: Record<MessageKey, string> = {
   'err.jobNotFound': 'Job not found in local store',
   'err.clearStatusInvalid': 'You can only clear applied or discarded jobs',
   'err.invalidBackup': 'Invalid file: expected store.jobs (object)',
+  'err.resetConfirm': 'Invalid confirmation. Type DELETEALL in uppercase.',
   'err.poolingUnexpected': 'Unexpected pooling failure',
   'err.networkLinkedIn': 'Network error contacting LinkedIn. Try again in a few seconds.',
   'err.cookieIncomplete': 'Incomplete LinkedIn cookie (li_at + JSESSIONID). Update in Settings.',
+  'err.jsessionInvalid':
+    'Invalid JSESSIONID. In LinkedIn Cookies, copy the cookie named JSESSIONID (starts with ajax:). Do not use other cookies.',
   'err.http': 'HTTP error {n}',
   'err.invalidResponse': 'Invalid response',
   'err.streamEmpty': 'Empty response (stream unavailable)',

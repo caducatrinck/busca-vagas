@@ -166,6 +166,16 @@ export async function deleteJobsByStatus(
   return removed
 }
 
+/** Apaga todas as vagas salvas (pendentes, aplicadas e descartadas). */
+export async function deleteAllJobs(): Promise<number> {
+  const store = await ensureStore()
+  const removed = Object.keys(store.jobs).length
+  if (removed === 0) return 0
+  store.jobs = {}
+  await persist(store)
+  return removed
+}
+
 export function withNewFlag(
   jobs: StoredJob[],
   newIds: Iterable<string>,

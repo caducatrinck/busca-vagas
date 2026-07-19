@@ -54,6 +54,10 @@ function matchErrorCode(text: string, t: TFn): string | null {
         return t('err.clearStatusInvalid')
       case 'invalid_backup':
         return t('err.invalidBackup')
+      case 'reset_confirm':
+        return t('err.resetConfirm')
+      case 'delete_jobs_confirm':
+        return t('err.deleteJobsConfirm')
       case 'pooling_unexpected':
         return t('err.poolingUnexpected')
       case 'cooldown':
@@ -74,6 +78,8 @@ function matchErrorCode(text: string, t: TFn): string | null {
         return t('err.networkLinkedIn')
       case 'cookie_incomplete':
         return t('err.cookieIncomplete')
+      case 'jsession_invalid':
+        return t('err.jsessionInvalid')
       case 'http':
         return t('err.http', { n: param || '?' })
       case 'invalid_response':

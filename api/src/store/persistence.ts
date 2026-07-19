@@ -5,6 +5,7 @@ import { resolveDataDir } from '../paths.js'
 import type { SearchParams } from '../types.js'
 import {
   backupStoreFile,
+  clearAllBackups,
   readLatestBackup,
   writeStoreAtomic,
 } from '../storeBackup.js'
@@ -222,7 +223,7 @@ export async function ensureStore(): Promise<StoreData> {
 
 export async function persist(
   data: StoreData,
-  options?: { allowEmptyOverwrite?: boolean },
+  options?: { allowEmptyOverwrite?: boolean; skipBackup?: boolean },
 ): Promise<void> {
   cache = data
   writeQueue = writeQueue.then(async () => {
@@ -246,10 +247,18 @@ export async function persist(
       }
     }
 
-    await backupStoreFile(STORE_PATH, BACKUP_DIR)
+    if (!options?.skipBackup) {
+      await backupStoreFile(STORE_PATH, BACKUP_DIR)
+    }
     await writeStoreAtomic(STORE_PATH, JSON.stringify(data, null, 2))
   })
   await writeQueue
+}
+
+/** Apaga backups internos em data/backups (exports em Downloads ficam intactos). */
+export async function clearInternalStoreBackups(): Promise<void> {
+  const { BACKUP_DIR } = dataPaths()
+  await clearAllBackups(BACKUP_DIR)
 }
 
 export async function getStore(): Promise<StoreData> {

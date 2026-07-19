@@ -22,8 +22,7 @@ export function registerSearchRoutes(
     const blocked = await rejectIfNotConfigured(reply as unknown as ReplyLike)
     if (blocked) return blocked
 
-    const { query, location, postedWithin, fetchDescriptions } =
-      request.body ?? { query: '' }
+    const { query, location, postedWithin } = request.body ?? { query: '' }
 
     if (!query?.trim()) {
       return reply.status(400).send({ error: 'err:query_required' })
@@ -53,7 +52,7 @@ export function registerSearchRoutes(
           query,
           location,
           postedWithin,
-          fetchDescriptions: Boolean(fetchDescriptions),
+          fetchDescriptions: true,
         },
         {
           discardedIds: hints.discardedIds,

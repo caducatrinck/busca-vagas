@@ -139,22 +139,19 @@ async function startBrowserMode() {
   console.log('   Ctrl+C para parar')
   console.log('')
 
+  // Sempre reinicia: prepare acabou de regenerar server.cjs; reaproveitar
+  // o processo antigo deixa a API sem as rotas novas.
   if (await portBusy()) {
     freePort()
     await sleep(600)
   }
 
-  if (await healthOk()) {
-    console.log(`→ servidor ainda ativo em http://${API_HOST}:${API_PORT}/ — abra no navegador (hard refresh)`)
-    return
-  }
-
-  if (await portBusy()) {
+  if (await healthOk() || (await portBusy())) {
     console.error(
-      `Porta ${API_PORT} ocupada (ex.: Docker busca-vagas-api) e não responde /health.`,
+      `Porta ${API_PORT} ainda ocupada após tentar liberar.`,
     )
     console.error(
-      `Pare com: docker stop busca-vagas-api   ou use: BUSCA_VAGAS_PORT=8788 npm run desktop:dev`,
+      `Pare o processo (ex.: fuser -k ${API_PORT}/tcp) ou use: BUSCA_VAGAS_PORT=8788 npm run desktop:dev`,
     )
     process.exit(1)
   }

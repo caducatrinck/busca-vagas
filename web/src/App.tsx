@@ -204,7 +204,7 @@ function App() {
           checking={linkedInSession.checking}
           onGoSettings={() => appSettings.setTab('settings')}
           onRecheck={() => {
-            void linkedInSession.refresh(true)
+            void linkedInSession.refresh({ force: true, clearGuards: true })
           }}
         />
       ) : null}
@@ -254,6 +254,7 @@ function App() {
             onSubTabChange={handleJobsSubTabChange}
             onRefresh={monitors.handleRefreshJobs}
             onClearStatus={monitors.handleClearJobsStatus}
+            onDeleteAll={monitors.handleDeleteAllJobs}
           />
         ) : null}
 
@@ -288,7 +289,7 @@ function App() {
               appSettings.setAppSettings(next)
               if (next.ready) {
                 void monitors.loadMonitors(monitors.activeMonitorId)
-                void linkedInSession.refresh(true)
+                void linkedInSession.refresh({ force: true, clearGuards: true })
               }
             }}
           />
@@ -321,8 +322,8 @@ function App() {
             loading={monitors.loading}
             error={monitors.error}
             searchProgress={searchRun.displaySearchProgress}
-            fetchDescriptions={monitors.monitorDraft.fetchDescriptions}
-            showDescriptionFilters={monitors.monitorDraft.fetchDescriptions}
+            fetchDescriptions
+            showDescriptionFilters
             title={
               monitors.activeMonitor
                 ? t('monitor.title', {

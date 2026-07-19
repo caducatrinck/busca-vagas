@@ -77,6 +77,12 @@ export async function pruneBackups(backupDir: string): Promise<void> {
   }
 }
 
+/** Remove todos os backups internos (não afeta exports em Downloads). */
+export async function clearAllBackups(backupDir: string): Promise<void> {
+  const files = await listBackupFiles(backupDir)
+  await Promise.all(files.map((file) => unlink(file).catch(() => undefined)))
+}
+
 /**
  * Copia o store atual para backups/ antes de sobrescrever.
  * Não faz backup se o arquivo não existir ou estiver vazio.

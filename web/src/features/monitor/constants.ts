@@ -6,6 +6,7 @@ export const POSTED_WITHIN_VALUES: Array<SearchForm['postedWithin']> = [
   '1h',
   '10h',
   '24h',
+  '3d',
   'week',
   'month',
 ]

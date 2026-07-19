@@ -1,4 +1,4 @@
-export type PostedWithin = '30m' | '1h' | '10h' | '24h' | 'week' | 'month'
+export type PostedWithin = '30m' | '1h' | '10h' | '24h' | '3d' | 'week' | 'month'
 
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'

@@ -7,19 +7,27 @@ import {
 
 const POLL_MS = 60_000
 
+type RefreshOptions = {
+  /** Reprobe Voyager (POST). Sem force = só lê status em cache (GET). */
+  force?: boolean
+  /** Zera circuit breaker — só no “Verificar de novo” / após salvar cookies. */
+  clearGuards?: boolean
+}
+
 export function useLinkedInSession(enabled: boolean) {
   const [session, setSession] = useState<LinkedInSessionStatus | null>(null)
   const [checking, setChecking] = useState(false)
 
-  const refresh = useCallback(async (force = false) => {
+  const refresh = useCallback(async (options: RefreshOptions = {}) => {
     if (!enabled) {
       setSession(null)
       return null
     }
+    const { force = false, clearGuards = false } = options
     setChecking(true)
     try {
       const next = force
-        ? await checkLinkedInSession()
+        ? await checkLinkedInSession({ clearGuards })
         : await fetchLinkedInSession()
       setSession(next)
       return next
@@ -35,9 +43,10 @@ export function useLinkedInSession(enabled: boolean) {
       setSession(null)
       return
     }
-    void refresh(true)
+    // Mount: probe sem limpar guards (respeita cooldown do Voyager).
+    void refresh({ force: true, clearGuards: false })
     const id = window.setInterval(() => {
-      void refresh(false)
+      void refresh({ force: false })
     }, POLL_MS)
     return () => window.clearInterval(id)
   }, [enabled, refresh])

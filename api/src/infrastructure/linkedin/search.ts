@@ -1,5 +1,4 @@
 import { getScrapeDelayConfig, randomDelay } from '../../rateLimit.js'
-import { log } from '../../logger.js'
 import { getAppSettings } from '../../store.js'
 import type {
   Job,
@@ -8,7 +7,7 @@ import type {
   SearchProgressCallback,
 } from '../../types.js'
 import { SearchCancelledError } from '../../types.js'
-import { linkedInFetch, linkedInVoyagerFetch } from './client.js'
+import { linkedInFetch, linkedInVoyagerFetch, isVoyagerAuthBlocked } from './client.js'
 import {
   parseDescriptionFromVoyagerPayload,
   parseJobDetailHtml,
@@ -33,6 +32,7 @@ export const POSTED_WITHIN_TO_TPR: Record<PostedWithin, string> = {
   '1h': 'r3600',
   '10h': 'r36000',
   '24h': 'r86400',
+  '3d': 'r259200',
   week: 'r604800',
   month: 'r2592000',
 }
@@ -60,7 +60,8 @@ export function buildSearchPath(params: SearchParams, start: number): string {
     Number.isFinite(params.postedWithinSeconds) &&
     params.postedWithinSeconds > 0
       ? `r${Math.floor(params.postedWithinSeconds)}`
-      : POSTED_WITHIN_TO_TPR[params.postedWithin ?? 'week']
+      : POSTED_WITHIN_TO_TPR[params.postedWithin ?? '3d'] ??
+        POSTED_WITHIN_TO_TPR['3d']
 
   const searchParams = new URLSearchParams({
     keywords: params.query.trim(),
@@ -91,29 +92,27 @@ async function fetchJobDetail(
   workplaceResolved: boolean
 }> {
   // Tags Híbrido/Presencial/Remoto só vêm no Voyager autenticado (HTML guest não traz).
-  try {
-    const payload = await linkedInVoyagerFetch(
-      `/voyager/api/jobs/jobPostings/${jobId}`,
-      signal,
-    )
-    return {
-      description: parseDescriptionFromVoyagerPayload(payload),
-      workplaceType: parseWorkplaceFromVoyagerPayload(payload) ?? null,
-      workplaceResolved: true,
+  if (!isVoyagerAuthBlocked()) {
+    try {
+      const payload = await linkedInVoyagerFetch(
+        `/voyager/api/jobs/jobPostings/${jobId}`,
+        signal,
+      )
+      return {
+        description: parseDescriptionFromVoyagerPayload(payload),
+        workplaceType: parseWorkplaceFromVoyagerPayload(payload) ?? null,
+        workplaceResolved: true,
+      }
+    } catch (err) {
+      if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        throw err
+      }
+      console.warn(
+        `[linkedin] Voyager falhou para ${jobId} · fallback guest · ${
+          err instanceof Error ? err.message : err
+        }`,
+      )
     }
-  } catch (err) {
-    if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
-      throw err
-    }
-    console.warn(
-      `[linkedin] Voyager falhou para ${jobId} · fallback guest · ${
-        err instanceof Error ? err.message : err
-      }`,
-    )
-    log.warn('linkedin.voyager.fallback', {
-      jobId,
-      error: err instanceof Error ? err.message : String(err),
-    })
   }
 
   const html = await linkedInFetch(
@@ -300,7 +299,7 @@ export async function searchLinkedInJobs(
 ): Promise<Job[]> {
   const query = params.query?.trim()
   if (!query) {
-    throw new Error('err:query_required')
+    throw new Error('query é obrigatória')
   }
 
   const discardedIds = options.discardedIds ?? new Set<string>()
@@ -317,7 +316,9 @@ export async function searchLinkedInJobs(
   let listingRequests = 0
   let listingPagesWithJobs = 0
   let emptyReason: string | undefined
-  let skippedDiscardedTotal = 0
+  let duplicatePageStreak = 0
+  // Guest sem cookie às vezes repete páginas; tolera um pouco mais antes de parar.
+  const MAX_DUPLICATE_PAGES = 6
 
   progress.emit({
     phase: 'listing',
@@ -327,15 +328,6 @@ export async function searchLinkedInJobs(
   })
 
   const { linkedinMaxPages: maxPages } = await getAppSettings()
-  const searchPathSample = buildSearchPath(params, 0)
-  log.info('linkedin.search.start', {
-    query,
-    location: params.location ?? null,
-    postedWithin: params.postedWithin ?? null,
-    postedWithinSeconds: params.postedWithinSeconds ?? null,
-    maxPages,
-    path: searchPathSample,
-  })
 
   try {
     for (let page = 0; page < maxPages; page++) {
@@ -349,53 +341,42 @@ export async function searchLinkedInJobs(
         if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
           throw new SearchCancelledError(jobs)
         }
-        log.error('linkedin.search.page_error', {
-          query,
-          page: page + 1,
-          error: err instanceof Error ? err.message : String(err),
-        })
         throw err
       }
       const batch = parseJobsFromSearchHtml(html)
 
-      let skippedDiscarded = 0
+      console.log(
+        `[linkedin] listagem · query="${query}" · página=${page + 1} · cards=${batch.length} · bytes=${html.length}`,
+      )
+
+      if (batch.length === 0) {
+        emptyReason =
+          listingRequests > 0
+            ? 'LinkedIn respondeu, mas a listagem veio sem cards para essa janela.'
+            : undefined
+        break
+      }
+      listingPagesWithJobs += 1
+
       let newOnPage = 0
       const pageJobs: Job[] = []
       for (const job of batch) {
         if (seen.has(job.id)) continue
         seen.add(job.id)
         newOnPage += 1
-        if (discardedIds.has(job.id)) {
-          skippedDiscarded += 1
-          continue
-        }
+        if (discardedIds.has(job.id)) continue
         jobs.push(job)
         pageJobs.push(job)
       }
-      skippedDiscardedTotal += skippedDiscarded
 
-      log.info('linkedin.search.page', {
-        query,
-        page: page + 1,
-        cards: batch.length,
-        bytes: html.length,
-        kept: pageJobs.length,
-        skippedDiscarded,
-        totalKept: jobs.length,
-      })
-
-      if (batch.length === 0) {
-        if (skippedDiscardedTotal > 0 && jobs.length === 0) {
-          emptyReason = 'all_discarded'
-        } else if (listingRequests > 0) {
-          emptyReason =
-            html.length < 80 ? 'linkedin_empty' : 'linkedin_no_cards'
+      if (newOnPage === 0) {
+        duplicatePageStreak += 1
+        if (batch.length < PAGE_SIZE || duplicatePageStreak >= MAX_DUPLICATE_PAGES) {
+          break
         }
-        break
+      } else {
+        duplicatePageStreak = 0
       }
-      listingPagesWithJobs += 1
-
-      if (newOnPage === 0) break
 
       if (batch.length >= PAGE_SIZE) {
         softTotal = Math.max(softTotal ?? 0, jobs.length + PAGE_SIZE)
@@ -433,18 +414,6 @@ export async function searchLinkedInJobs(
     })
 
     if (jobs.length === 0) {
-      if (!emptyReason && skippedDiscardedTotal > 0) {
-        emptyReason = 'all_discarded'
-      }
-
-      log.info('linkedin.search.empty', {
-        query,
-        listingRequests,
-        listingPagesWithJobs,
-        seen: seen.size,
-        skippedDiscardedTotal,
-        emptyReason: emptyReason ?? null,
-      })
 
       options.onTelemetry?.({
         linkedinResponded: listingRequests > 0,
@@ -455,14 +424,6 @@ export async function searchLinkedInJobs(
       await options.onListingComplete?.(jobs)
       return jobs
     }
-
-    log.info('linkedin.search.listed', {
-      query,
-      jobCount: jobs.length,
-      listingRequests,
-      listingPagesWithJobs,
-      skippedDiscardedTotal,
-    })
 
     options.onTelemetry?.({
       linkedinResponded: listingRequests > 0,
