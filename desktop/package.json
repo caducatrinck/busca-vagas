@@ -26,6 +26,7 @@
       "main.mjs",
       "updater.mjs",
       "updaterLogic.mjs",
+      "linkedinLogin.mjs",
       "preload.cjs",
       "trayBadge.mjs",
       "splash.html",
