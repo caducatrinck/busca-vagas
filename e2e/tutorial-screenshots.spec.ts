@@ -27,6 +27,18 @@ async function shot(page: import('@playwright/test').Page, name: string) {
   })
 }
 
+/** Simula app Electron para exibir “Entrar com LinkedIn” no setup. */
+async function mockDesktopLinkedIn(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    // @ts-expect-error demo stub
+    window.buscaVagasDesktop = {
+      isDesktop: true,
+      linkedinLogin: async () => ({ ok: false, cancelled: true }),
+      linkedinLogout: async () => ({ ok: true }),
+    }
+  })
+}
+
 test.describe.configure({ mode: 'serial' })
 
 test.beforeEach(async ({ page }) => {
@@ -40,11 +52,23 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-test('01 configuração (settings)', async ({ page }) => {
+test('01 setup: opções LinkedIn + manual', async ({ page }) => {
   await resetFresh()
+  await mockDesktopLinkedIn(page)
   await page.goto('/')
   await expect(page.locator('.settings-panel')).toBeVisible()
-  await expect(page.getByText('Configure para continuar')).toBeVisible()
+  await expect(page.getByText('Como conectar o LinkedIn')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Entrar com LinkedIn' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Configurar manualmente' }),
+  ).toBeVisible()
+  await shot(page, '01-conectar-opcoes.png')
+
+  await page.getByRole('button', { name: 'Configurar manualmente' }).click()
+  await expect(page.getByText('Como pegar os cookies')).toBeVisible()
+  await shot(page, '01b-opcao-manual.png')
 
   await page.getByPlaceholder('Cole o li_at').fill('demo-li-at-for-screenshots')
   await page.getByPlaceholder('Cole o JSESSIONID').fill('ajax:demo-jsession')
@@ -75,7 +99,9 @@ test('04 aba com pooling ativo', async ({ page }) => {
   await importStore(demoStore({ pollingEnabled: true, withJobs: true }))
   await page.goto('/')
   await page.getByRole('tab', { name: /Monitor/i }).click()
-  await expect(page.locator('.monitor-tabs__item--pooling, .app-nav__tab--pooling').first()).toBeVisible({
+  await expect(
+    page.locator('.monitor-tabs__item--pooling, .app-nav__tab--pooling').first(),
+  ).toBeVisible({
     timeout: 10_000,
   })
   await shot(page, '04-pooling-ativo.png')
@@ -84,7 +110,6 @@ test('04 aba com pooling ativo', async ({ page }) => {
 test('05 vagas / badge de novas', async ({ page }) => {
   await importStore(demoStore({ pollingEnabled: true, withJobs: true }))
   await page.goto('/')
-  // simula anúncio in-app via badge: abre Vagas
   await page.getByRole('tab', { name: /Vagas|Jobs/i }).click()
   await expect(page.locator('.job-list, .jobs-panel, .app__main').first()).toBeVisible()
   await shot(page, '05-vagas-pendentes.png')
@@ -104,7 +129,9 @@ test('07 bandeja', async ({ page }) => {
   await importStore(demoStore({ pollingEnabled: true, withJobs: true }))
   await page.goto('/')
   await page.getByRole('tab', { name: /Monitor/i }).click()
-  await expect(page.locator('.app-nav__tab--pooling, .monitor-tabs__item--pooling').first()).toBeVisible()
+  await expect(
+    page.locator('.app-nav__tab--pooling, .monitor-tabs__item--pooling').first(),
+  ).toBeVisible()
   await showTaskbarDemo(page)
   await shot(page, '07-bandeja.png')
   await clearOsChrome(page)

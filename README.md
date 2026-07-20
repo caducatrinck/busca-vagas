@@ -6,15 +6,17 @@ App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações
 
 ### Baixar
 
-- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.4/BuscaVagas-1.0.4-win-x64-portable.exe)** — `BuscaVagas-1.0.4-win-x64-portable.exe`
-- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.4/BuscaVagas-1.0.4-linux-x64.AppImage)** — `BuscaVagas-1.0.4-linux-x64.AppImage`  
+- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.5/BuscaVagas-1.0.5-win-x64-portable.exe)** — `BuscaVagas-1.0.5-win-x64-portable.exe`
+- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.5/BuscaVagas-1.0.5-linux-x64.AppImage)** — `BuscaVagas-1.0.5-linux-x64.AppImage`  
   (`chmod +x` no AppImage se o sistema pedir)
 
 Outras versões: **[Releases](https://github.com/caducatrinck/busca-vagas/releases)**
 
 Tutorial com prints: **[docs/tutorial](./docs/tutorial/README.md)**
 
-![Configuração](./docs/tutorial/screenshots/01-configuracao.png)
+Na primeira abertura você conecta o LinkedIn no app (**Entrar com LinkedIn**) ou cola os cookies manualmente:
+
+![Como conectar o LinkedIn](./docs/tutorial/screenshots/01-conectar-opcoes.png)
 
 ![Pooling ativo](./docs/tutorial/screenshots/04-pooling-ativo.png)
 
@@ -42,7 +44,7 @@ Use **Exportar / Importar** no topo do app para backup.
 
 Este projeto é **experimental**, para uso **pessoal e local** no seu próprio PC.
 
-Ele automatiza consultas de vagas no LinkedIn com a **sua** sessão (cookie). Isso **conflita** com o [Contrato do Usuário do LinkedIn](https://br.linkedin.com/legal/user-agreement) — em especial a seção **8.2** (proibição de desenvolver/usar meios para extrair dados e de métodos automatizados não autorizados) — e com a política de [software proibido](https://www.linkedin.com/help/linkedin/answer/a1341387).
+Ele automatiza consultas de vagas no LinkedIn com a **sua** sessão (cookie / login no app). Isso **conflita** com o [Contrato do Usuário do LinkedIn](https://br.linkedin.com/legal/user-agreement) — em especial a seção **8.2** (proibição de desenvolver/usar meios para extrair dados e de métodos automatizados não autorizados) — e com a política de [software proibido](https://www.linkedin.com/help/linkedin/answer/a1341387).
 
 **Riscos (você assume):**
 - bloqueios técnicos (rate limit / sessão inválida)
