@@ -32,18 +32,18 @@ The screenshot below is the everyday outcome that matters:
 
 On first launch the app asks you to connect LinkedIn. Pick one option (data stays on this PC only):
 
-1. **Sign in with LinkedIn** — opens LinkedIn in the app; you sign in (email, Google, etc.) and cookies are captured
+1. **Sign in with LinkedIn** — LinkedIn-style blue button; opens the in-app login window (email, Google, Microsoft, Apple…). When you finish, the session is saved automatically
 2. **Configure manually** — paste `li_at` and `JSESSIONID` from the browser
 
-![Choose how to connect](./screenshots/01-conectar-opcoes.png)
+![How to connect LinkedIn](./screenshots/01-conectar-opcoes.png)
 
-### Option A — Sign in in the app
+### Option A — Sign in with LinkedIn
 
-Under **Sign in with LinkedIn**, use the button to open the login window. After you sign in, login windows should close and you return to **Settings** with the session saved.
+Click **Sign in with LinkedIn** and sign in in the window that opens. There is no extra step: the button starts login right away. When the session is captured, login windows close and searches/monitor unlock.
 
 ### Option B — Manual
 
-![Configure manually](./screenshots/01b-opcao-manual.png)
+![Manual path](./screenshots/01b-opcao-manual.png)
 
 Follow the in-app guide (F12 → Application → Cookies) and paste `li_at` and `JSESSIONID`.
 
@@ -85,7 +85,7 @@ On launch, if a newer GitHub release exists, the app asks whether you want to do
 
 | Situation | What to do |
 |-----------|------------|
-| Search fails / 401 | Refresh the cookie in Settings |
+| Search fails / 401 | In Settings, **Sign in to LinkedIn again** or refresh the cookies |
 | Linux won’t open | `chmod +x` on the AppImage |
 | Backup | **Export / Import** at the top of the app |
 

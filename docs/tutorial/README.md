@@ -32,18 +32,18 @@ O print abaixo é o resultado que importa no dia a dia:
 
 Na primeira abertura o app pede para conectar o LinkedIn. Escolha uma opção (os dados ficam só neste PC):
 
-1. **Logar com LinkedIn** — abre o LinkedIn no app; você entra (e-mail, Google, etc.) e os cookies são capturados
+1. **Entrar com LinkedIn** — botão azul no estilo LinkedIn; abre a janela de login no app (e-mail, Google, Microsoft, Apple…). Ao concluir, a sessão é salva sozinha
 2. **Configurar manualmente** — cola `li_at` e `JSESSIONID` do navegador
 
-![Escolher como conectar](./screenshots/01-conectar-opcoes.png)
+![Como conectar o LinkedIn](./screenshots/01-conectar-opcoes.png)
 
-### Opção A — Logar no app
+### Opção A — Entrar com LinkedIn
 
-Em **Logar com LinkedIn**, use o botão para abrir a janela de login. Depois de entrar, as janelas de login devem fechar sozinhas e você volta para **Configurações** com a sessão salva.
+Clique em **Entrar com LinkedIn** e faça login na janela que abrir. Não há etapa intermediária: o botão já inicia o login. Quando a sessão for capturada, as janelas fecham e o app libera buscas e monitor.
 
 ### Opção B — Manual
 
-![Configurar manualmente](./screenshots/01b-opcao-manual.png)
+![Caminho manual](./screenshots/01b-opcao-manual.png)
 
 Siga o guia no app (F12 → Application → Cookies) e cole `li_at` e `JSESSIONID`.
 
@@ -85,7 +85,7 @@ Ao abrir, se houver versão nova no GitHub, o app pergunta se você quer baixar 
 
 | Situação | O que fazer |
 |----------|-------------|
-| Busca falha / 401 | Atualize o cookie em Configurações |
+| Busca falha / 401 | Em Configurações, **Entrar de novo no LinkedIn** ou atualize os cookies |
 | Linux não abre | `chmod +x` no AppImage |
 | Backup | **Exportar / Importar** no topo do app |
 
