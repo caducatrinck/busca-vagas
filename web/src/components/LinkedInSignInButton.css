@@ -1,0 +1,38 @@
+.linkedin-signin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 8px;
+  background: #0a66c2;
+  color: #fff;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 1px 2px color-mix(in srgb, #0a66c2 35%, transparent);
+}
+
+.linkedin-signin:hover:not(:disabled) {
+  background: #004182;
+}
+
+.linkedin-signin:focus-visible {
+  outline: 2px solid #0a66c2;
+  outline-offset: 2px;
+}
+
+.linkedin-signin:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.linkedin-signin__mark {
+  flex-shrink: 0;
+  display: block;
+}

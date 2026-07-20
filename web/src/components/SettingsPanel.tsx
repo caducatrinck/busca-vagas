@@ -9,6 +9,7 @@ import {
 import { useI18n } from '../i18n'
 import { localizeVisibleError } from '../lib/localizeVisibleError'
 import { Alert, Button, Field, NumberInput, TextInput } from '../ui'
+import { LinkedInSignInButton } from './LinkedInSignInButton'
 import './SettingsPanel.css'
 
 const COOKIE_MASK = '********'
@@ -83,7 +84,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   const [linkedinLoggingIn, setLinkedinLoggingIn] = useState(false)
   const [linkedinLoggingOut, setLinkedinLoggingOut] = useState(false)
   /** null = escolher; login | manual = caminho escolhido (setup). */
-  const [setupPath, setSetupPath] = useState<null | 'login' | 'manual'>(null)
+  const [setupPath, setSetupPath] = useState<null | 'manual'>(null)
   const canLinkedInLogin =
     typeof window !== 'undefined' &&
     typeof window.buscaVagasDesktop?.linkedinLogin === 'function'
@@ -198,7 +199,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         setError(t('settings.loginTimeout'))
         return
       }
-      if (!result.ok || !result.linkedinLiAt || !result.linkedinJsessionId) {
+      if (!result.ok || !result.linkedinLiAt) {
         setError(
           result.error
             ? localizeVisibleError(result.error, t)
@@ -209,7 +210,11 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
 
       const patch: SettingsPatch = {
         linkedinLiAt: stripCookieQuotes(result.linkedinLiAt),
-        linkedinJsessionId: stripCookieQuotes(result.linkedinJsessionId),
+        ...(result.linkedinJsessionId
+          ? {
+              linkedinJsessionId: stripCookieQuotes(result.linkedinJsessionId),
+            }
+          : {}),
         linkedinMaxPages: form.linkedinMaxPages,
         searchCooldownMs: Math.max(0, Math.round(form.searchCooldownSec * 1000)),
         maxSearchesPerHour: form.maxSearchesPerHour,
@@ -334,31 +339,33 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
           <p className="settings-panel__chooser-lead">{t('settings.chooseLead')}</p>
           <div className="settings-panel__chooser-options">
             {canLinkedInLogin ? (
+              <div className="settings-panel__choice-card">
+                <LinkedInSignInButton
+                  disabled={linkedinLoggingIn || saving}
+                  onClick={() => void handleLinkedInLogin()}
+                >
+                  {linkedinLoggingIn
+                    ? t('settings.loginWorking')
+                    : t('settings.loginButton')}
+                </LinkedInSignInButton>
+                <p className="settings-panel__choice-desc">
+                  {t('settings.chooseLoginBody')}
+                </p>
+              </div>
+            ) : null}
+            <div className="settings-panel__choice-card">
               <button
                 type="button"
-                className="settings-panel__option"
-                onClick={() => setSetupPath('login')}
+                className="settings-panel__manual-btn"
+                disabled={linkedinLoggingIn}
+                onClick={() => setSetupPath('manual')}
               >
-                <span className="settings-panel__option-title">
-                  {t('settings.chooseLogin')}
-                </span>
-                <span className="settings-panel__option-body">
-                  {t('settings.chooseLoginBody')}
-                </span>
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="settings-panel__option"
-              onClick={() => setSetupPath('manual')}
-            >
-              <span className="settings-panel__option-title">
                 {t('settings.chooseManual')}
-              </span>
-              <span className="settings-panel__option-body">
+              </button>
+              <p className="settings-panel__choice-desc">
                 {t('settings.chooseManualBody')}
-              </span>
-            </button>
+              </p>
+            </div>
           </div>
           {!canLinkedInLogin ? (
             <p className="settings-panel__login-hint">{t('settings.loginDesktopOnly')}</p>
@@ -366,44 +373,10 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
         </div>
       ) : null}
 
-      {setupPath === 'login' && canLinkedInLogin ? (
-        <div className="settings-panel__login">
-          <h2 className="settings-panel__path-title">{t('settings.chooseLogin')}</h2>
-          <p className="settings-panel__login-hint">{t('settings.loginHint')}</p>
-          <Button
-            type="button"
-            variant="primary"
-            disabled={linkedinLoggingIn || saving}
-            onClick={() => void handleLinkedInLogin()}
-          >
-            {linkedinLoggingIn
-              ? t('settings.loginWorking')
-              : t('settings.loginButton')}
-          </Button>
-          {setupRequired ? (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={linkedinLoggingIn}
-              onClick={() => setSetupPath(null)}
-            >
-              {t('settings.chooseBack')}
-            </Button>
-          ) : null}
-          <button
-            type="button"
-            className="settings-panel__linkish"
-            onClick={() => setSetupPath('manual')}
-          >
-            {t('settings.chooseSwitchManual')}
-          </button>
-        </div>
-      ) : null}
-
-      {error && (setupPath === 'login' || showSetupChooser) ? (
+      {error && showSetupChooser ? (
         <Alert tone="danger">{localizeVisibleError(error, t)}</Alert>
       ) : null}
-      {okMsg && (setupPath === 'login' || showSetupChooser) ? (
+      {okMsg && showSetupChooser ? (
         <p className="settings-panel__ok">{okMsg}</p>
       ) : null}
 
@@ -443,16 +416,14 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
                   <p className="settings-panel__connected">{t('settings.connected')}</p>
                   {canLinkedInLogin ? (
                     <>
-                      <Button
-                        type="button"
-                        variant="primary"
+                      <LinkedInSignInButton
                         disabled={linkedinLoggingIn || linkedinLoggingOut || saving}
                         onClick={() => void handleLinkedInLogin()}
                       >
                         {linkedinLoggingIn
                           ? t('settings.loginWorking')
                           : t('settings.loginAgain')}
-                      </Button>
+                      </LinkedInSignInButton>
                       <Button
                         type="button"
                         variant="danger"

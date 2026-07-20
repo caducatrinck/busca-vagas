@@ -129,8 +129,6 @@ const pt = {
     'No Chrome: F12 → Application → Cookies → selecione https://www.linkedin.com.',
   'settings.loginButton': 'Entrar com LinkedIn',
   'settings.loginWorking': 'Aguardando login…',
-  'settings.loginHint':
-    'Abre o LinkedIn neste app, captura li_at e JSESSIONID e salva automaticamente. Você ainda pode colar os cookies manualmente abaixo.',
   'settings.loginSavedOk': 'Login LinkedIn salvo. Buscas liberadas.',
   'settings.loginCancelled': 'Login cancelado.',
   'settings.loginTimeout': 'Tempo esgotado no login LinkedIn. Tente de novo.',
@@ -140,14 +138,12 @@ const pt = {
   'settings.chooseTitle': 'Como conectar o LinkedIn',
   'settings.chooseLead':
     'Escolha uma opção. Em ambos os casos os dados ficam só neste PC.',
-  'settings.chooseLogin': 'Logar com LinkedIn',
   'settings.chooseLoginBody':
     'Abre o LinkedIn neste app. Você entra na sua conta (e-mail, Google, etc.) e os cookies são capturados automaticamente.',
   'settings.chooseManual': 'Configurar manualmente',
   'settings.chooseManualBody':
     'Copia li_at e JSESSIONID do navegador e cola aqui — útil se preferir não logar pela janela do app.',
   'settings.chooseBack': 'Voltar às opções',
-  'settings.chooseSwitchManual': 'Prefiro configurar manualmente',
   'settings.loginDesktopOnly':
     'Login in-app só no app desktop (Electron). Aqui use a configuração manual.',
   'settings.connected': 'LinkedIn conectado neste computador.',
@@ -571,8 +567,6 @@ const en: Record<MessageKey, string> = {
     'In Chrome: F12 → Application → Cookies → select https://www.linkedin.com.',
   'settings.loginButton': 'Sign in with LinkedIn',
   'settings.loginWorking': 'Waiting for login…',
-  'settings.loginHint':
-    'Opens LinkedIn in this app, captures li_at and JSESSIONID, and saves them. You can still paste cookies manually below.',
   'settings.loginSavedOk': 'LinkedIn login saved. Searches unlocked.',
   'settings.loginCancelled': 'Login cancelled.',
   'settings.loginTimeout': 'LinkedIn login timed out. Try again.',
@@ -582,14 +576,12 @@ const en: Record<MessageKey, string> = {
   'settings.chooseTitle': 'How to connect LinkedIn',
   'settings.chooseLead':
     'Pick an option. Either way, data stays only on this PC.',
-  'settings.chooseLogin': 'Sign in with LinkedIn',
   'settings.chooseLoginBody':
     'Opens LinkedIn in this app. You sign in (email, Google, etc.) and cookies are captured automatically.',
   'settings.chooseManual': 'Configure manually',
   'settings.chooseManualBody':
     'Copy li_at and JSESSIONID from the browser and paste them here — useful if you prefer not to sign in via the app window.',
   'settings.chooseBack': 'Back to options',
-  'settings.chooseSwitchManual': 'I prefer manual setup',
   'settings.loginDesktopOnly':
     'In-app login is only available in the desktop app (Electron). Use manual setup here.',
   'settings.connected': 'LinkedIn is connected on this computer.',

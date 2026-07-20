@@ -1,13 +1,25 @@
 import { BrowserWindow, ipcMain, session } from 'electron'
 
 const LOGIN_URL = 'https://www.linkedin.com/login'
+const FEED_URL = 'https://www.linkedin.com/feed/'
 const PARTITION = 'persist:linkedin-login'
-const POLL_MS = 800
+const POLL_MS = 700
 const TIMEOUT_MS = 10 * 60_000
-const BLANK_CLOSE_MS = 600
+const POST_POPUP_RETRY_MS = 4_000
+const JSESSION_WAIT_MS = 2_500
+const REFRESH_DELAY_MS = 250
+const BLANK_CLOSE_MS = 700
 
 const AUTH_HOST_RE =
-  /(^|\.)linkedin\.com$|(^|\.)google\.com$|(^|\.)googleusercontent\.com$|(^|\.)gstatic\.com$|(^|\.)accounts\.youtube\.com$/i
+  /(^|\.)linkedin\.com$|(^|\.)google\.com$|(^|\.)googleusercontent\.com$|(^|\.)gstatic\.com$|(^|\.)accounts\.youtube\.com$|(^|\.)microsoftonline\.com$|(^|\.)microsoft\.com$|(^|\.)live\.com$|(^|\.)office\.com$|(^|\.)apple\.com$|(^|\.)appleid\.apple\.com$/i
+
+const EMPTY_POPUP_PROBE = `(() => {
+  const b = document.body
+  if (!b) return true
+  const text = (b.innerText || '').replace(/\\s+/g, ' ').trim()
+  const interactive = b.querySelectorAll('input, button, a, [role="button"]').length
+  return text.length < 8 && interactive === 0
+})()`
 
 /**
  * @param {string | undefined} value
@@ -33,15 +45,20 @@ function stripCookieQuotes(value) {
  */
 function isAuthRelatedUrl(url) {
   try {
-    const host = new URL(url).hostname
-    return AUTH_HOST_RE.test(host)
+    return AUTH_HOST_RE.test(new URL(url).hostname)
   } catch {
     return false
   }
 }
 
 /**
- * Pós-OAuth (Google) costuma cair em about:blank com a janela branca.
+ * @param {string} url
+ */
+function isLoginUrl(url) {
+  return /\/login/i.test(url) || /uas\/login/i.test(url)
+}
+
+/**
  * @param {string} url
  */
 function isPostAuthBlankUrl(url) {
@@ -55,15 +72,36 @@ function isPostAuthBlankUrl(url) {
 }
 
 /**
- * @param {import('electron').Session} ses
+ * @param {string | undefined} domain
  */
-async function readLinkedInCookies(ses) {
-  const cookies = await ses.cookies.get({ url: 'https://www.linkedin.com' })
-  const byName = new Map(cookies.map((c) => [c.name, c.value]))
+function isLinkedInCookieDomain(domain) {
+  const host = String(domain ?? '')
+    .replace(/^\./, '')
+    .toLowerCase()
+  return host === 'linkedin.com' || host.endsWith('.linkedin.com')
+}
+
+/**
+ * @param {import('electron').Session} ses
+ * @param {{ requireJsession?: boolean }} [opts]
+ */
+async function readLinkedInCookies(ses, opts = {}) {
+  const requireJsession = opts.requireJsession !== false
+  const cookies = await ses.cookies.get({})
+  /** @type {Map<string, string>} */
+  const byName = new Map()
+  for (const c of cookies) {
+    if (!isLinkedInCookieDomain(c.domain)) continue
+    byName.set(c.name, c.value)
+    byName.set(c.name.toLowerCase(), c.value)
+  }
   const liAt = stripCookieQuotes(byName.get('li_at'))
-  const jsession = stripCookieQuotes(byName.get('JSESSIONID'))
-  if (!liAt || !jsession) return null
-  return { linkedinLiAt: liAt, linkedinJsessionId: jsession }
+  const jsession = stripCookieQuotes(
+    byName.get('JSESSIONID') || byName.get('jsessionid'),
+  )
+  if (!liAt) return null
+  if (requireJsession && !jsession) return null
+  return { linkedinLiAt: liAt, linkedinJsessionId: jsession || '' }
 }
 
 /**
@@ -79,6 +117,35 @@ function focusMainWindow(getMainWindow) {
 }
 
 /**
+ * @param {BrowserWindow} w
+ * @param {import('electron').Session} ses
+ */
+function windowUsesLoginSession(w, ses) {
+  if (w.isDestroyed()) return false
+  try {
+    const ws = w.webContents?.session
+    if (!ws) return false
+    if (ws === ses) return true
+    return ws.getStoragePath?.() === ses.getStoragePath?.()
+  } catch {
+    return false
+  }
+}
+
+/**
+ * @param {import('electron').Session} ses
+ */
+function loginWebPreferences(ses) {
+  return {
+    session: ses,
+    partition: PARTITION,
+    nodeIntegration: false,
+    contextIsolation: true,
+    sandbox: true,
+  }
+}
+
+/**
  * @param {() => BrowserWindow | null} getMainWindow
  */
 export function registerLinkedInLogin(getMainWindow) {
@@ -90,8 +157,7 @@ export function registerLinkedInLogin(getMainWindow) {
 
 async function clearLinkedInLoginSession() {
   try {
-    const ses = session.fromPartition(PARTITION)
-    await ses.clearStorageData()
+    await session.fromPartition(PARTITION).clearStorageData()
     return { ok: true }
   } catch (err) {
     return {
@@ -111,6 +177,8 @@ function openLinkedInLogin(getMainWindow) {
     const windows = new Set()
     /** @type {Map<number, ReturnType<typeof setTimeout>>} */
     const blankTimers = new Map()
+    /** @type {ReturnType<typeof setTimeout>[]} */
+    const looseTimers = []
 
     /** @type {BrowserWindow | null} */
     let win = new BrowserWindow({
@@ -120,60 +188,69 @@ function openLinkedInLogin(getMainWindow) {
       minHeight: 560,
       title: 'LinkedIn',
       autoHideMenuBar: true,
-      // Sem parent: evita o Windows mandar o app pra bandeja/desktop ao fechar a popup
-      webPreferences: {
-        session: ses,
-        partition: PARTITION,
-        nodeIntegration: false,
-        contextIsolation: true,
-        sandbox: true,
-      },
+      webPreferences: loginWebPreferences(ses),
     })
     windows.add(win)
 
     let settled = false
+    let pendingLoginRefresh = false
+    let liAtSeenAt = 0
     /** @type {ReturnType<typeof setInterval> | null} */
-    let timer = null
+    let pollTimer = null
     /** @type {ReturnType<typeof setTimeout> | null} */
-    let timeout = null
+    let timeoutTimer = null
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    let postPopupTimer = null
 
-    const clearBlankTimers = () => {
+    const schedule = (fn, ms) => {
+      const id = setTimeout(fn, ms)
+      looseTimers.push(id)
+      return id
+    }
+
+    const clearAllTimers = () => {
+      if (pollTimer) clearInterval(pollTimer)
+      pollTimer = null
+      if (timeoutTimer) clearTimeout(timeoutTimer)
+      timeoutTimer = null
+      if (postPopupTimer) clearTimeout(postPopupTimer)
+      postPopupTimer = null
       for (const t of blankTimers.values()) clearTimeout(t)
       blankTimers.clear()
-    }
-
-    const cleanupTimers = () => {
-      if (timer) clearInterval(timer)
-      timer = null
-      if (timeout) clearTimeout(timeout)
-      timeout = null
-      clearBlankTimers()
-    }
-
-    const closeAllWindows = () => {
-      clearBlankTimers()
-      for (const w of [...windows]) {
-        windows.delete(w)
-        if (!w.isDestroyed()) {
-          w.removeAllListeners('closed')
-          try {
-            w.close()
-          } catch {
-            /* ignore */
-          }
-        }
+      for (const t of looseTimers) clearTimeout(t)
+      looseTimers.length = 0
+      try {
+        ses.cookies.removeListener('changed', onCookieChanged)
+      } catch {
+        /* ignore */
       }
-      // Qualquer janela órfã da mesma partition (Electron às vezes cria fora do handler)
-      for (const w of BrowserWindow.getAllWindows()) {
-        if (w.isDestroyed()) continue
+    }
+
+    const forceClose = (w) => {
+      if (!w || w.isDestroyed()) return
+      try {
+        w.removeAllListeners('closed')
+      } catch {
+        /* ignore */
+      }
+      try {
+        w.destroy()
+      } catch {
         try {
-          if (w.webContents?.session === ses) {
-            w.removeAllListeners('closed')
-            w.close()
-          }
+          w.close()
         } catch {
           /* ignore */
         }
+      }
+    }
+
+    const closeAllWindows = () => {
+      for (const w of [...windows]) {
+        windows.delete(w)
+        forceClose(w)
+      }
+      for (const w of BrowserWindow.getAllWindows()) {
+        if (windowUsesLoginSession(w, ses)) forceClose(w)
       }
       win = null
     }
@@ -191,9 +268,8 @@ function openLinkedInLogin(getMainWindow) {
     const finish = (result) => {
       if (settled) return
       settled = true
-      cleanupTimers()
+      clearAllTimers()
       closeAllWindows()
-      // Volta o foco para Configurações (não deixa o Windows no desktop)
       setTimeout(() => focusMainWindow(getMainWindow), 50)
       resolve(result)
     }
@@ -201,66 +277,72 @@ function openLinkedInLogin(getMainWindow) {
     const tryCapture = async () => {
       if (settled) return
       try {
-        const cookies = await readLinkedInCookies(ses)
-        if (!cookies) return
-        finish({ ok: true, ...cookies })
+        const both = await readLinkedInCookies(ses, { requireJsession: true })
+        if (both) {
+          finish({ ok: true, ...both })
+          return
+        }
+        const partial = await readLinkedInCookies(ses, { requireJsession: false })
+        if (!partial) return
+        if (!liAtSeenAt) liAtSeenAt = Date.now()
+        if (Date.now() - liAtSeenAt >= JSESSION_WAIT_MS) {
+          finish({ ok: true, ...partial })
+        }
       } catch (err) {
         console.warn('[linkedin-login] cookie read failed', err)
       }
     }
 
-    /**
-     * Cria popup OAuth sob nosso controle (em vez de action:allow),
-     * para garantir mesma session e fechamento após redirect em branco.
-     * @param {string} url
-     * @param {BrowserWindow} [parentHost]
-     */
-    const openAuthPopup = (url, parentHost) => {
-      if (settled) return null
-      const child = new BrowserWindow({
-        width: 520,
-        height: 720,
-        autoHideMenuBar: true,
-        title: 'Sign In',
-        webPreferences: {
-          session: ses,
-          partition: PARTITION,
-          nodeIntegration: false,
-          contextIsolation: true,
-          sandbox: true,
-        },
-      })
-      windows.add(child)
-      wireWindow(child)
-      child.on('closed', () => {
-        windows.delete(child)
-        void tryCapture()
-        // Se só restava a popup e o login principal já sumiu, cancela
-        if (
-          !settled &&
-          ![...windows].some((w) => !w.isDestroyed())
-        ) {
-          finish({ ok: false, cancelled: true })
-        }
-      })
-      void child.loadURL(url).catch((err) => {
-        console.warn('[linkedin-login] popup load failed', err)
-      })
-      if (parentHost && !parentHost.isDestroyed()) {
-        // Mantém a janela de login LinkedIn atrás da popup, sem parent modal
-        child.moveTop()
+    const refreshLoginWindow = () => {
+      if (settled || !win || win.isDestroyed()) return
+      pendingLoginRefresh = true
+      try {
+        win.webContents.reloadIgnoringCache()
+      } catch {
+        pendingLoginRefresh = false
+        void win.loadURL(FEED_URL).catch(() => {})
       }
-      return child
+    }
+
+    /** Popup de e-mail/OAuth fecha e /login fica stale — F5 aplica a session. */
+    const afterPopupClosed = () => {
+      if (settled) return
+      void tryCapture()
+      if (postPopupTimer) clearTimeout(postPopupTimer)
+
+      schedule(() => {
+        if (!settled) refreshLoginWindow()
+      }, REFRESH_DELAY_MS)
+
+      const started = Date.now()
+      const tick = () => {
+        if (settled) return
+        void tryCapture()
+        if (Date.now() - started >= POST_POPUP_RETRY_MS) return
+        postPopupTimer = setTimeout(tick, 400)
+      }
+      postPopupTimer = setTimeout(tick, 400)
     }
 
     /**
-     * Fecha só popups OAuth que ficaram em branco — nunca a janela principal de login.
+     * @param {import('electron').Event} _event
+     * @param {Electron.Cookie} cookie
+     * @param {string} _cause
+     * @param {boolean} removed
+     */
+    const onCookieChanged = (_event, cookie, _cause, removed) => {
+      if (removed || settled) return
+      const name = String(cookie?.name || '').toLowerCase()
+      if (name === 'li_at' || name === 'jsessionid') void tryCapture()
+    }
+    ses.cookies.on('changed', onCookieChanged)
+
+    /**
      * @param {BrowserWindow} host
      * @param {string} url
      */
     const scheduleBlankClose = (host, url) => {
-      if (settled || host.isDestroyed()) return
-      if (host === win) return
+      if (settled || host.isDestroyed() || host === win) return
       if (!isPostAuthBlankUrl(url)) return
       const id = host.id
       const prev = blankTimers.get(id)
@@ -272,90 +354,77 @@ function openLinkedInLogin(getMainWindow) {
           if (settled || host.isDestroyed()) return
           void tryCapture().finally(() => {
             if (settled || host.isDestroyed()) return
-            try {
-              host.close()
-            } catch {
-              /* ignore */
-            }
+            forceClose(host)
+            windows.delete(host)
+            afterPopupClosed()
           })
         }, BLANK_CLOSE_MS),
       )
     }
 
     /**
+     * `allow` + mesma session preserva window.opener (necessário no login e-mail).
      * @param {BrowserWindow} host
      */
     const wireWindow = (host) => {
       host.webContents.setWindowOpenHandler(({ url }) => {
-        if (!isAuthRelatedUrl(url)) {
-          return { action: 'deny' }
-        }
-        openAuthPopup(url, host)
-        return { action: 'deny' }
-      })
-
-      // Fallback: se o Chromium criar janela mesmo com deny, recria sob nosso controle
-      host.webContents.on('did-create-window', (child, details) => {
-        const url =
-          (details && details.url) ||
-          (() => {
-            try {
-              return child.webContents.getURL()
-            } catch {
-              return ''
-            }
-          })()
-        try {
-          child.destroy()
-        } catch {
-          /* ignore */
-        }
-        if (url && isAuthRelatedUrl(url)) {
-          openAuthPopup(url, host)
+        if (!isAuthRelatedUrl(url)) return { action: 'deny' }
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 520,
+            height: 720,
+            autoHideMenuBar: true,
+            webPreferences: loginWebPreferences(ses),
+          },
         }
       })
 
-      const onNav = (_event, url) => {
+      host.webContents.on('did-create-window', (child) => {
+        windows.add(child)
+        wireWindow(child)
+        child.on('closed', () => {
+          windows.delete(child)
+          afterPopupClosed()
+        })
+      })
+
+      /** @param {string} url */
+      const onUrl = (url) => {
         void tryCapture()
         scheduleBlankClose(host, url)
       }
 
-      host.webContents.on('did-navigate', onNav)
-      host.webContents.on('did-navigate-in-page', () => {
-        void tryCapture()
-      })
+      host.webContents.on('did-navigate', (_e, url) => onUrl(url))
+      host.webContents.on('did-navigate-in-page', (_e, url) => onUrl(url))
+      host.webContents.on('will-redirect', (_e, url) => onUrl(url))
+      host.webContents.on('did-redirect-navigation', (_e, url) => onUrl(url))
       host.webContents.on('did-finish-load', () => {
+        if (settled || host.isDestroyed()) return
         void tryCapture()
+        let url = ''
         try {
-          const url = host.webContents.getURL()
-          scheduleBlankClose(host, url)
+          url = host.webContents.getURL()
+          onUrl(url)
         } catch {
           /* ignore */
         }
-        // Google/LinkedIn às vezes deixam a popup branca sem about:blank
-        if (host === win || host.isDestroyed()) return
+
+        if (host === win && pendingLoginRefresh) {
+          pendingLoginRefresh = false
+          if (isLoginUrl(url)) {
+            void host.loadURL(FEED_URL).catch(() => {})
+          }
+          return
+        }
+
+        if (host === win) return
         void host.webContents
-          .executeJavaScript(
-            `(() => {
-              const b = document.body
-              if (!b) return true
-              const text = (b.innerText || '').replace(/\\s+/g, ' ').trim()
-              const interactive = b.querySelectorAll('input, button, a, [role="button"]').length
-              return text.length < 8 && interactive === 0
-            })()`,
-          )
+          .executeJavaScript(EMPTY_POPUP_PROBE)
           .then((empty) => {
             if (empty) scheduleBlankClose(host, 'about:blank')
           })
           .catch(() => {})
-      })
-      host.webContents.on('will-redirect', (_event, url) => {
-        void tryCapture()
-        scheduleBlankClose(host, url)
-      })
-      host.webContents.on('did-redirect-navigation', (_event, url) => {
-        void tryCapture()
-        scheduleBlankClose(host, url)
       })
     }
 
@@ -365,16 +434,15 @@ function openLinkedInLogin(getMainWindow) {
       windows.delete(win)
       win = null
       if (settled) return
-      // Ainda há popup OAuth → não cancela; o poll / closed da popup decide
       if ([...windows].some((w) => !w.isDestroyed())) return
       finish({ ok: false, cancelled: true })
     })
 
-    timer = setInterval(() => {
+    pollTimer = setInterval(() => {
       void tryCapture()
     }, POLL_MS)
 
-    timeout = setTimeout(() => {
+    timeoutTimer = setTimeout(() => {
       finish({ ok: false, timedOut: true })
     }, TIMEOUT_MS)
 
