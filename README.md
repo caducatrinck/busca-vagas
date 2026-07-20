@@ -84,5 +84,3 @@ flowchart LR
 Stack de CI usada nessa pipeline: **GitHub Actions**, **Playwright**.
 
 ---
-
-> Isto **não é aconselhamento jurídico**. Em caso de dúvida, consulte um advogado e leia o Contrato atualizado.
