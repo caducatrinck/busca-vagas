@@ -27,14 +27,19 @@ async function shot(page: import('@playwright/test').Page, name: string) {
   })
 }
 
-/** Simula app Electron para exibir “Entrar com LinkedIn” no setup. */
-async function mockDesktopLinkedIn(page: import('@playwright/test').Page) {
+/** Stub mínimo do bridge Electron (login no print não abre janela real). */
+async function stubDesktopBridge(page: import('@playwright/test').Page) {
   await page.addInitScript(() => {
     // @ts-expect-error demo stub
     window.buscaVagasDesktop = {
       isDesktop: true,
-      linkedinLogin: async () => ({ ok: false, cancelled: true }),
-      linkedinLogout: async () => ({ ok: true }),
+      setTrayBadge() {},
+      linkedinLogin() {
+        return Promise.resolve({ ok: false, cancelled: true })
+      },
+      linkedinLogout() {
+        return Promise.resolve({ ok: true })
+      },
     }
   })
 }
@@ -50,13 +55,17 @@ test.beforeEach(async ({ page }) => {
     // @ts-expect-error demo stub
     window.Notification.requestPermission = async () => 'granted'
   })
+  await stubDesktopBridge(page)
 })
 
 test('01 setup: opções LinkedIn + manual', async ({ page }) => {
   await resetFresh()
-  await mockDesktopLinkedIn(page)
+  const settingsRes = page.waitForResponse(
+    (r) => r.url().includes('/settings') && r.request().method() === 'GET',
+  )
   await page.goto('/')
-  await expect(page.locator('.settings-panel')).toBeVisible()
+  await settingsRes
+  await expect(page.locator('.settings-panel')).toBeVisible({ timeout: 20_000 })
   await expect(page.getByText('Como conectar o LinkedIn')).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Entrar com LinkedIn' }),

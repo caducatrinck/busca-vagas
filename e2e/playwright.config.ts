@@ -54,6 +54,8 @@ export default defineConfig({
       env: {
         ...process.env,
         VITE_API_URL: API,
+        // Exibe “Entrar com LinkedIn” nos prints (sem Electron real)
+        VITE_E2E_DESKTOP_LOGIN: 'true',
       },
     },
   ],

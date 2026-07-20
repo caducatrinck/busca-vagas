@@ -86,8 +86,9 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   /** null = escolher; login | manual = caminho escolhido (setup). */
   const [setupPath, setSetupPath] = useState<null | 'manual'>(null)
   const canLinkedInLogin =
-    typeof window !== 'undefined' &&
-    typeof window.buscaVagasDesktop?.linkedinLogin === 'function'
+    import.meta.env.VITE_E2E_DESKTOP_LOGIN === 'true' ||
+    (typeof window !== 'undefined' &&
+      typeof window.buscaVagasDesktop?.linkedinLogin === 'function')
 
   useEffect(() => {
     let cancelled = false
