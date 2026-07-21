@@ -9,6 +9,7 @@ import { registerJobRoutes } from './presentation/routes/jobs.js'
 import { registerMonitorRoutes } from './presentation/routes/monitors.js'
 import { registerSearchRoutes } from './presentation/routes/search.js'
 import { registerSettingsRoutes } from './presentation/routes/settings.js'
+import { registerTagRoutes } from './presentation/routes/tags.js'
 import { restoreSchedulersFromDisk } from './poller.js'
 import { restoreRateLimitFromDisk } from './rateLimit.js'
 import {
@@ -96,6 +97,7 @@ export async function startServer(
   }
 
   registerSettingsRoutes(app, { repo })
+  registerTagRoutes(app, { repo })
   registerJobRoutes(app, { repo })
   registerMonitorRoutes(app, {
     repo,
@@ -123,6 +125,7 @@ export async function startServer(
           '/prefs',
           '/data',
           '/rate-limit',
+          '/tags',
         ]
         if (apiPrefixes.some((p) => request.url === p || request.url.startsWith(`${p}/`) || request.url.startsWith(`${p}?`))) {
           return reply.status(404).send({ error: 'Not found' })

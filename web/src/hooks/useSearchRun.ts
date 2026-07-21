@@ -50,11 +50,23 @@ export function useSearchRun(params: {
   const [searchProgress, setSearchProgress] = useState<SearchProgress | null>(
     null,
   )
+  /** Monitor que iniciou a busca manual em andamento. */
+  const [searchingMonitorId, setSearchingMonitorId] = useState<string | null>(
+    null,
+  )
   const searchAbortRef = useRef<AbortController | null>(null)
   const poolingStartedAtRef = useRef<number | null>(null)
+  const activeMonitorIdRef = useRef(activeMonitorId)
+  activeMonitorIdRef.current = activeMonitorId
+  const searchingMonitorIdRef = useRef(searchingMonitorId)
+  searchingMonitorIdRef.current = searchingMonitorId
 
   const displaySearchProgress = useMemo((): SearchProgress | null => {
-    if (searchProgress) return searchProgress
+    if (searchProgress) {
+      // Só mostra progresso na aba do monitor que está buscando.
+      if (searchingMonitorId !== activeMonitorId) return null
+      return searchProgress
+    }
     if (!activeMonitor?.ticking) {
       poolingStartedAtRef.current = null
       return null
@@ -74,10 +86,18 @@ export function useSearchRun(params: {
       elapsedMs: Date.now() - startedAt,
       etaSeconds: null,
     }
-  }, [searchProgress, activeMonitor?.ticking, activeMonitor?.id, t])
+  }, [
+    searchProgress,
+    searchingMonitorId,
+    activeMonitorId,
+    activeMonitor?.ticking,
+    activeMonitor?.id,
+    t,
+  ])
 
   async function handleRunMonitorNow() {
     if (!activeMonitorId) return
+    const runMonitorId = activeMonitorId
     const limit = await fetchRateLimit()
     setRateLimit(limit)
     if (limit && !limit.allowed) {
@@ -99,6 +119,7 @@ export function useSearchRun(params: {
 
     setError(null)
     const searchStartedAt = Date.now()
+    setSearchingMonitorId(runMonitorId)
     setSearchProgress({
       phase: 'listing',
       label: t('search.starting'),
@@ -117,16 +138,22 @@ export function useSearchRun(params: {
       if (!activeMonitor?.pollingEnabled) {
         await onPoolingWillEnable?.()
       }
-      await updateMonitor(activeMonitorId, {
+      await updateMonitor(runMonitorId, {
         search: monitorDraft,
         name: monitorDraft.query.trim().slice(0, 28) || t('monitor.defaultName'),
         pollingEnabled: true,
         intervalMinutes,
       })
-      const result = await runMonitorWithProgress(activeMonitorId, {
+      const result = await runMonitorWithProgress(runMonitorId, {
         signal: ac.signal,
-        onProgress: setSearchProgress,
+        onProgress: (progress) => {
+          if (searchingMonitorIdRef.current === runMonitorId) {
+            setSearchProgress(progress)
+          }
+        },
         onJobs: (jobs) => {
+          // Não mistura jobs na lista se o usuário já trocou de aba.
+          if (activeMonitorIdRef.current !== runMonitorId) return
           setMonitorJobs((prev) => mergeJobs(prev, jobs))
         },
       })
@@ -134,26 +161,33 @@ export function useSearchRun(params: {
       if (!result.cancelled && duration >= LONG_SEARCH_CHIME_MS) {
         playSearchCompleteChime()
       }
-      await loadMonitorJobs(activeMonitorId)
-      await loadMonitors(activeMonitorId)
+      if (activeMonitorIdRef.current === runMonitorId) {
+        await loadMonitorJobs(runMonitorId)
+      }
+      await loadMonitors(activeMonitorIdRef.current ?? runMonitorId)
       await loadSaved()
       setRateLimit(await fetchRateLimit())
     } catch (err) {
-      if (!ac.signal.aborted) {
+      if (!ac.signal.aborted && activeMonitorIdRef.current === runMonitorId) {
         setError(err instanceof Error ? err.message : t('search.runError'))
       }
-      await loadMonitorJobs(activeMonitorId)
-      await loadMonitors(activeMonitorId)
+      if (activeMonitorIdRef.current === runMonitorId) {
+        await loadMonitorJobs(runMonitorId)
+      }
+      await loadMonitors(activeMonitorIdRef.current ?? runMonitorId)
       await loadSaved()
       setRateLimit(await fetchRateLimit())
     } finally {
       if (searchAbortRef.current === ac) searchAbortRef.current = null
-      setSearchProgress(null)
+      if (searchingMonitorIdRef.current === runMonitorId) {
+        setSearchingMonitorId(null)
+        setSearchProgress(null)
+      }
     }
   }
 
   function handleCancelSearch() {
-    const id = activeMonitorId
+    const id = searchingMonitorIdRef.current ?? activeMonitorId
     searchAbortRef.current?.abort()
     if (id) void cancelMonitorRun(id)
   }
@@ -161,6 +195,7 @@ export function useSearchRun(params: {
   return {
     searchProgress,
     displaySearchProgress,
+    searchingMonitorId,
     handleRunMonitorNow,
     handleCancelSearch,
   }

@@ -69,6 +69,8 @@ describe('filtro de título com tag de workplace', () => {
         excludeDescription: [],
         includeDescription: [],
         language: '',
+        selectedTagIds: [],
+        excludedTagIds: [],
       },
       { requireQueryInTitle: 'presencial' },
     )
@@ -84,6 +86,8 @@ describe('filtro de título com tag de workplace', () => {
         excludeDescription: [],
         includeDescription: [],
         language: '',
+        selectedTagIds: [],
+        excludedTagIds: [],
       },
       { requireQueryInTitle: 'presencial' },
     )
@@ -104,9 +108,45 @@ describe('filtro de título com tag de workplace', () => {
         excludeDescription: [],
         includeDescription: [],
         language: '',
+        selectedTagIds: [],
+        excludedTagIds: [],
       },
       { requireQueryInTitle: 'CLT' },
     )
     assert.equal(jobs.length, 1)
+  })
+
+  it('fail-closed: include tags sem catálogo não libera tudo', () => {
+    const jobs = filterJobs(
+      [base],
+      {
+        excludeTitle: [],
+        includeTitle: [],
+        excludeDescription: [],
+        includeDescription: [],
+        language: '',
+        selectedTagIds: ['remote'],
+        excludedTagIds: [],
+      },
+      { catalogTags: [] },
+    )
+    assert.equal(jobs.length, 0)
+  })
+
+  it('fail-closed: exclude tags com catálogo vazio não libera tudo', () => {
+    const jobs = filterJobs(
+      [base],
+      {
+        excludeTitle: [],
+        includeTitle: [],
+        excludeDescription: [],
+        includeDescription: [],
+        language: '',
+        selectedTagIds: [],
+        excludedTagIds: ['PJ'],
+      },
+      { catalogTags: [] },
+    )
+    assert.equal(jobs.length, 0)
   })
 })

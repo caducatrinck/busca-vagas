@@ -1,32 +1,24 @@
-import type { Job, JobFilters, JobStatus } from '../lib/types'
+import type { AppTag, Job, JobFilters, JobStatus } from '../lib/types'
 import { jobStatus } from '../lib/jobStatus'
 import { matchedWords, titleSearchText } from '../lib/filterJobs'
 import { formatPostedAt } from '../lib/formatPostedAt'
 import { useI18n } from '../i18n'
-import {
-  parseContractTags,
-  resolveWorkplaceType,
-  type WorkplaceType,
-} from '../shared/domain'
+import { matchingCatalogTags } from '../shared/tags'
 import { Button } from '../ui'
 import './JobCard.css'
 
 type Props = {
   job: Job
   filters: JobFilters
+  catalogTags?: AppTag[]
   showDescriptionFilters?: boolean
   onStatusChange?: (job: Job, status: JobStatus) => void
-}
-
-const WORKPLACE_KEYS: Record<WorkplaceType, 'workplace.hybrid' | 'workplace.onsite' | 'workplace.remote'> = {
-  hybrid: 'workplace.hybrid',
-  onsite: 'workplace.onsite',
-  remote: 'workplace.remote',
 }
 
 export function JobCard({
   job,
   filters,
+  catalogTags = [],
   showDescriptionFilters = true,
   onStatusChange,
 }: Props) {
@@ -52,14 +44,10 @@ export function JobCard({
     ? t('card.linkedinPosted', { label: job.postedLabel })
     : job.postedAt
 
-  const contractTags = job.contractTags?.length
-    ? job.contractTags
-    : parseContractTags(job.description ?? '')
-  const workplace = resolveWorkplaceType(job.workplaceType, job.description)
-  const metaTags = [
-    ...(workplace ? [t(WORKPLACE_KEYS[workplace])] : []),
-    ...contractTags,
-  ]
+  const metaTags = matchingCatalogTags(job, catalogTags).map((tag) => tag.label)
+  const TAG_PREVIEW = 16
+  const visibleTags = metaTags.slice(0, TAG_PREVIEW)
+  const hiddenTagCount = metaTags.length - visibleTags.length
 
   return (
     <article
@@ -95,10 +83,13 @@ export function JobCard({
         {job.location || t('card.noLocation')}
       </p>
       {metaTags.length > 0 ? (
-        <ul className="job-card__tags">
-          {metaTags.map((tag) => (
+        <ul className="job-card__tags" title={metaTags.join(', ')}>
+          {visibleTags.map((tag) => (
             <li key={tag}>{tag}</li>
           ))}
+          {hiddenTagCount > 0 ? (
+            <li className="job-card__tags-more">+{hiddenTagCount}</li>
+          ) : null}
         </ul>
       ) : null}
       <p className="job-card__excerpt">{excerpt}</p>

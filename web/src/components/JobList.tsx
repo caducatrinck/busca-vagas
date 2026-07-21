@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  type AppTag,
   type DescriptionLanguage,
   type Job,
   type JobFilters,
   type JobStatus,
   type SearchProgress,
 } from '../lib/types'
-import { matchesQuickFilter, titleSearchText } from '../lib/filterJobs'
+import { matchesTextFilter } from '../lib/filterJobs'
 import { jobRecencyMs } from '../lib/formatPostedAt'
 import { jobStatus } from '../lib/jobStatus'
 import { isRateLimitError } from '../lib/rateLimit'
@@ -15,6 +16,7 @@ import { useI18n } from '../i18n'
 import { JobCard } from './JobCard'
 import { LanguageDropdown } from './LanguageDropdown'
 import { SearchProgressCard } from './SearchProgressCard'
+import { TagMultiSelect } from './TagMultiSelect'
 import { Button, TextInput } from '../ui'
 import './JobList.css'
 
@@ -22,6 +24,7 @@ type Props = {
   jobs: Job[]
   totalCount: number
   filters: JobFilters
+  catalogTags?: AppTag[]
   loading: boolean
   error: string | null
   emptyTitle?: string
@@ -38,6 +41,10 @@ type Props = {
   onStatusChange?: (job: Job, status: JobStatus) => void
   onDiscardAll?: (jobs: Job[]) => void | Promise<void>
   onLanguageChange?: (value: DescriptionLanguage) => void
+  onTagsChange?: (ids: string[]) => void
+  onExcludedTagsChange?: (ids: string[]) => void
+  onCreateTag?: (label: string) => Promise<AppTag>
+  onDeleteTag?: (id: string) => Promise<void>
 }
 
 const EMPTY_JOBS: Job[] = []
@@ -46,6 +53,7 @@ export function JobList({
   jobs,
   totalCount,
   filters,
+  catalogTags = [],
   loading,
   error,
   emptyTitle,
@@ -60,14 +68,17 @@ export function JobList({
   onStatusChange,
   onDiscardAll,
   onLanguageChange,
+  onTagsChange,
+  onExcludedTagsChange,
+  onCreateTag,
+  onDeleteTag,
 }: Props) {
   const { t } = useI18n()
   const resolvedEmptyTitle = emptyTitle ?? t('list.emptyDefault')
   const resolvedEmptyHint = emptyHint ?? t('list.emptyHintDefault')
   const resolvedTitle = title ?? t('list.titleDefault')
   const searching = Boolean(searchProgress)
-  const [titleQuery, setTitleQuery] = useState('')
-  const [descriptionQuery, setDescriptionQuery] = useState('')
+  const [textQuery, setTextQuery] = useState('')
   const [newestFirst, setNewestFirst] = useState(true)
   const [discarding, setDiscarding] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
@@ -76,11 +87,7 @@ export function JobList({
 
   const visibleJobs = useMemo(() => {
     const filtered = showTopFilters
-      ? safeJobs.filter(
-          (job) =>
-            matchesQuickFilter(titleSearchText(job), titleQuery) &&
-            matchesQuickFilter(job.description ?? '', descriptionQuery),
-        )
+      ? safeJobs.filter((job) => matchesTextFilter(job, textQuery))
       : safeJobs
 
     if (!showTopFilters) return filtered
@@ -90,13 +97,7 @@ export function JobList({
     return [...filtered].sort(
       (a, b) => dir * (jobRecencyMs(a, now) - jobRecencyMs(b, now)),
     )
-  }, [
-    safeJobs,
-    titleQuery,
-    descriptionQuery,
-    showTopFilters,
-    newestFirst,
-  ])
+  }, [safeJobs, textQuery, showTopFilters, newestFirst])
 
   const discardable = useMemo(
     () => visibleJobs.filter((job) => jobStatus(job) !== 'discarded'),
@@ -198,80 +199,120 @@ export function JobList({
         </p>
       ) : null}
 
+      <div className="job-list__scroll">
       <header className="job-list__header">
         <div className="job-list__heading">
           <h2>{resolvedTitle}</h2>
           <p className="job-list__count">{countLabel}</p>
         </div>
         {showTopFilters ? (
-          <div className="job-list__toolbar">
-            <label className="job-list__search">
-              <TextInput
-                type="search"
-                value={titleQuery}
-                onChange={(e) => setTitleQuery(e.target.value)}
-                placeholder={t('list.filterTitle')}
-                autoComplete="off"
-                aria-label={t('list.filterTitleAria')}
-              />
-            </label>
-            <label className="job-list__search">
-              <TextInput
-                type="search"
-                value={descriptionQuery}
-                onChange={(e) => setDescriptionQuery(e.target.value)}
-                placeholder={t('list.filterDesc')}
-                autoComplete="off"
-                aria-label={t('list.filterDescAria')}
-              />
-            </label>
-            {showLanguageFilter && onLanguageChange ? (
-              <label className="job-list__language">
-                <span>{t('list.language')}</span>
-                <LanguageDropdown
-                  value={filters.language}
-                  onChange={onLanguageChange}
+          <div className="job-list__filters">
+            <div className="job-list__toolbar">
+              <label className="job-list__search">
+                <TextInput
+                  type="search"
+                  value={textQuery}
+                  onChange={(e) => setTextQuery(e.target.value)}
+                  placeholder={t('list.filterText')}
+                  autoComplete="off"
+                  aria-label={t('list.filterTextAria')}
                 />
               </label>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="job-list__sort"
-              onClick={() => setNewestFirst((v) => !v)}
-              aria-label={
-                newestFirst
-                  ? t('list.sortNewestAria')
-                  : t('list.sortOldestAria')
-              }
-              title={
-                newestFirst
-                  ? t('list.sortNewestTitle')
-                  : t('list.sortOldestTitle')
-              }
-            >
-              {newestFirst ? '↓' : '↑'}
-            </Button>
-            {onDiscardAll ? (
-              <Button
-                variant="danger"
-                size="sm"
-                className="job-list__discard-all"
-                disabled={discardCount === 0 || discarding || searching}
-                onClick={() => setConfirmDiscard(true)}
-              >
-                {discarding
-                  ? t('list.discarding')
-                  : discardCount > 0
-                    ? t('list.discardAllCount', { n: discardCount })
-                    : t('list.discardAll')}
-              </Button>
+              <div className="job-list__toolbar-end">
+                {showLanguageFilter && onLanguageChange ? (
+                  <LanguageDropdown
+                    fullWidth
+                    placeholder={t('list.language')}
+                    value={filters.language}
+                    onChange={onLanguageChange}
+                  />
+                ) : null}
+                {onDiscardAll ? (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="job-list__discard-all"
+                    disabled={discardCount === 0 || discarding || searching}
+                    onClick={() => setConfirmDiscard(true)}
+                  >
+                    {discarding
+                      ? t('list.discarding')
+                      : discardCount > 0
+                        ? t('list.discardCount', { n: discardCount })
+                        : t('list.discard')}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            {onTagsChange && onExcludedTagsChange && onCreateTag ? (
+              <div className="job-list__tags-row">
+                <TagMultiSelect
+                  compact
+                  tone="include"
+                  catalog={catalogTags}
+                  selectedIds={filters.selectedTagIds ?? []}
+                  onChange={onTagsChange}
+                  onCreateTag={onCreateTag}
+                  onDeleteTag={onDeleteTag}
+                  placeholder={t('tags.searchIncludePlaceholder')}
+                />
+                <div className="job-list__tags-end">
+                  <TagMultiSelect
+                    compact
+                    tone="exclude"
+                    catalog={catalogTags}
+                    selectedIds={filters.excludedTagIds ?? []}
+                    onChange={onExcludedTagsChange}
+                    onCreateTag={onCreateTag}
+                    onDeleteTag={onDeleteTag}
+                    placeholder={t('tags.searchExcludePlaceholder')}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="job-list__sort"
+                    onClick={() => setNewestFirst((v) => !v)}
+                    aria-label={
+                      newestFirst
+                        ? t('list.sortNewestAria')
+                        : t('list.sortOldestAria')
+                    }
+                    title={
+                      newestFirst
+                        ? t('list.sortNewestTitle')
+                        : t('list.sortOldestTitle')
+                    }
+                  >
+                    <svg
+                      className="job-list__sort-cal"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <path d="M3 10h18M8 3v4M16 3v4" />
+                    </svg>
+                    <span className="job-list__sort-label">
+                      {t('list.sortDate')}
+                    </span>
+                    <span className="job-list__sort-dir" aria-hidden>
+                      {newestFirst ? '↓' : '↑'}
+                    </span>
+                  </Button>
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
       </header>
 
-      <div className="job-list__scroll">
         {visibleJobs.length === 0 ? (
           <div className="job-list__empty job-list--state job-list--state-inline">
             <h2>
@@ -296,6 +337,7 @@ export function JobList({
                 key={job.id}
                 job={job}
                 filters={filters}
+                catalogTags={catalogTags}
                 showDescriptionFilters={showDescriptionFilters}
                 onStatusChange={onStatusChange}
               />

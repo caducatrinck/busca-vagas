@@ -24,6 +24,12 @@ function normalizeFilters(parsed?: Partial<JobFilters> | null): JobFilters {
     includeDescription: Array.isArray(parsed.includeDescription)
       ? parsed.includeDescription
       : [],
+    selectedTagIds: Array.isArray(parsed.selectedTagIds)
+      ? parsed.selectedTagIds
+      : [],
+    excludedTagIds: Array.isArray(parsed.excludedTagIds)
+      ? parsed.excludedTagIds
+      : [],
   }
 }
 
@@ -89,6 +95,26 @@ export function usePersistedFilters() {
     setFilters((prev) => ({ ...prev, language }))
   }, [])
 
+  const setSelectedTagIds = useCallback((selectedTagIds: string[]) => {
+    setFilters((prev) => ({
+      ...prev,
+      selectedTagIds,
+      excludedTagIds: prev.excludedTagIds.filter(
+        (id) => !selectedTagIds.includes(id),
+      ),
+    }))
+  }, [])
+
+  const setExcludedTagIds = useCallback((excludedTagIds: string[]) => {
+    setFilters((prev) => ({
+      ...prev,
+      excludedTagIds,
+      selectedTagIds: prev.selectedTagIds.filter(
+        (id) => !excludedTagIds.includes(id),
+      ),
+    }))
+  }, [])
+
   const replaceFilters = useCallback((next: JobFilters) => {
     skipSave.current = true
     setFilters(normalizeFilters(next))
@@ -99,6 +125,8 @@ export function usePersistedFilters() {
     setFilters,
     replaceFilters,
     setLanguage,
+    setSelectedTagIds,
+    setExcludedTagIds,
     addWord,
     removeWord,
     ready,

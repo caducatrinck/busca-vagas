@@ -1,4 +1,6 @@
 .job-list {
+  --job-gap: 1rem;
+  --job-cols: minmax(0, 1fr) minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -15,12 +17,17 @@
 }
 
 .job-list__header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 0.85rem;
-  padding: 0;
+  padding: 0 0 0.15rem;
   flex-shrink: 0;
+  box-sizing: border-box;
+  background: var(--bg);
 }
 
 .job-list__scroll {
@@ -29,7 +36,6 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-right: 0.15rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink) 28%, transparent) transparent;
 }
@@ -86,57 +92,145 @@
   color: var(--ink-soft);
 }
 
-.job-list__toolbar {
+.job-list__filters {
   display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+  flex-direction: column;
   gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Mesmo eixo das cards: 1fr | --job-gap | 1fr */
+.job-list__toolbar {
+  display: grid;
+  grid-template-columns: var(--job-cols);
+  align-items: center;
+  gap: var(--job-gap);
+  width: 100%;
+  min-width: 0;
 }
 
 .job-list__search {
-  flex: 1 1 12rem;
   min-width: 0;
   margin: 0;
+  width: 100%;
+}
+
+/* Metade direita: 50/50 → 25% + 25% do total (mesmo gap das cards) */
+.job-list__toolbar-end {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--job-gap);
+  min-width: 0;
+}
+
+/* Mesmo eixo das cards; direita: 4fr + 1fr → 40% + 10% */
+.job-list__tags-row {
+  display: grid;
+  grid-template-columns: var(--job-cols);
+  align-items: start;
+  gap: var(--job-gap);
+  width: 100%;
+  min-width: 0;
+}
+
+.job-list__tags-row > .tag-multi {
+  min-width: 0;
+}
+
+.job-list__tags-end {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--job-gap);
+  min-width: 0;
+}
+
+.job-list__tags-end > .tag-multi {
+  min-width: 0;
 }
 
 .job-list__search .ui-input {
+  width: 100%;
   padding: 0.55rem 0.75rem;
 }
 
-.job-list__language {
+.job-list__sort.ui-btn {
+  box-sizing: border-box;
+  width: 100%;
+  height: 2.5rem;
+  min-width: 0;
+  padding: 0 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-solid);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  box-shadow: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  flex: 0 0 auto;
-  font-size: 0.78rem;
-  font-weight: var(--font-bold);
-  color: var(--ink-soft);
+  justify-content: center;
+  gap: 0.2rem;
+  white-space: nowrap;
 }
 
-.job-list__sort.ui-btn {
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  align-self: stretch;
-  aspect-ratio: 1;
-  min-width: 2.4rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.job-list__sort-cal {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.job-list__sort-label {
+  letter-spacing: 0.01em;
+}
+
+.job-list__sort-dir {
+  font-size: 0.95rem;
+  line-height: 1;
   color: var(--ink);
-  font-size: 1.05rem;
-  box-shadow: none;
 }
 
 .job-list__sort.ui-btn:hover:not(:disabled) {
   transform: none;
-  background: transparent;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel-solid));
+  color: var(--accent);
+}
+
+.job-list__sort.ui-btn:hover:not(:disabled) .job-list__sort-dir {
   color: var(--accent);
 }
 
 .job-list__discard-all.ui-btn {
-  flex: 0 0 auto;
+  width: 100%;
+  height: 2.5rem;
+  justify-content: center;
   font-size: var(--text-sm);
+}
+
+.job-list__toolbar-end .ui-select__trigger {
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.84rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 720px) {
+  .job-list {
+    --job-cols: minmax(0, 1fr);
+  }
+
+  .job-list__toolbar-end,
+  .job-list__tags-end {
+    grid-template-columns: 1fr;
+  }
+
+  .job-list__sort.ui-btn {
+    width: auto;
+    justify-self: start;
+    padding: 0 0.65rem;
+  }
 }
 
 .job-list--state-inline {
@@ -187,8 +281,8 @@
 
 .job-list__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 1rem;
+  grid-template-columns: var(--job-cols);
+  gap: var(--job-gap);
   justify-content: center;
   align-content: start;
 }

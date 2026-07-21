@@ -48,6 +48,13 @@ export {
 } from './store/monitors.js'
 
 export {
+  createTag,
+  deleteTag,
+  listTags,
+  resolveTagsByIds,
+} from './store/tags.js'
+
+export {
   exportStoreData,
   getAppSettings,
   getRateLimitState,

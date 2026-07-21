@@ -2,6 +2,12 @@ import { randomUUID } from 'node:crypto'
 import type { Job } from '../types.js'
 import { parseContractTags, resolveWorkplaceType } from '../types.js'
 import {
+  MAX_TAG_LABEL_LENGTH,
+  findTagByLabel,
+  mergeBuiltinTags,
+  type AppTag,
+} from '../shared/tags.js'
+import {
   RATE_LIMIT_DEFAULTS_REV,
   type AppSettings,
   type DescriptionFilters,
@@ -28,7 +34,43 @@ export function defaultJobFilters(): JobFilters {
     excludeDescription: [],
     includeDescription: [],
     language: '',
+    selectedTagIds: [],
+    excludedTagIds: [],
   }
+}
+
+export function defaultTags(): AppTag[] {
+  return mergeBuiltinTags([])
+}
+
+/**
+ * Mapeia palavras antigas de include/exclude para ids de tags.
+ * Palavras sem match no catálogo viram tags custom (mutando `catalog`).
+ */
+export function migrateWordsToTagIds(
+  words: string[] | undefined,
+  catalog: AppTag[],
+): string[] {
+  if (!Array.isArray(words) || words.length === 0) return []
+  const ids: string[] = []
+  for (const word of words) {
+    if (typeof word !== 'string') continue
+    const trimmed = word.trim().replace(/\s+/g, ' ')
+    if (!trimmed) continue
+    const label = trimmed.slice(0, MAX_TAG_LABEL_LENGTH)
+    let found = findTagByLabel(catalog, label)
+    if (!found) {
+      found = {
+        id: randomUUID(),
+        label,
+        kind: 'custom',
+        builtin: false,
+      }
+      catalog.push(found)
+    }
+    if (!ids.includes(found.id)) ids.push(found.id)
+  }
+  return ids
 }
 
 export function defaultDescriptionFilters(): DescriptionFilters {
@@ -57,11 +99,20 @@ export function normalizeDescriptionFilters(
   }
 }
 
-export function normalizeJobFilters(raw?: Partial<JobFilters> | null): JobFilters {
+export function normalizeJobFilters(
+  raw?: Partial<JobFilters> | null,
+  catalog: AppTag[] = mergeBuiltinTags([]),
+): JobFilters {
   const base = defaultJobFilters()
   if (!raw || typeof raw !== 'object') return base
   const language =
     raw.language === 'pt' || raw.language === 'en' ? raw.language : ''
+  const selectedTagIds = Array.isArray(raw.selectedTagIds)
+    ? normalizeTagIds(raw.selectedTagIds, catalog)
+    : migrateWordsToTagIds(raw.includeDescription, catalog)
+  const excludedTagIds = Array.isArray(raw.excludedTagIds)
+    ? normalizeTagIds(raw.excludedTagIds, catalog)
+    : migrateWordsToTagIds(raw.excludeDescription, catalog)
   return {
     excludeTitle: Array.isArray(raw.excludeTitle)
       ? raw.excludeTitle.filter((w) => typeof w === 'string')
@@ -76,7 +127,24 @@ export function normalizeJobFilters(raw?: Partial<JobFilters> | null): JobFilter
       ? raw.includeDescription.filter((w) => typeof w === 'string')
       : base.includeDescription,
     language,
+    selectedTagIds,
+    excludedTagIds,
   }
+}
+
+export function normalizeTagIds(
+  ids: unknown,
+  catalog: AppTag[],
+): string[] {
+  if (!Array.isArray(ids)) return []
+  const valid = new Set(catalog.map((t) => t.id))
+  const out: string[] = []
+  for (const id of ids) {
+    if (typeof id !== 'string' || !id.trim()) continue
+    if (!valid.has(id)) continue
+    if (!out.includes(id)) out.push(id)
+  }
+  return out
 }
 
 export function normalizeTheme(raw?: unknown): ThemeMode {
@@ -249,8 +317,29 @@ export function normalizeJob(job: Partial<StoredJob> & Job): StoredJob {
   }
 }
 
-export function createMonitor(partial?: Partial<Monitor>): Monitor {
+export function createMonitor(
+  partial?: Partial<Monitor> & {
+    descriptionFilters?: DescriptionFilters | null
+  },
+  catalog: AppTag[] = defaultTags(),
+): Monitor {
   const id = partial?.id || randomUUID()
+  const legacy = normalizeDescriptionFilters(partial?.descriptionFilters)
+  const language =
+    partial?.language === 'pt' || partial?.language === 'en'
+      ? partial.language
+      : legacy.language
+
+  const selectedTagIds =
+    Array.isArray(partial?.selectedTagIds)
+      ? normalizeTagIds(partial.selectedTagIds, catalog)
+      : migrateWordsToTagIds(legacy.includeDescription, catalog)
+
+  const excludedTagIds =
+    Array.isArray(partial?.excludedTagIds)
+      ? normalizeTagIds(partial.excludedTagIds, catalog)
+      : migrateWordsToTagIds(legacy.excludeDescription, catalog)
+
   return {
     id,
     name: partial?.name?.trim() || 'Monitor',
@@ -272,7 +361,9 @@ export function createMonitor(partial?: Partial<Monitor>): Monitor {
         : null,
     knownIdsAtStart: partial?.knownIdsAtStart ?? [],
     lastRunStats: partial?.lastRunStats ?? null,
-    descriptionFilters: normalizeDescriptionFilters(partial?.descriptionFilters),
+    language,
+    selectedTagIds,
+    excludedTagIds,
   }
 }
 

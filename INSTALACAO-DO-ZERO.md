@@ -10,6 +10,8 @@ Guia para quem **nunca instalou Git nem Node** e quer rodar o código (contribui
 
 Só quer **baixar o .exe / AppImage**? Use o [README](./README.md) e os [Releases](https://github.com/caducatrinck/busca-vagas/releases/latest) — não precisa deste guia.
 
+**macOS:** não há instalável nos Releases ainda — use o guia dedicado **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**.
+
 ---
 
 <a id="português"></a>

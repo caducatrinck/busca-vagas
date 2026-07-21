@@ -8,6 +8,8 @@ type Props = {
   fullWidth?: boolean
   id?: string
   'aria-label'?: string
+  /** Texto no trigger quando value é vazio (ex.: "Idioma"). */
+  placeholder?: string
 }
 
 export function LanguageDropdown({
@@ -16,6 +18,7 @@ export function LanguageDropdown({
   fullWidth = false,
   id,
   'aria-label': ariaLabel,
+  placeholder,
 }: Props) {
   const { t } = useI18n()
   const options = [
@@ -31,7 +34,8 @@ export function LanguageDropdown({
       onChange={onChange}
       fullWidth={fullWidth}
       id={id}
-      aria-label={ariaLabel ?? t('list.language')}
+      placeholder={placeholder}
+      aria-label={ariaLabel ?? placeholder ?? t('list.language')}
     />
   )
 }

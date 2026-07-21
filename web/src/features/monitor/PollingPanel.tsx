@@ -3,11 +3,11 @@ import type { RateLimitInfo } from '../../lib/api'
 import { useI18n } from '../../i18n'
 import { formatRateLimitSummary } from '../../lib/rateLimit'
 import type {
+  AppTag,
   DescriptionLanguage,
   JobFilters,
   Monitor,
   SearchForm,
-  WordFilterKey,
 } from '../../lib/types'
 import '../../components/SearchPanel.css'
 import '../../components/PollingPanel.css'
@@ -22,18 +22,22 @@ type Props = {
   activeId: string | null
   draft: SearchForm
   filters: JobFilters
+  catalogTags: AppTag[]
   loading: boolean
   searching?: boolean
+  searchingMonitorId?: string | null
   onSelect: (id: string) => void
   onAdd: () => void
   onClose: (id: string) => void
   onDraftChange: (next: SearchForm) => void
   onLanguageChange: (value: DescriptionLanguage) => void
+  onTagsChange: (ids: string[]) => void
+  onExcludedTagsChange: (ids: string[]) => void
+  onCreateTag: (label: string) => Promise<AppTag>
+  onDeleteTag?: (id: string) => Promise<void>
   onPausePooling: () => void
   onIntervalChange: (minutes: number) => void
   onRunNow: () => void
-  onAddWord: (key: WordFilterKey, word: string) => void
-  onRemoveWord: (key: WordFilterKey, word: string) => void
   rateLimit?: RateLimitInfo | null
 }
 
@@ -42,18 +46,22 @@ export function PollingPanel({
   activeId,
   draft,
   filters,
+  catalogTags,
   loading,
   searching = false,
+  searchingMonitorId = null,
   onSelect,
   onAdd,
   onClose,
   onDraftChange,
   onLanguageChange,
+  onTagsChange,
+  onExcludedTagsChange,
+  onCreateTag,
+  onDeleteTag,
   onPausePooling,
   onIntervalChange,
   onRunNow,
-  onAddWord,
-  onRemoveWord,
   rateLimit = null,
 }: Props) {
   const { t, locale } = useI18n()
@@ -94,7 +102,7 @@ export function PollingPanel({
       <MonitorTabs
         monitors={monitors}
         activeId={activeId}
-        searching={searching}
+        searchingMonitorId={searchingMonitorId}
         busy={busy}
         now={now}
         onSelect={onSelect}
@@ -130,9 +138,12 @@ export function PollingPanel({
 
           <MonitorDescriptionSection
             filters={filters}
+            catalog={catalogTags}
             onLanguageChange={onLanguageChange}
-            onAddWord={onAddWord}
-            onRemoveWord={onRemoveWord}
+            onTagsChange={onTagsChange}
+            onExcludedTagsChange={onExcludedTagsChange}
+            onCreateTag={onCreateTag}
+            onDeleteTag={onDeleteTag}
           />
         </>
       )}

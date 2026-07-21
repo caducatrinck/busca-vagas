@@ -16,6 +16,8 @@ type Props<T extends string> = {
   id?: string
   'aria-label'?: string
   disabled?: boolean
+  /** Mostrado no trigger quando value é string vazia. */
+  placeholder?: string
 }
 
 export function Select<T extends string>({
@@ -26,6 +28,7 @@ export function Select<T extends string>({
   id,
   'aria-label': ariaLabel = 'Selecionar',
   disabled = false,
+  placeholder,
 }: Props<T>) {
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 0 })
@@ -33,9 +36,12 @@ export function Select<T extends string>({
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
+  const isPlaceholder = Boolean(placeholder) && value === ('' as T)
+
   const selectedLabel = useMemo(() => {
+    if (isPlaceholder) return placeholder!
     return options.find((o) => o.value === value)?.label ?? options[0]?.label ?? ''
-  }, [options, value])
+  }, [options, value, placeholder, isPlaceholder])
 
   useEffect(() => {
     if (!open) return
@@ -91,7 +97,10 @@ export function Select<T extends string>({
         ref={triggerRef}
         id={id}
         type="button"
-        className="ui-select__trigger"
+        className={cx(
+          'ui-select__trigger',
+          isPlaceholder && 'ui-select__trigger--placeholder',
+        )}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
@@ -143,4 +152,3 @@ export function Select<T extends string>({
     </div>
   )
 }
-

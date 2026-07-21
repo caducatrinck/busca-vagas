@@ -1,25 +1,27 @@
-import { FilterTags } from '../../components/FilterTags'
 import { LanguageDropdown } from '../../components/LanguageDropdown'
+import { TagMultiSelect } from '../../components/TagMultiSelect'
 import { useI18n } from '../../i18n'
-import type {
-  DescriptionLanguage,
-  JobFilters,
-  WordFilterKey,
-} from '../../lib/types'
+import type { AppTag, DescriptionLanguage, JobFilters } from '../../lib/types'
 import { Field } from '../../ui'
 
 type Props = {
   filters: JobFilters
+  catalog: AppTag[]
   onLanguageChange: (value: DescriptionLanguage) => void
-  onAddWord: (key: WordFilterKey, word: string) => void
-  onRemoveWord: (key: WordFilterKey, word: string) => void
+  onTagsChange: (ids: string[]) => void
+  onExcludedTagsChange: (ids: string[]) => void
+  onCreateTag: (label: string) => Promise<AppTag>
+  onDeleteTag?: (id: string) => Promise<void>
 }
 
 export function MonitorDescriptionSection({
   filters,
+  catalog,
   onLanguageChange,
-  onAddWord,
-  onRemoveWord,
+  onTagsChange,
+  onExcludedTagsChange,
+  onCreateTag,
+  onDeleteTag,
 }: Props) {
   const { t } = useI18n()
 
@@ -35,24 +37,28 @@ export function MonitorDescriptionSection({
         </Field>
       </div>
 
-      <FilterTags
-        label={t('desc.exclude')}
-        hint={t('desc.excludeHint')}
-        words={filters.excludeDescription}
-        filterKey="excludeDescription"
-        onAdd={onAddWord}
-        onRemove={onRemoveWord}
-        tone="exclude"
-      />
-      <FilterTags
-        label={t('desc.include')}
-        hint={t('desc.includeHint')}
-        words={filters.includeDescription}
-        filterKey="includeDescription"
-        onAdd={onAddWord}
-        onRemove={onRemoveWord}
-        tone="include"
-      />
+      <div className="search-panel__tags-row">
+        <TagMultiSelect
+          compact
+          tone="include"
+          catalog={catalog}
+          selectedIds={filters.selectedTagIds ?? []}
+          onChange={onTagsChange}
+          onCreateTag={onCreateTag}
+          onDeleteTag={onDeleteTag}
+          placeholder={t('tags.searchIncludePlaceholder')}
+        />
+        <TagMultiSelect
+          compact
+          tone="exclude"
+          catalog={catalog}
+          selectedIds={filters.excludedTagIds ?? []}
+          onChange={onExcludedTagsChange}
+          onCreateTag={onCreateTag}
+          onDeleteTag={onDeleteTag}
+          placeholder={t('tags.searchExcludePlaceholder')}
+        />
+      </div>
     </div>
   )
 }

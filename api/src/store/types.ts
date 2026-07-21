@@ -1,4 +1,5 @@
 import type { Job, SearchParams, SearchRunStats } from '../types.js'
+import type { AppTag } from '../shared/tags.js'
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
@@ -26,8 +27,17 @@ export type Monitor = {
   lastRunMode: 'manual' | 'pooling' | null
   knownIdsAtStart: string[]
   lastRunStats: SearchRunStats | null
-  /** Filtros de descrição/idioma desta aba (não globais). */
-  descriptionFilters: DescriptionFilters
+  /** Idioma desta aba. */
+  language: '' | 'pt' | 'en'
+  /** Tags selecionadas: filtro UI include (OR) + auto-descarte na busca. */
+  selectedTagIds: string[]
+  /** Tags de exclusão: esconde / descarta se a vaga tiver qualquer uma (OR). */
+  excludedTagIds: string[]
+  /**
+   * @deprecated Migrado para selectedTagIds + excludedTagIds + language.
+   * Mantido só para ler stores antigos.
+   */
+  descriptionFilters?: DescriptionFilters
 }
 
 export type StoredRateLimit = {
@@ -60,6 +70,10 @@ export type JobFilters = {
   excludeDescription: string[]
   includeDescription: string[]
   language: '' | 'pt' | 'en'
+  /** Filtro por tags na aba Vagas (OR include). Vazio = todas. */
+  selectedTagIds: string[]
+  /** Esconde vagas que tiverem qualquer uma destas tags (OR). */
+  excludedTagIds: string[]
 }
 
 export type DescriptionFilters = {
@@ -86,6 +100,8 @@ export type StoreData = {
   filters: JobFilters
   theme: ThemeMode
   locale: AppLocale
+  /** Catálogo global de tags (builtins + custom). */
+  tags: AppTag[]
 }
 
 export type PublicAppSettings = {

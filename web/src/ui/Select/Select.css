@@ -35,6 +35,10 @@
   min-width: 0;
 }
 
+.ui-select__trigger--placeholder .ui-select__trigger-text {
+  color: var(--ink-soft);
+}
+
 .ui-select__trigger:disabled {
   opacity: 0.55;
   cursor: not-allowed;

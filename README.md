@@ -6,8 +6,8 @@ App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações
 
 ### Baixar
 
-- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.5/BuscaVagas-1.0.5-win-x64-portable.exe)** — `BuscaVagas-1.0.5-win-x64-portable.exe`
-- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.5/BuscaVagas-1.0.5-linux-x64.AppImage)** — `BuscaVagas-1.0.5-linux-x64.AppImage`  
+- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.6/BuscaVagas-1.0.6-win-x64-portable.exe)** — `BuscaVagas-1.0.6-win-x64-portable.exe`
+- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.6/BuscaVagas-1.0.6-linux-x64.AppImage)** — `BuscaVagas-1.0.6-linux-x64.AppImage`  
   (`chmod +x` no AppImage se o sistema pedir)
 
 Outras versões: **[Releases](https://github.com/caducatrinck/busca-vagas/releases)**
@@ -63,6 +63,7 @@ O código é público só como referência de projeto open source. **Não somos 
 
 Guia de rodar com Node/Docker: **[docs/dev.md](./docs/dev.md)**  
 Instalação do zero (Git/Node): **[INSTALACAO-DO-ZERO.md](./INSTALACAO-DO-ZERO.md)**  
+**macOS** (clone + Node, sem binário nos Releases): **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**  
 Empacotar desktop / releases: **[DESKTOP.md](./DESKTOP.md)**
 
 ### Pipeline automatizada

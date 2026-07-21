@@ -21,6 +21,7 @@ import {
   createMonitor,
   defaultAppSettings,
   defaultJobFilters,
+  defaultTags,
   migrateCookiesFromLegacyEnv,
   normalizeJob,
   normalizeJobFilters,
@@ -29,6 +30,7 @@ import {
   normalizeTheme,
   normalizeLocale,
 } from './defaults.js'
+import { mergeBuiltinTags } from '../shared/tags.js'
 
 function dataPaths() {
   const DATA_DIR = resolveDataDir()
@@ -56,6 +58,7 @@ const DEFAULT_STORE: StoreData = {
   filters: defaultJobFilters(),
   theme: 'light',
   locale: 'pt',
+  tags: defaultTags(),
 }
 void DEFAULT_STORE
 
@@ -80,21 +83,31 @@ function parseStoreRaw(raw: string): StoreData {
     jobs[id] = normalizeJob(job as StoredJob)
   }
 
+  const tags = mergeBuiltinTags(
+    Array.isArray((parsed as { tags?: unknown }).tags)
+      ? ((parsed as { tags: Parameters<typeof mergeBuiltinTags>[0] }).tags)
+      : [],
+  )
+
+  const filters = normalizeJobFilters(
+    (parsed as Partial<StoreData>).filters,
+    tags,
+  )
+
   let monitors: Monitor[] = Array.isArray(parsed.monitors)
     ? parsed.monitors.map((m) => {
         const rawMon = m as Partial<Monitor> & {
           descriptionFilters?: DescriptionFilters | null
         }
-        const monitor = createMonitor(rawMon)
-        if (rawMon.descriptionFilters == null) {
-          const global = normalizeJobFilters(
-            (parsed as Partial<StoreData>).filters,
-          )
-          monitor.descriptionFilters = {
-            excludeDescription: global.excludeDescription,
-            includeDescription: global.includeDescription,
-            language: global.language,
-          }
+        const monitor = createMonitor(rawMon, tags)
+        if (
+          rawMon.descriptionFilters == null &&
+          rawMon.selectedTagIds == null &&
+          rawMon.language == null
+        ) {
+          monitor.language = filters.language
+          monitor.selectedTagIds = [...filters.selectedTagIds]
+          monitor.excludedTagIds = [...filters.excludedTagIds]
         }
         return monitor
       })
@@ -102,16 +115,19 @@ function parseStoreRaw(raw: string): StoreData {
 
   if (monitors.length === 0 && parsed.poller?.search?.query) {
     monitors = [
-      createMonitor({
-        name: parsed.poller.search.query.slice(0, 28) || 'Monitor',
-        search: parsed.poller.search,
-        pollingEnabled: Boolean(parsed.poller.enabled),
-        intervalMinutes: parsed.poller.intervalMinutes ?? 20,
-        lastRunAt: parsed.poller.lastRunAt ?? null,
-        lastError: parsed.poller.lastError ?? null,
-        newCountLastRun: parsed.poller.newCountLastRun ?? 0,
-        knownIdsAtStart: parsed.poller.knownIdsAtStart ?? [],
-      }),
+      createMonitor(
+        {
+          name: parsed.poller.search.query.slice(0, 28) || 'Monitor',
+          search: parsed.poller.search,
+          pollingEnabled: Boolean(parsed.poller.enabled),
+          intervalMinutes: parsed.poller.intervalMinutes ?? 20,
+          lastRunAt: parsed.poller.lastRunAt ?? null,
+          lastError: parsed.poller.lastError ?? null,
+          newCountLastRun: parsed.poller.newCountLastRun ?? 0,
+          knownIdsAtStart: parsed.poller.knownIdsAtStart ?? [],
+        },
+        tags,
+      ),
     ]
   }
 
@@ -122,9 +138,10 @@ function parseStoreRaw(raw: string): StoreData {
     settings: migrateCookiesFromLegacyEnv(
       normalizeSettings((parsed as Partial<StoreData>).settings),
     ),
-    filters: normalizeJobFilters((parsed as Partial<StoreData>).filters),
+    filters,
     theme: normalizeTheme((parsed as Partial<StoreData>).theme),
     locale: normalizeLocale((parsed as Partial<StoreData>).locale),
+    tags,
   }
 }
 
@@ -137,6 +154,7 @@ function emptyStore(): StoreData {
     filters: defaultJobFilters(),
     theme: 'light',
     locale: 'pt',
+    tags: defaultTags(),
   }
 }
 
