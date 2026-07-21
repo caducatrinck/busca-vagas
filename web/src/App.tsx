@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, startTransition } from 'react'
 import { DataWarningBanner } from './components/DataWarningBanner'
 import { LinkedInSessionBanner } from './components/LinkedInSessionBanner'
 import { UpdateBanner } from './components/UpdateBanner'
@@ -162,7 +162,9 @@ function App() {
     if (value === 'viewed' && notifications.unreadTotal > 0) {
       notifications.handleMarkAllNotificationsRead()
     }
-    monitors.setJobsSubTab(value)
+    startTransition(() => {
+      monitors.setJobsSubTab(value)
+    })
   }
 
   async function handlePausePooling() {

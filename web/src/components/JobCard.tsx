@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { AppTag, Job, JobFilters, JobStatus } from '../lib/types'
 import { jobStatus } from '../lib/jobStatus'
 import { matchedWords, titleSearchText } from '../lib/filterJobs'
@@ -15,7 +16,10 @@ type Props = {
   onStatusChange?: (job: Job, status: JobStatus) => void
 }
 
-export function JobCard({
+const EXCERPT_MAX = 360
+const TAG_PREVIEW = 16
+
+function JobCardComponent({
   job,
   filters,
   catalogTags = [],
@@ -37,15 +41,22 @@ export function JobCard({
     : []
   const badges = [...new Set([...titleHits, ...descHits])]
 
-  const excerpt = job.description?.trim() || t('card.noDescription')
+  const rawDesc = job.description?.trim() || ''
+  const excerpt = rawDesc
+    ? rawDesc.length > EXCERPT_MAX
+      ? `${rawDesc.slice(0, EXCERPT_MAX).trimEnd()}…`
+      : rawDesc
+    : t('card.noDescription')
 
   const postedLabel = formatPostedAt(job.postedAt, Date.now(), locale)
   const postedTitle = job.postedLabel
     ? t('card.linkedinPosted', { label: job.postedLabel })
     : job.postedAt
 
-  const metaTags = matchingCatalogTags(job, catalogTags).map((tag) => tag.label)
-  const TAG_PREVIEW = 16
+  const metaTags =
+    catalogTags.length === 0
+      ? []
+      : matchingCatalogTags(job, catalogTags).map((tag) => tag.label)
   const visibleTags = metaTags.slice(0, TAG_PREVIEW)
   const hiddenTagCount = metaTags.length - visibleTags.length
 
@@ -144,3 +155,5 @@ export function JobCard({
     </article>
   )
 }
+
+export const JobCard = memo(JobCardComponent)

@@ -11,6 +11,8 @@
   animation: card-in 420ms ease both;
   min-width: 0;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
 }
 
 .job-card:hover {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   type AppTag,
   type DescriptionLanguage,
@@ -48,6 +48,7 @@ type Props = {
 }
 
 const EMPTY_JOBS: Job[] = []
+const RENDER_PAGE = 48
 
 export function JobList({
   jobs,
@@ -82,6 +83,8 @@ export function JobList({
   const [newestFirst, setNewestFirst] = useState(true)
   const [discarding, setDiscarding] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [renderLimit, setRenderLimit] = useState(RENDER_PAGE)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const safeJobs = jobs ?? EMPTY_JOBS
 
@@ -98,6 +101,32 @@ export function JobList({
       (a, b) => dir * (jobRecencyMs(a, now) - jobRecencyMs(b, now)),
     )
   }, [safeJobs, textQuery, showTopFilters, newestFirst])
+
+  useEffect(() => {
+    setRenderLimit(RENDER_PAGE)
+    const el = scrollRef.current
+    if (el) el.scrollTop = 0
+  }, [safeJobs, textQuery, newestFirst])
+
+  const renderedJobs = useMemo(
+    () => visibleJobs.slice(0, renderLimit),
+    [visibleJobs, renderLimit],
+  )
+  const hasMoreJobs = renderLimit < visibleJobs.length
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || !hasMoreJobs) return
+    function onScroll() {
+      if (!el) return
+      const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 480
+      if (nearBottom) {
+        setRenderLimit((n) => Math.min(n + RENDER_PAGE, visibleJobs.length))
+      }
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [hasMoreJobs, visibleJobs.length])
 
   const discardable = useMemo(
     () => visibleJobs.filter((job) => jobStatus(job) !== 'discarded'),
@@ -199,7 +228,7 @@ export function JobList({
         </p>
       ) : null}
 
-      <div className="job-list__scroll">
+      <div className="job-list__scroll" ref={scrollRef}>
       <header className="job-list__header">
         <div className="job-list__heading">
           <h2>{resolvedTitle}</h2>
@@ -332,7 +361,7 @@ export function JobList({
           </div>
         ) : (
           <div className="job-list__grid">
-            {visibleJobs.map((job) => (
+            {renderedJobs.map((job) => (
               <JobCard
                 key={job.id}
                 job={job}

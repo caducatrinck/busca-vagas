@@ -49,19 +49,45 @@ export function normalizeTagLabel(label: string): string {
     .replace(/\s+/g, ' ')
 }
 
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+function isWordCharCode(code: number): boolean {
+  // Após NFD + remoção de diacríticos, letras latinas caem em ASCII.
+  // Código > 127 ainda conta como “letra” para não partir tokens raros.
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    code === 95 ||
+    code > 127
+  )
+}
+
+/** Haystack já normalizado (normalizeTagLabel). Evita NFD/regex a cada tag. */
+export function containsWholeWordNormalized(
+  normalizedHaystack: string,
+  needle: string,
+): boolean {
+  const n = normalizeTagLabel(needle)
+  if (!n || !normalizedHaystack) return false
+  let from = 0
+  while (from <= normalizedHaystack.length) {
+    const i = normalizedHaystack.indexOf(n, from)
+    if (i < 0) return false
+    const beforeOk =
+      i === 0 || !isWordCharCode(normalizedHaystack.charCodeAt(i - 1))
+    const afterIdx = i + n.length
+    const afterOk =
+      afterIdx >= normalizedHaystack.length ||
+      !isWordCharCode(normalizedHaystack.charCodeAt(afterIdx))
+    if (beforeOk && afterOk) return true
+    from = i + 1
+  }
+  return false
 }
 
 export function containsWholeWord(haystack: string, needle: string): boolean {
   const n = normalizeTagLabel(needle)
   if (!n) return false
-  const h = normalizeTagLabel(haystack)
-  const re = new RegExp(
-    `(?<![\\p{L}\\p{N}_])${escapeRegExp(n)}(?![\\p{L}\\p{N}_])`,
-    'u',
-  )
-  return re.test(h)
+  return containsWholeWordNormalized(normalizeTagLabel(haystack), n)
 }
 
 /** Tokens da query: ordem irrelevante, todos precisam aparecer (AND). */
@@ -110,30 +136,62 @@ export function jobTitleHaystack(
 export function tagMatchesJob(
   tag: AppTag,
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
+  prepared?: {
+    normalizedHaystack: string
+    workplace: ReturnType<typeof resolveWorkplaceType>
+    contracts: string[]
+  },
 ): boolean {
-  const haystack = jobSearchHaystack(job)
+  const workplace =
+    prepared?.workplace ??
+    resolveWorkplaceType(job.workplaceType, job.description)
+  const contracts =
+    prepared?.contracts ??
+    (job.contractTags?.length
+      ? job.contractTags
+      : parseContractTags(job.description ?? ''))
+  const haystack =
+    prepared?.normalizedHaystack ??
+    normalizeTagLabel(jobSearchHaystack(job))
 
   if (tag.kind === 'workplace') {
     const wanted = WORKPLACE_BY_TAG_ID[tag.id]
     if (wanted) {
-      const resolved = resolveWorkplaceType(job.workplaceType, job.description)
-      if (resolved === wanted) return true
+      if (workplace === wanted) return true
       return WORKPLACE_ALIASES[wanted].some((alias) =>
-        containsWholeWord(haystack, alias),
+        containsWholeWordNormalized(haystack, alias),
       )
     }
   }
 
   if (tag.kind === 'contract') {
-    const contracts =
-      job.contractTags?.length
-        ? job.contractTags
-        : parseContractTags(job.description ?? '')
     if (contracts.includes(tag.label as 'CLT' | 'PJ')) return true
-    return containsWholeWord(haystack, tag.label)
+    return containsWholeWordNormalized(haystack, tag.label)
   }
 
-  return containsWholeWord(haystack, tag.label)
+  return containsWholeWordNormalized(haystack, tag.label)
+}
+
+function prepareJobTagMatch(
+  job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
+  opts?: { maxDescriptionChars?: number },
+) {
+  const maxDesc = opts?.maxDescriptionChars
+  const description =
+    maxDesc != null && (job.description?.length ?? 0) > maxDesc
+      ? (job.description ?? '').slice(0, maxDesc)
+      : (job.description ?? '')
+  const slim =
+    maxDesc != null
+      ? { ...job, description }
+      : job
+  return {
+    normalizedHaystack: normalizeTagLabel(jobSearchHaystack(slim)),
+    workplace: resolveWorkplaceType(job.workplaceType, job.description),
+    contracts: job.contractTags?.length
+      ? job.contractTags
+      : parseContractTags(job.description ?? ''),
+  }
 }
 
 /** OR: pelo menos uma tag selecionada precisa casar. Sem seleção = passa. */
@@ -142,7 +200,8 @@ export function jobMatchesSelectedTags(
   selectedTags: AppTag[],
 ): boolean {
   if (selectedTags.length === 0) return true
-  return selectedTags.some((tag) => tagMatchesJob(tag, job))
+  const prepared = prepareJobTagMatch(job)
+  return selectedTags.some((tag) => tagMatchesJob(tag, job, prepared))
 }
 
 /** OR: se qualquer tag de exclusão casar, a vaga é rejeitada. Sem seleção = passa. */
@@ -151,7 +210,8 @@ export function jobMatchesExcludedTags(
   excludedTags: AppTag[],
 ): boolean {
   if (excludedTags.length === 0) return false
-  return excludedTags.some((tag) => tagMatchesJob(tag, job))
+  const prepared = prepareJobTagMatch(job)
+  return excludedTags.some((tag) => tagMatchesJob(tag, job, prepared))
 }
 
 /**
@@ -171,11 +231,14 @@ export function jobMatchesSearchCriteria(
   return jobMatchesSelectedTags(job, selectedTags)
 }
 
+/** Tags do catálogo que casam com a vaga (UI). Limita scan da descrição. */
 export function matchingCatalogTags(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
   catalog: AppTag[],
 ): AppTag[] {
-  return catalog.filter((tag) => tagMatchesJob(tag, job))
+  if (catalog.length === 0) return []
+  const prepared = prepareJobTagMatch(job, { maxDescriptionChars: 1200 })
+  return catalog.filter((tag) => tagMatchesJob(tag, job, prepared))
 }
 
 export function mergeBuiltinTags(stored?: AppTag[] | null): AppTag[] {

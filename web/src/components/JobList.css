@@ -27,7 +27,9 @@
   padding: 0 0 0.15rem;
   flex-shrink: 0;
   box-sizing: border-box;
-  background: var(--bg);
+  /* Mesmo fundo da página (gradiente), alinhado ao viewport — evita bloco flat. */
+  background: var(--page-bg);
+  background-attachment: fixed;
 }
 
 .job-list__scroll {
