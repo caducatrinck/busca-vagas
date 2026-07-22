@@ -7,6 +7,7 @@ import {
   getMonitor,
   getStore,
   isAppConfigured,
+  listMonitors,
   resolveTagsByIds,
   updateMonitor,
   upsertSearchResults,
@@ -16,33 +17,44 @@ import type { Job, SearchRunStats } from '../types.js'
 import { SearchCancelledError } from '../types.js'
 import { resolvePoolingPostedSeconds as resolvePoolingWindow } from '../domain/poolingWindow.js'
 import {
+  jobMatchesAnySearchQuery,
   jobMatchesExcludedTags,
   jobMatchesSelectedTags,
-  jobTitleHaystack,
-  textMatchesQueryTokens,
   type AppTag,
 } from '../shared/tags.js'
 import { aborts, running } from './runtime.js'
 import type { MonitorRunCallbacks, MonitorRunMode, MonitorRunResult } from './types.js'
 
 function buildShouldDiscard(
-  query: string,
+  poolingQueries: string[],
   selectedTags: AppTag[],
   excludedTags: AppTag[],
 ) {
   return (job: Job): boolean => {
-    if (!textMatchesQueryTokens(jobTitleHaystack(job), query)) return true
+    if (!jobMatchesAnySearchQuery(job, poolingQueries)) return true
+
     const hasDetail =
       Boolean(job.description?.trim()) ||
       job.workplaceType != null ||
       Boolean(job.contractTags?.length)
-    if (!hasDetail) {
-      return false
-    }
+    if (!hasDetail) return false
     if (jobMatchesExcludedTags(job, excludedTags)) return true
     if (selectedTags.length === 0) return false
     return !jobMatchesSelectedTags(job, selectedTags)
   }
+}
+
+async function resolvePoolingSearchQueries(currentQuery: string): Promise<string[]> {
+  const monitors = await listMonitors()
+  const queries = new Set<string>()
+  const current = currentQuery.trim()
+  if (current) queries.add(current)
+  for (const monitor of monitors) {
+    if (!monitor.pollingEnabled) continue
+    const q = monitor.search?.query?.trim()
+    if (q) queries.add(q)
+  }
+  return [...queries]
 }
 
 export async function runMonitor(
@@ -129,8 +141,11 @@ export async function runMonitor(
 
     const selectedTags = await resolveTagsByIds(monitor.selectedTagIds ?? [])
     const excludedTags = await resolveTagsByIds(monitor.excludedTagIds ?? [])
-    const shouldDiscard = buildShouldDiscard(
+    const poolingQueries = await resolvePoolingSearchQueries(
       monitor.search.query ?? '',
+    )
+    const shouldDiscard = buildShouldDiscard(
+      poolingQueries,
       selectedTags,
       excludedTags,
     )

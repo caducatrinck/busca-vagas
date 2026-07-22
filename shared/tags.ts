@@ -206,13 +206,23 @@ export function jobMatchesExcludedTags(
   return excludedTags.some((tag) => tagMatchesJob(tag, job, prepared))
 }
 
+export function jobMatchesAnySearchQuery(
+  job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
+  queries: string[],
+): boolean {
+  const active = queries.map((q) => q.trim()).filter(Boolean)
+  if (active.length === 0) return true
+  const haystack = jobTitleHaystack(job)
+  return active.some((q) => textMatchesQueryTokens(haystack, q))
+}
+
 export function jobMatchesSearchCriteria(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
   query: string,
   selectedTags: AppTag[],
   excludedTags: AppTag[] = [],
 ): boolean {
-  if (!textMatchesQueryTokens(jobTitleHaystack(job), query)) return false
+  if (!jobMatchesAnySearchQuery(job, [query])) return false
   if (jobMatchesExcludedTags(job, excludedTags)) return false
   return jobMatchesSelectedTags(job, selectedTags)
 }

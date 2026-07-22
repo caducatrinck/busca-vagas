@@ -37,11 +37,7 @@
 
 .tag-multi--compact .tag-multi__selected:not(.tag-multi__selected--empty) {
   min-height: 0;
-  max-height: 4.8rem;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 0.15rem;
+  overflow: visible;
 }
 
 .tag-multi--compact .tag-multi__selected--empty {

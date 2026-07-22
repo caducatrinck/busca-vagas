@@ -6,8 +6,8 @@ App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações
 
 ### Baixar
 
-- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.8/BuscaVagas-1.0.8-win-x64-portable.exe)** — `BuscaVagas-1.0.8-win-x64-portable.exe`
-- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.8/BuscaVagas-1.0.8-linux-x64.AppImage)** — `BuscaVagas-1.0.8-linux-x64.AppImage`  
+- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.9/BuscaVagas-1.0.9-win-x64-portable.exe)** — `BuscaVagas-1.0.9-win-x64-portable.exe`
+- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.9/BuscaVagas-1.0.9-linux-x64.AppImage)** — `BuscaVagas-1.0.9-linux-x64.AppImage`  
   (`chmod +x` no AppImage se o sistema pedir)
 - **macOS** — ainda **não** há `.dmg` nos Releases. No Mac você roda a partir do código (Git + Node), passo a passo: **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**
 
