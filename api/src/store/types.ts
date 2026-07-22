@@ -19,31 +19,21 @@ export type Monitor = {
   pollingEnabled: boolean
   intervalMinutes: number
   lastRunAt: string | null
-
   nextRunAt: string | null
   lastError: string | null
   newCountLastRun: number
-  /** Origem da última rodada — só pooling dispara notificação no cliente. */
   lastRunMode: 'manual' | 'pooling' | null
   knownIdsAtStart: string[]
   lastRunStats: SearchRunStats | null
-  /** Idioma desta aba. */
   language: '' | 'pt' | 'en'
-  /** Tags selecionadas: filtro UI include (OR) + auto-descarte na busca. */
   selectedTagIds: string[]
-  /** Tags de exclusão: esconde / descarta se a vaga tiver qualquer uma (OR). */
   excludedTagIds: string[]
-  /**
-   * @deprecated Migrado para selectedTagIds + excludedTagIds + language.
-   * Mantido só para ler stores antigos.
-   */
   descriptionFilters?: DescriptionFilters
 }
 
 export type StoredRateLimit = {
   events: number[]
   lastSearchAt: number | null
-  /** Bloqueio até este timestamp (ms), definido por erros reais do LinkedIn. */
   blockedUntil: number | null
   blockReason: string | null
   lastLinkedInStatus: number | null
@@ -57,11 +47,9 @@ export type AppSettings = {
   maxSearchesPerHour: number
   maxSearchesPerDay: number
   jobDetailConcurrency: number
-  /** bump pra atualizar defaults velhos de rate limit */
   rateLimitDefaultsRev: number
 }
 
-/** rev 2 → 30s, 30/hora, 500/dia */
 export const RATE_LIMIT_DEFAULTS_REV = 2
 
 export type JobFilters = {
@@ -70,9 +58,7 @@ export type JobFilters = {
   excludeDescription: string[]
   includeDescription: string[]
   language: '' | 'pt' | 'en'
-  /** Filtro por tags na aba Vagas (OR include). Vazio = todas. */
   selectedTagIds: string[]
-  /** Esconde vagas que tiverem qualquer uma destas tags (OR). */
   excludedTagIds: string[]
 }
 
@@ -100,7 +86,6 @@ export type StoreData = {
   filters: JobFilters
   theme: ThemeMode
   locale: AppLocale
-  /** Catálogo global de tags (builtins + custom). */
   tags: AppTag[]
 }
 

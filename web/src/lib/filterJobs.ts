@@ -35,7 +35,6 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
   return re.test(h)
 }
 
-/** Tokens that need whole-word match in the quick list filter. */
 const QUICK_FILTER_WHOLE_WORD = new Set(['java', 'javascript'])
 
 const WORKPLACE_SEARCH_ALIASES: Record<WorkplaceType, string> = {
@@ -44,7 +43,6 @@ const WORKPLACE_SEARCH_ALIASES: Record<WorkplaceType, string> = {
   remote: 'remoto remote',
 }
 
-/** Workplace tag text for search/filter. */
 export function workplaceSearchText(
   job: Pick<Job, 'workplaceType' | 'description'>,
 ): string {
@@ -53,7 +51,6 @@ export function workplaceSearchText(
   return `${WORKPLACE_TYPE_LABELS[t]} ${WORKPLACE_SEARCH_ALIASES[t]}`
 }
 
-/** Title + workplace/CLT/PJ tags for title filters. */
 export function titleSearchText(
   job: Pick<Job, 'title' | 'workplaceType' | 'contractTags' | 'description'>,
 ): string {
@@ -64,7 +61,6 @@ export function titleSearchText(
   return `${job.title ?? ''} ${workplaceSearchText(job)} ${contracts}`.trim()
 }
 
-/** Title + description for the unified text filter (order-independent). */
 export function fullTextSearchHaystack(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
 ): string {
@@ -75,10 +71,6 @@ function stripQuickFilterQuotes(token: string): string {
   return token.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
 }
 
-/**
- * Quick list filter: substring normally, except java/javascript
- * (whole word so "Java" does not match "Javascript").
- */
 export function matchesQuickFilter(text: string, query: string): boolean {
   const tokens = query
     .trim()
@@ -98,7 +90,6 @@ export function matchesQuickFilter(text: string, query: string): boolean {
   })
 }
 
-/** Order-independent whole-word tokens across title+description. */
 export function matchesTextFilter(job: Job, query: string): boolean {
   return textMatchesQueryTokens(fullTextSearchHaystack(job), query)
 }
@@ -146,7 +137,6 @@ export function filterJobs(
   const selectedTags = catalog.filter((tag) => selectedIds.includes(tag.id))
   const excludedTags = catalog.filter((tag) => excludedIds.includes(tag.id))
 
-  // Fail-closed: filtro de tags ativo sem catálogo/ids resolvidos → não libera tudo.
   if (selectedIds.length > 0 && selectedTags.length === 0) return []
   if (excludedIds.length > 0 && catalog.length === 0) return []
 

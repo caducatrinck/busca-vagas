@@ -43,10 +43,6 @@ export function defaultTags(): AppTag[] {
   return mergeBuiltinTags([])
 }
 
-/**
- * Mapeia palavras antigas de include/exclude para ids de tags.
- * Palavras sem match no catálogo viram tags custom (mutando `catalog`).
- */
 export function migrateWordsToTagIds(
   words: string[] | undefined,
   catalog: AppTag[],
@@ -155,10 +151,6 @@ export function normalizeLocale(raw?: unknown): import('./types.js').AppLocale {
   return raw === 'en' ? 'en' : 'pt'
 }
 
-/**
- * DevTools às vezes copia o valor com aspas (`"ajax:…"`).
- * Remove aspas externas (retas ou tipográficas) sem alterar o miolo.
- */
 export function normalizeCookieValue(raw?: string | null): string {
   let value = typeof raw === 'string' ? raw.trim() : ''
   if (!value) return ''
@@ -177,10 +169,9 @@ export function normalizeCookieValue(raw?: string | null): string {
   return value
 }
 
-/** JSESSIONID do LinkedIn costuma ser `ajax:…` (DevTools pode vir com aspas). */
 export function isLikelyLinkedInJsessionId(raw?: string | null): boolean {
   const value = normalizeCookieValue(raw)
-  if (!value) return true // vazio = opcional no form; probe trata incomplete
+  if (!value) return true
   return /^ajax:\S+$/i.test(value)
 }
 

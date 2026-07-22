@@ -37,7 +37,6 @@ function buildShouldDiscard(
       job.workplaceType != null ||
       Boolean(job.contractTags?.length)
     if (!hasDetail) {
-      // Sem detalhe ainda: só descarta por título; exclusão/include esperam descrição.
       return false
     }
     if (jobMatchesExcludedTags(job, excludedTags)) return true
@@ -107,7 +106,6 @@ export async function runMonitor(
 
       const retryAfterMs = Math.max(1_000, rawRetry + 500)
 
-      // cooldown local: não grava lastError (já tem mensagem com contador na UI)
       if (source !== 'cooldown') {
         if (mode === 'manual') {
           callbacks.onProgress?.({
@@ -191,8 +189,6 @@ export async function runMonitor(
 
     try {
       const hints = await getJobSearchHints()
-      // Janela estreita do pooling só no tick automático.
-      // Busca manual (Buscar agora) usa o "Publicadas em" do formulário.
       const postedWithinSeconds =
         mode === 'pooling'
           ? resolvePoolingWindow(

@@ -103,6 +103,7 @@ npm run dev
 ```
 
 Mesma regra: Terminal aberto = app no ar; Terminal fechado = app desliga.
+
 ### Opção B — janela Electron (desktop)
 
 ```bash

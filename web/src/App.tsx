@@ -249,6 +249,7 @@ function App() {
           monitors={monitors.monitors}
           unreadTotal={notifications.unreadTotal}
           setupRequired={appSettings.setupRequired}
+          searchingMonitorId={searchRun.searchingMonitorId}
           theme={theme}
           onToggleTheme={toggleTheme}
           onChange={handleTabChange}

@@ -212,7 +212,7 @@ export async function ensureStore(): Promise<StoreData> {
           backup: path.basename(backup.path),
           jobs: jobCount(cache),
         })
-        // Restaura o arquivo principal a partir do backup (sem criar novo backup vazio)
+
         await writeStoreAtomic(STORE_PATH, JSON.stringify(cache, null, 2))
         return cache
       } catch (backupErr) {
@@ -229,8 +229,8 @@ export async function ensureStore(): Promise<StoreData> {
       return cache
     }
 
-    // Arquivo existe mas está corrompido e não há backup: NÃO sobrescreve.
-    // Mantém cache vazio em memória só para a API não cair; o disco fica intacto.
+
+
     log.error('store.corrupt_no_backup', {
       path: STORE_PATH,
     })
@@ -261,7 +261,7 @@ export async function persist(
           return
         }
       } catch {
-        // sem arquivo anterior — ok gravar vazio
+
       }
     }
 
@@ -273,7 +273,6 @@ export async function persist(
   await writeQueue
 }
 
-/** Apaga backups internos em data/backups (exports em Downloads ficam intactos). */
 export async function clearInternalStoreBackups(): Promise<void> {
   const { BACKUP_DIR } = dataPaths()
   await clearAllBackups(BACKUP_DIR)

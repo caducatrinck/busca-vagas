@@ -12,7 +12,7 @@ import type {
 } from './types'
 
 const rawApiUrl = import.meta.env.VITE_API_URL
-/** '' = mesma origem (desktop). sem env = API local */
+
 const API_URL =
   rawApiUrl === '' ? '' : rawApiUrl || 'http://127.0.0.1:8787'
 
@@ -313,7 +313,7 @@ export type DataBackup = {
     filters?: JobFilters
     theme?: 'light' | 'dark'
   }
-  /** @deprecated backups antigos — agora vai em store.filters */
+
   filters?: JobFilters
   theme?: 'light' | 'dark'
 }

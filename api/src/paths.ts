@@ -8,18 +8,17 @@ function resolveModuleDir(): string {
       return path.dirname(fileURLToPath(meta))
     }
   } catch {
-    /* esbuild CJS: import.meta.url vazio */
+
   }
   return path.dirname(path.resolve(process.argv[1] || process.cwd()))
 }
 
 const moduleDir = resolveModuleDir()
 
-/** Pasta de dados (store, backups, logs). */
 export function resolveDataDir(): string {
   const fromEnv = process.env.BUSCA_VAGAS_DATA_DIR?.trim()
   if (fromEnv) return path.resolve(fromEnv)
-  // api/src → api/data
+
   return path.resolve(moduleDir, '../data')
 }
 

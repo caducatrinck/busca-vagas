@@ -95,6 +95,8 @@
   align-items: center;
   gap: 0.45rem;
   min-height: 2.5rem;
+  padding: 2px;
+  box-sizing: border-box;
 }
 
 .tag-multi__control input {
@@ -112,8 +114,9 @@
 }
 
 .tag-multi__control input:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .tag-multi__count {

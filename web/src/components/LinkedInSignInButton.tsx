@@ -25,7 +25,6 @@ type Props = {
   onClick: () => void
 }
 
-/** Botão no estilo oficial “Sign in with LinkedIn”. */
 export function LinkedInSignInButton({ children, disabled, onClick }: Props) {
   return (
     <button

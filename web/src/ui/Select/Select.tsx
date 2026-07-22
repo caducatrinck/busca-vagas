@@ -16,7 +16,7 @@ type Props<T extends string> = {
   id?: string
   'aria-label'?: string
   disabled?: boolean
-  /** Mostrado no trigger quando value é string vazia. */
+
   placeholder?: string
 }
 

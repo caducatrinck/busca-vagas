@@ -19,13 +19,11 @@ type Props = {
   catalog: AppTag[]
   selectedIds: string[]
   disabled?: boolean
-  /** Esconde título, dica e “nenhuma selecionada” (toolbar compacta). */
   compact?: boolean
   tone?: 'include' | 'exclude'
   placeholder?: string
   onChange: (ids: string[]) => void
   onCreateTag: (label: string) => Promise<AppTag>
-  /** Remove a tag do catálogo global. */
   onDeleteTag?: (id: string) => Promise<void>
   label?: string
   hint?: string
@@ -100,8 +98,8 @@ export function TagMultiSelect({
       maxHeight,
       zIndex: 1200,
       ...(openUp
-        ? { bottom: window.innerHeight - r.top + 4, top: 'auto' }
-        : { top: r.bottom + 4, bottom: 'auto' }),
+        ? { bottom: window.innerHeight - r.top + 8, top: 'auto' }
+        : { top: r.bottom + 8, bottom: 'auto' }),
     })
   }
 

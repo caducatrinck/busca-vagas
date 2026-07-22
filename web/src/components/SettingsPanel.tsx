@@ -83,7 +83,7 @@ export function SettingsPanel({ setupRequired = false, onSaved }: Props) {
   const [resetError, setResetError] = useState<string | null>(null)
   const [linkedinLoggingIn, setLinkedinLoggingIn] = useState(false)
   const [linkedinLoggingOut, setLinkedinLoggingOut] = useState(false)
-  /** null = escolher; login | manual = caminho escolhido (setup). */
+
   const [setupPath, setSetupPath] = useState<null | 'manual'>(null)
   const canLinkedInLogin =
     import.meta.env.VITE_E2E_DESKTOP_LOGIN === 'true' ||

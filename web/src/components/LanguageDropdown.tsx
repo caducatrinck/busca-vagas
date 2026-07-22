@@ -8,7 +8,7 @@ type Props = {
   fullWidth?: boolean
   id?: string
   'aria-label'?: string
-  /** Texto no trigger quando value é vazio (ex.: "Idioma"). */
+
   placeholder?: string
 }
 

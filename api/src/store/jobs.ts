@@ -56,7 +56,6 @@ export async function listJobs(options?: {
   return jobs
 }
 
-/** Prefere ISO com horário a data só-dia; atualiza quando a nova coleta traz mais precisão. */
 function preferPostedAt(
   incoming?: string,
   existing?: string,
@@ -73,7 +72,7 @@ function preferPostedAt(
 }
 
 export type UpsertSearchOptions = {
-  /** Se true, grava a vaga como discarded (não sobrescreve applied). */
+
   shouldDiscard?: (job: Job) => boolean
 }
 
@@ -178,7 +177,6 @@ export async function deleteJobsByStatus(
   return removed
 }
 
-/** Apaga todas as vagas salvas (pendentes, aplicadas e descartadas). */
 export async function deleteAllJobs(): Promise<number> {
   const store = await ensureStore()
   const removed = Object.keys(store.jobs).length

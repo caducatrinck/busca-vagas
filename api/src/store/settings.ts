@@ -170,8 +170,6 @@ export async function replaceStoreData(
   return next
 }
 
-/** Zera o store como instalação nova (sem puxar cookies de env).
- *  Não toca nos JSON exportados em Downloads — só limpa store + backups internos. */
 export async function resetStoreToFactory(): Promise<StoreData> {
   const next: StoreData = {
     jobs: {},

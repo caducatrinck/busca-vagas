@@ -5,7 +5,7 @@ import { tabCountdownLabel } from './formatCountdown'
 type Props = {
   monitors: Monitor[]
   activeId: string | null
-  /** Monitor com busca manual em andamento (não confundir com a aba ativa). */
+
   searchingMonitorId?: string | null
   busy: boolean
   now: number

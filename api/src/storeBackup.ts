@@ -77,16 +77,11 @@ export async function pruneBackups(backupDir: string): Promise<void> {
   }
 }
 
-/** Remove todos os backups internos (não afeta exports em Downloads). */
 export async function clearAllBackups(backupDir: string): Promise<void> {
   const files = await listBackupFiles(backupDir)
   await Promise.all(files.map((file) => unlink(file).catch(() => undefined)))
 }
 
-/**
- * Copia o store atual para backups/ antes de sobrescrever.
- * Não faz backup se o arquivo não existir ou estiver vazio.
- */
 export async function backupStoreFile(
   storePath: string,
   backupDir: string,
@@ -108,7 +103,7 @@ export async function backupStoreFile(
     const monitorCount = Array.isArray(parsed.monitors) ? parsed.monitors.length : 0
     if (jobCount === 0 && monitorCount === 0) return null
   } catch {
-    // arquivo corrompido: ainda assim guarda como backup
+
   }
 
   await mkdir(backupDir, { recursive: true })
@@ -118,7 +113,6 @@ export async function backupStoreFile(
   return dest
 }
 
-/** Tenta carregar o backup mais recente (por mtime). */
 export async function readLatestBackup(
   backupDir: string,
 ): Promise<{ path: string; raw: string } | null> {
@@ -149,7 +143,6 @@ export async function readLatestBackup(
   return null
 }
 
-/** Escrita atômica: .tmp → rename. */
 export async function writeStoreAtomic(
   storePath: string,
   contents: string,

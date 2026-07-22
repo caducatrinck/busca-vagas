@@ -13,7 +13,7 @@ type Props = {
   id?: string
   'aria-label'?: string
   className?: string
-  /** fallback se sair do campo vazio */
+
   emptyValue?: number
 }
 

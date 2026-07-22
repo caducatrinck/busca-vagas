@@ -12,7 +12,6 @@ function normalizeForMatch(text: string): string {
     .trim()
 }
 
-/** IDs oficiais do LinkedIn: 1=presencial, 2=remoto, 3=híbrido */
 export const WORKPLACE_TYPE_BY_URN_ID: Record<string, WorkplaceType> = {
   '1': 'onsite',
   '2': 'remote',
@@ -67,7 +66,6 @@ export function parseDescriptionFromVoyagerPayload(payload: unknown): string {
   return ''
 }
 
-/** Só aceita o texto da tag em si (Híbrido / Presencial / Remoto), não trechos de título/local. */
 export function parseWorkplaceTag(text: string): WorkplaceType | undefined {
   const n = normalizeForMatch(text)
   if (!n) return undefined
@@ -98,7 +96,6 @@ export function parseWorkplaceTag(text: string): WorkplaceType | undefined {
   return undefined
 }
 
-/** @deprecated use parseWorkplaceTag */
 export function inferWorkplaceType(text: string): WorkplaceType | undefined {
   return parseWorkplaceTag(text)
 }
@@ -109,7 +106,6 @@ function isWorkplaceCriteriaHeader(header: string): boolean {
   )
 }
 
-/** Extrai só a tag de modelo de trabalho do HTML de detalhe (não título/local). */
 export function parseWorkplaceTypeFromDetail(
   $: cheerio.CheerioAPI,
 ): WorkplaceType | undefined {
@@ -135,7 +131,7 @@ export function parseWorkplaceTypeFromDetail(
     if (exact) return exact
   }
 
-  // Pills com classe de workplace no HTML guest
+
   const workplaceEls = $('[class*="workplace-type"]')
   for (let i = 0; i < workplaceEls.length; i++) {
     const text = workplaceEls.eq(i).text().replace(/\s+/g, ' ').trim()
@@ -157,11 +153,6 @@ export function parseJobId(card: cheerio.Cheerio<Element>, href: string): string
   return fromHref || href
 }
 
-/**
- * Lê o <time> do card LinkedIn.
- * - postedLabel: texto exato da UI ("há 8 horas", "Compartilhada há 4 horas")
- * - postedAt: ISO absoluto quando o texto é relativo; senão o datetime (às vezes só YYYY-MM-DD)
- */
 export function extractPostedAt(
   card: cheerio.Cheerio<Element>,
   now = Date.now(),
@@ -301,7 +292,6 @@ export function parseJobDetailHtml(html: string): {
   return { description, workplaceType }
 }
 
-/** @deprecated use parseJobDetailHtml */
 export function parseJobDescriptionHtml(html: string): string {
   return parseJobDetailHtml(html).description
 }

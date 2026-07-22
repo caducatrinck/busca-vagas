@@ -23,7 +23,6 @@ const API_HOST = '127.0.0.1'
 const API_PORT = Number(process.env.BUSCA_VAGAS_PORT || 8787)
 const APP_DISPLAY_NAME = 'Busca Vagas'
 
-/** Splash/tray: locale do SO (app UI i18n vive no renderer). */
 function desktopLocale() {
   const raw = (app.getLocale?.() || '').toLowerCase()
   return raw.startsWith('pt') ? 'pt' : 'en'
@@ -48,13 +47,12 @@ function isSafeExternalUrl(url) {
   }
 }
 
-/** @type {import('node:child_process').ChildProcess | null} */
 let apiProcess = null
-/** @type {BrowserWindow | null} */
+
 let mainWindow = null
-/** @type {BrowserWindow | null} */
+
 let splashWindow = null
-/** @type {Tray | null} */
+
 let tray = null
 let mainUiReady = false
 let isQuitting = false
@@ -316,14 +314,14 @@ async function createWindow() {
     if (isSafeExternalUrl(url)) void shell.openExternal(url)
   })
 
-  // X / Alt+F4 → bandeja (pooling continua)
+
   mainWindow.on('close', (event) => {
     if (isQuitting) return
     event.preventDefault()
     hideToTray()
   })
 
-  // minimizar também manda pra bandeja
+
   mainWindow.on('minimize', (event) => {
     if (isQuitting) return
     event.preventDefault()
@@ -424,7 +422,7 @@ if (!gotLock) {
   })
 
   app.on('window-all-closed', () => {
-    // com tray, esconder a janela não deve encerrar o app
+
     if (!isQuitting) return
     if (!mainUiReady) return
     stopApi()

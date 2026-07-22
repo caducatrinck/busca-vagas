@@ -26,6 +26,7 @@ The screenshot below is the everyday outcome that matters:
 2. Download for your platform:
    - Windows: `BuscaVagas-*-win-x64-portable.exe`
    - Linux: `BuscaVagas-*-linux-x64.AppImage`
+   - **macOS:** no installer in Releases yet — follow **[INSTALACAO-MAC.md](../../INSTALACAO-MAC.md)** (Git + Node, step by step; Portuguese)
 3. Open the file (on Linux, allow execution if the OS asks)
 
 ## 2. Connect LinkedIn

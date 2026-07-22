@@ -28,7 +28,7 @@ function resolveModuleDir(): string {
       return path.dirname(fileURLToPath(meta))
     }
   } catch {
-    /* esbuild CJS */
+
   }
   return path.dirname(path.resolve(process.argv[1] || process.cwd()))
 }
@@ -110,7 +110,7 @@ export async function startServer(
     await app.register(fastifyStatic, {
       root: path.resolve(staticDir),
       prefix: '/',
-      // wildcard: pega asset novo sem precisar reiniciar
+
       wildcard: true,
     })
     app.setNotFoundHandler((request, reply) => {
@@ -130,7 +130,7 @@ export async function startServer(
         if (apiPrefixes.some((p) => request.url === p || request.url.startsWith(`${p}/`) || request.url.startsWith(`${p}?`))) {
           return reply.status(404).send({ error: 'Not found' })
         }
-        // .js/.css faltando → 404 JSON, não o index.html (senão MIME explode)
+
         const pathOnly = request.url.split('?')[0] ?? request.url
         if (/\.(?:js|mjs|css|map|svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf)$/i.test(pathOnly)) {
           return reply.status(404).send({ error: 'Not found' })
@@ -144,7 +144,7 @@ export async function startServer(
   await restoreRateLimitFromDisk()
   await restoreSchedulersFromDisk()
 
-  // Sessão UI = cookies; sync antes de aceitar requests (sem Voyager).
+
   const { syncLinkedInSessionFromCookies, probeLinkedInSession } =
     await import('./linkedinSession.js')
   await syncLinkedInSessionFromCookies()

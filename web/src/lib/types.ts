@@ -72,7 +72,7 @@ export type Monitor = {
   language: DescriptionLanguage
   selectedTagIds: string[]
   excludedTagIds: string[]
-  /** @deprecated legado */
+
   descriptionFilters?: DescriptionFilters
 }
 

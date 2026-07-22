@@ -8,7 +8,7 @@
   gap: 0.85rem;
   min-height: 0;
   height: 100%;
-  /* visible pra o pulse da config não cortar na borda */
+
   overflow: visible;
 }
 

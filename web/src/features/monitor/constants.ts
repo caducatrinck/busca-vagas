@@ -1,6 +1,5 @@
 import type { SearchForm } from '../../lib/types'
 
-/** Valores de “Publicadas em” — labels vêm de i18n (`search.posted.*`). */
 export const POSTED_WITHIN_VALUES: Array<SearchForm['postedWithin']> = [
   '30m',
   '1h',

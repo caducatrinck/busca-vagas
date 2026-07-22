@@ -119,7 +119,7 @@ export function registerSettingsRoutes(
             monitors: body.monitors,
           }
 
-    // Backups antigos: filters/theme no topo do JSON
+
     if (!storePayload.filters && body.filters) {
       storePayload.filters = body.filters
     }

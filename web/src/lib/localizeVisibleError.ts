@@ -2,7 +2,6 @@ import type { MessageKey } from '../i18n/messages'
 
 type TFn = (key: MessageKey, vars?: Record<string, string | number>) => string
 
-/** Códigos estáveis (`err:…`) + legado PT/EN da API → texto via translate. */
 export function localizeVisibleError(
   raw: string | null | undefined,
   t: TFn,

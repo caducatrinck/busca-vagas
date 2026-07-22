@@ -233,7 +233,6 @@ const pt = {
   'update.retry': 'Tentar de novo',
   'update.dismiss': 'Fechar',
 
-
   'settings.guideTitle': 'Como pegar os cookies',
   'settings.guideStep1': 'Abra o LinkedIn no navegador e faça login na sua conta.',
   'settings.guideStep2': 'Pressione F12 (ou clique com o botão direito → Inspecionar) para abrir as DevTools.',
@@ -344,11 +343,9 @@ const pt = {
   'rate.dayLeft': ' · {n} restantes hoje (teto opcional)',
   'rate.dayUsed': ' · {n} hoje',
 
-
   'filter.placeholder': 'Digite e Enter',
   'filter.addAria': 'Adicionar em {label}',
   'nav.unread': '{n} notificações não lidas',
-
 
   'err.load': 'Erro ao carregar',
   'err.loadMonitors': 'Erro ao carregar monitores',
@@ -384,7 +381,6 @@ const pt = {
   'progress.starting': 'Iniciando busca…',
 
   'progress.newCount': '{n} nova(s) vaga(s)',
-
 
   'err.generic': 'Algo deu errado. Tente de novo.',
   'err.missingLiAt': 'Configure o cookie li_at em Configurações antes de buscar vagas.',
@@ -702,7 +698,6 @@ const en: Record<MessageKey, string> = {
   'update.retry': 'Try again',
   'update.dismiss': 'Dismiss',
 
-
   'settings.guideTitle': 'How to get the cookies',
   'settings.guideStep1': 'Open LinkedIn in the browser and sign in to your account.',
   'settings.guideStep2': 'Press F12 (or right-click → Inspect) to open DevTools.',
@@ -813,11 +808,9 @@ const en: Record<MessageKey, string> = {
   'rate.dayLeft': ' · {n} left today (optional cap)',
   'rate.dayUsed': ' · {n} today',
 
-
   'filter.placeholder': 'Type and press Enter',
   'filter.addAria': 'Add to {label}',
   'nav.unread': '{n} unread notifications',
-
 
   'err.load': 'Failed to load',
   'err.loadMonitors': 'Failed to load monitors',
@@ -853,7 +846,6 @@ const en: Record<MessageKey, string> = {
   'progress.starting': 'Starting search…',
 
   'progress.newCount': '{n} new job(s)',
-
 
   'err.generic': 'Something went wrong. Try again.',
   'err.missingLiAt': 'Set the li_at cookie in Settings before searching.',

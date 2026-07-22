@@ -8,7 +8,6 @@ export function stripVersionTag(tag) {
     .replace(/^v/i, '')
 }
 
-/** @returns {number} >0 se a > b */
 export function compareSemver(a, b) {
   const pa = stripVersionTag(a)
     .split('.')

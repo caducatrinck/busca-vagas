@@ -50,7 +50,6 @@
   gap: var(--space-4);
 }
 
-/* labels legados (Settings / forms sem Field) */
 .search-panel__form > label:not(.ui-field):not(.search-panel__check) {
   display: flex;
   flex-direction: column;

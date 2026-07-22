@@ -29,7 +29,7 @@ export function useSearchRun(params: {
   setRateLimit: Dispatch<SetStateAction<RateLimitInfo | null>>
   setError: Dispatch<SetStateAction<string | null>>
   clearPendingDraftSave: () => void
-  /** ao ligar o pooling (ex. pedir notificação) */
+
   onPoolingWillEnable?: () => void | Promise<void>
 }) {
   const {
@@ -50,7 +50,7 @@ export function useSearchRun(params: {
   const [searchProgress, setSearchProgress] = useState<SearchProgress | null>(
     null,
   )
-  /** Monitor que iniciou a busca manual em andamento. */
+
   const [searchingMonitorId, setSearchingMonitorId] = useState<string | null>(
     null,
   )
@@ -63,7 +63,6 @@ export function useSearchRun(params: {
 
   const displaySearchProgress = useMemo((): SearchProgress | null => {
     if (searchProgress) {
-      // Só mostra progresso na aba do monitor que está buscando.
       if (searchingMonitorId !== activeMonitorId) return null
       return searchProgress
     }
@@ -101,7 +100,6 @@ export function useSearchRun(params: {
     const limit = await fetchRateLimit()
     setRateLimit(limit)
     if (limit && !limit.allowed) {
-      // cooldown: só o contador embaixo do botão; não joga erro na lista
       if (limit.source !== 'cooldown') {
         setError(
           formatRateLimitSummary(limit, Date.now(), locale) ||
@@ -152,7 +150,6 @@ export function useSearchRun(params: {
           }
         },
         onJobs: (jobs) => {
-          // Não mistura jobs na lista se o usuário já trocou de aba.
           if (activeMonitorIdRef.current !== runMonitorId) return
           setMonitorJobs((prev) => mergeJobs(prev, jobs))
         },

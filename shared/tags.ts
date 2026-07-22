@@ -7,7 +7,6 @@ import {
 
 export const MAX_TAG_LABEL_LENGTH = 32
 
-/** @deprecated Sem limite de catálogo; mantido só por compat de imports antigos. */
 export const MAX_APP_TAGS = Number.POSITIVE_INFINITY
 
 export type AppTagKind = 'workplace' | 'contract' | 'custom'
@@ -19,7 +18,6 @@ export type AppTag = {
   builtin: boolean
 }
 
-/** Defaults do app (podem ser removidos pelo usuário). */
 export const BUILTIN_TAGS: readonly AppTag[] = [
   { id: 'hybrid', label: 'Híbrido', kind: 'workplace', builtin: true },
   { id: 'onsite', label: 'Presencial', kind: 'workplace', builtin: true },
@@ -50,8 +48,6 @@ export function normalizeTagLabel(label: string): string {
 }
 
 function isWordCharCode(code: number): boolean {
-  // Após NFD + remoção de diacríticos, letras latinas caem em ASCII.
-  // Código > 127 ainda conta como “letra” para não partir tokens raros.
   return (
     (code >= 48 && code <= 57) ||
     (code >= 65 && code <= 90) ||
@@ -61,7 +57,6 @@ function isWordCharCode(code: number): boolean {
   )
 }
 
-/** Haystack já normalizado (normalizeTagLabel). Evita NFD/regex a cada tag. */
 export function containsWholeWordNormalized(
   normalizedHaystack: string,
   needle: string,
@@ -90,7 +85,6 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
   return containsWholeWordNormalized(normalizeTagLabel(haystack), n)
 }
 
-/** Tokens da query: ordem irrelevante, todos precisam aparecer (AND). */
 export function queryTokens(query: string): string[] {
   return query
     .trim()
@@ -194,7 +188,6 @@ function prepareJobTagMatch(
   }
 }
 
-/** OR: pelo menos uma tag selecionada precisa casar. Sem seleção = passa. */
 export function jobMatchesSelectedTags(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
   selectedTags: AppTag[],
@@ -204,7 +197,6 @@ export function jobMatchesSelectedTags(
   return selectedTags.some((tag) => tagMatchesJob(tag, job, prepared))
 }
 
-/** OR: se qualquer tag de exclusão casar, a vaga é rejeitada. Sem seleção = passa. */
 export function jobMatchesExcludedTags(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
   excludedTags: AppTag[],
@@ -214,12 +206,6 @@ export function jobMatchesExcludedTags(
   return excludedTags.some((tag) => tagMatchesJob(tag, job, prepared))
 }
 
-/**
- * Critério de aceite na busca/polling:
- * - query: todas as palavras no título (ordem irrelevante)
- * - include tags: OR em título+descrição (vazio = todas)
- * - exclude tags: OR — se qualquer casar, rejeita
- */
 export function jobMatchesSearchCriteria(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
   query: string,
@@ -231,7 +217,6 @@ export function jobMatchesSearchCriteria(
   return jobMatchesSelectedTags(job, selectedTags)
 }
 
-/** Tags do catálogo que casam com a vaga (UI). Limita scan da descrição. */
 export function matchingCatalogTags(
   job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
   catalog: AppTag[],
@@ -263,7 +248,6 @@ export function mergeBuiltinTags(stored?: AppTag[] | null): AppTag[] {
     })
   }
 
-  // Reaplica definição oficial se a tag padrão ainda existir no store.
   for (const builtin of BUILTIN_TAGS) {
     if (byId.has(builtin.id)) byId.set(builtin.id, { ...builtin })
   }

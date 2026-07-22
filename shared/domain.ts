@@ -1,9 +1,7 @@
 export type PostedWithin = '30m' | '1h' | '10h' | '24h' | '3d' | 'week' | 'month'
 
-
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
-/** híbrido / presencial / remoto */
 export type WorkplaceType = 'hybrid' | 'onsite' | 'remote'
 
 export const WORKPLACE_TYPE_LABELS: Record<WorkplaceType, string> = {
@@ -12,10 +10,8 @@ export const WORKPLACE_TYPE_LABELS: Record<WorkplaceType, string> = {
   remote: 'Remoto',
 }
 
-/** CLT ou PJ puxado da descrição */
 export type ContractTag = 'CLT' | 'PJ'
 
-/** CLT/PJ como palavra inteira */
 export function parseContractTags(text: string): ContractTag[] {
   const hay = text
     .normalize('NFD')
@@ -29,10 +25,6 @@ export function parseContractTags(text: string): ContractTag[] {
   return tags
 }
 
-/**
- * chute pela descrição quando o LinkedIn não mandou a tag.
- * ordem: híbrido > remoto > presencial
- */
 export function inferWorkplaceFromDescription(
   text: string,
 ): WorkplaceType | undefined {
@@ -64,7 +56,6 @@ export function inferWorkplaceFromDescription(
   return undefined
 }
 
-/** tag oficial primeiro; senão tenta a descrição */
 export function resolveWorkplaceType(
   workplaceType: WorkplaceType | null | undefined,
   description?: string,
@@ -80,15 +71,15 @@ export type Job = {
   location: string
   description: string
   url: string
-  /** ISO absoluto quando der pra ter (ordenar / atualizar rótulo) */
+
   postedAt?: string
-  /** texto cru do LinkedIn na coleta ("há 8 horas") */
+
   postedLabel?: string
-  /** tag LinkedIn; null = já olhou e não tinha */
+
   workplaceType?: WorkplaceType | null
-  /** veio do Voyager; store antigo sem isso = reconsultar */
+
   workplaceResolved?: boolean
-  /** CLT/PJ se a descrição falar */
+
   contractTags?: ContractTag[]
 }
 

@@ -20,7 +20,6 @@ export {
 let probeInFlight: Promise<LinkedInSessionStatus> | null = null
 let lastProbeAt = 0
 
-/** Só cookies — sem Voyager. Fonte de verdade da UI. */
 export async function syncLinkedInSessionFromCookies(): Promise<LinkedInSessionStatus> {
   const settings = await getAppSettings()
   if (!isAppConfigured(settings)) {
@@ -45,10 +44,6 @@ export async function syncLinkedInSessionFromCookies(): Promise<LinkedInSessionS
   return getLinkedInSessionStatus()
 }
 
-/**
- * Status da sessão = cookies presentes ou não.
- * Voyager /me é só diagnóstico em log — nunca marca `expired`.
- */
 export async function probeLinkedInSession(
   options: { force?: boolean; clearGuards?: boolean } = {},
 ): Promise<LinkedInSessionStatus> {

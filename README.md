@@ -6,9 +6,10 @@ App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações
 
 ### Baixar
 
-- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.7/BuscaVagas-1.0.7-win-x64-portable.exe)** — `BuscaVagas-1.0.7-win-x64-portable.exe`
-- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.7/BuscaVagas-1.0.7-linux-x64.AppImage)** — `BuscaVagas-1.0.7-linux-x64.AppImage`  
+- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.8/BuscaVagas-1.0.8-win-x64-portable.exe)** — `BuscaVagas-1.0.8-win-x64-portable.exe`
+- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.8/BuscaVagas-1.0.8-linux-x64.AppImage)** — `BuscaVagas-1.0.8-linux-x64.AppImage`  
   (`chmod +x` no AppImage se o sistema pedir)
+- **macOS** — ainda **não** há `.dmg` nos Releases. No Mac você roda a partir do código (Git + Node), passo a passo: **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**
 
 Outras versões: **[Releases](https://github.com/caducatrinck/busca-vagas/releases)**
 
@@ -26,7 +27,7 @@ Na primeira abertura você conecta o LinkedIn no app (**Entrar com LinkedIn**) o
 
 | Tecnologia | Papel | Por quê |
 |------------|--------|---------|
-| **Electron** | App desktop (Windows portable / Linux AppImage) | Empacota UI + API no PC, bandeja, notificações e auto-update sem depender de navegador aberto |
+| **Electron** | App desktop (Windows portable / Linux AppImage; Mac via código) | Empacota UI + API no PC, bandeja, notificações e auto-update sem depender de navegador aberto |
 | **React + Vite** | Interface | UI rápida de desenvolver e empacotar; hot reload no dia a dia |
 | **Fastify** | API local | Servidor HTTP leve embutido no desktop: buscas, store, pooling |
 | **Cheerio** | Parsing HTML do LinkedIn | Extrai listagem/detalhe sem browser headless pesado |
@@ -37,6 +38,8 @@ Na primeira abertura você conecta o LinkedIn no app (**Entrar com LinkedIn**) o
 Ficam só na sua máquina:
 - Windows: `%AppData%/Busca Vagas/data/`
 - Linux: `~/.config/Busca Vagas/data/`
+- macOS (app empacotado): `~/Library/Application Support/Busca Vagas/data/`
+- macOS (rodando pelo código): pasta `api/data/` no clone — ver **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**
 
 Use **Exportar / Importar** no topo do app para backup.
 
@@ -63,7 +66,7 @@ O código é público só como referência de projeto open source. **Não somos 
 
 Guia de rodar com Node/Docker: **[docs/dev.md](./docs/dev.md)**  
 Instalação do zero (Git/Node): **[INSTALACAO-DO-ZERO.md](./INSTALACAO-DO-ZERO.md)**  
-**macOS** (clone + Node, sem binário nos Releases): **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**  
+**macOS** (passo a passo na máquina): **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**  
 Empacotar desktop / releases: **[DESKTOP.md](./DESKTOP.md)**
 
 ### Pipeline automatizada
