@@ -1,6 +1,6 @@
 export type LinkedInSessionStatus = {
   ok: boolean
-  /** missing | incomplete | expired | network | unknown | ok */
+
   code: 'ok' | 'missing' | 'incomplete' | 'expired' | 'network' | 'unknown'
   message: string
   checkedAt: string | null

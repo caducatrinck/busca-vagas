@@ -26,6 +26,7 @@ O print abaixo é o resultado que importa no dia a dia:
 2. Baixe o arquivo da sua plataforma:
    - Windows: `BuscaVagas-*-win-x64-portable.exe`
    - Linux: `BuscaVagas-*-linux-x64.AppImage`
+   - **macOS:** ainda não há instalável nos Releases — use o guia **[INSTALACAO-MAC.md](../../INSTALACAO-MAC.md)** (Git + Node, passo a passo)
 3. Abra o arquivo (no Linux, permita execução se o sistema pedir)
 
 ## 2. Configurar o LinkedIn

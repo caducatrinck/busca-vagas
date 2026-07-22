@@ -12,6 +12,7 @@ import {
   DEFAULT_RATE_LIMIT,
   defaultAppSettings,
   defaultJobFilters,
+  defaultTags,
   isLikelyLinkedInJsessionId,
   normalizeCookieValue,
   normalizeJob,
@@ -22,6 +23,7 @@ import {
   normalizeLocale,
 } from './defaults.js'
 import { ensureStore, persist, clearInternalStoreBackups } from './persistence.js'
+import { mergeBuiltinTags } from '../shared/tags.js'
 
 export async function getAppSettings(): Promise<AppSettings> {
   const store = await ensureStore()
@@ -135,17 +137,21 @@ export async function saveRateLimitState(
 export async function replaceStoreData(
   incoming: Partial<StoreData> & { filters?: Partial<JobFilters> },
 ): Promise<StoreData> {
+  const current = await ensureStore()
   const jobs: Record<string, StoredJob> = {}
   for (const [id, raw] of Object.entries(incoming.jobs ?? {})) {
     const job = raw as StoredJob
     jobs[id] = normalizeJob({ ...job, id: job.id || id })
   }
 
+  const tags = mergeBuiltinTags(
+    Array.isArray(incoming.tags) ? incoming.tags : current.tags,
+  )
+
   const monitors = Array.isArray(incoming.monitors)
-    ? incoming.monitors.map((m) => createMonitor(m))
+    ? incoming.monitors.map((m) => createMonitor(m, tags))
     : []
 
-  const current = await ensureStore()
   const next: StoreData = {
     jobs,
     monitors,
@@ -158,13 +164,12 @@ export async function replaceStoreData(
     locale: normalizeLocale(
       incoming.locale !== undefined ? incoming.locale : current.locale,
     ),
+    tags,
   }
   await persist(next, { allowEmptyOverwrite: true })
   return next
 }
 
-/** Zera o store como instalação nova (sem puxar cookies de env).
- *  Não toca nos JSON exportados em Downloads — só limpa store + backups internos. */
 export async function resetStoreToFactory(): Promise<StoreData> {
   const next: StoreData = {
     jobs: {},
@@ -174,6 +179,7 @@ export async function resetStoreToFactory(): Promise<StoreData> {
     filters: defaultJobFilters(),
     theme: 'light',
     locale: 'pt',
+    tags: defaultTags(),
   }
   await persist(next, { allowEmptyOverwrite: true, skipBackup: true })
   await clearInternalStoreBackups()

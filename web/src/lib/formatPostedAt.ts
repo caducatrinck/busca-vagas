@@ -18,7 +18,7 @@ export function formatPostedAt(
 
   const then = parsePostedAt(raw, now)
   if (then == null) {
-    // rótulo cru do LinkedIn (conteúdo externo) — não forçar translate
+
     if (/atrás|atras|há\s|ago/i.test(raw)) return normalizePtRelative(raw)
     return raw
   }
@@ -26,7 +26,6 @@ export function formatPostedAt(
   return formatRelativeDiff(now - then, locale)
 }
 
-/** Timestamp para ordenar vagas (postedAt → firstSeenAt → lastSeenAt). */
 export function jobRecencyMs(
   job: {
     postedAt?: string | null
@@ -140,7 +139,7 @@ export function parsePostedAt(raw: string, now: number): number | null {
   )
   if (en) return now - amountToMs(Number(en[1]), en[2])
 
-  // "há 8 horas", "Compartilhada há 4 horas", etc.
+
   const ptHa = lower.match(
     /\bha\s+(\d+)\s+(minutos?|horas?|dias?|semanas?|meses?|anos?)\b/,
   )

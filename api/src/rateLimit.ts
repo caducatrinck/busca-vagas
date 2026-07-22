@@ -6,9 +6,9 @@ import {
 } from './store.js'
 
 export type RateLimitConfig = {
-  /** intervalo mínimo entre buscas; 0 = off */
+
   minIntervalMs: number
-  /** tetos locais; 0 = off. o bloqueio de verdade vem do LinkedIn */
+
   maxPerHour: number
   maxPerDay: number
 }
@@ -37,7 +37,7 @@ type SearchEvent = {
 
 const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
-/** Sem Retry-After no 429, pausa padrão (LinkedIn costuma omitir o header). */
+
 export const DEFAULT_LINKEDIN_429_MS = 15 * 60_000
 export const DEFAULT_LINKEDIN_999_MS = 30 * 60_000
 
@@ -121,9 +121,7 @@ export class SearchRateLimiter {
     return this.events.filter((e) => e.at >= since).length
   }
 
-  /**
-   * bloqueio a partir de resposta real do LinkedIn (429/999/Retry-After)
-   */
+
   registerLinkedInBlock(input: {
     retryAfterMs?: number
     status?: number
@@ -155,7 +153,7 @@ export class SearchRateLimiter {
     return this.snapshot(now)
   }
 
-  /** se o erro for rate/anti-bot do LinkedIn, atualiza o bloqueio */
+
   noteLinkedInError(err: unknown, now = Date.now()): boolean {
     if (!(err instanceof Error)) return false
     const status = (err as Error & { linkedInStatus?: number }).linkedInStatus

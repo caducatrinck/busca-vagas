@@ -1,4 +1,7 @@
 import type {
+  AppTag,
+  DescriptionFilters,
+  DescriptionLanguage,
   Job,
   JobFilters,
   JobStatus,
@@ -6,11 +9,10 @@ import type {
   SearchForm,
   SearchProgress,
   SearchRunStats,
-  DescriptionFilters,
 } from './types'
 
 const rawApiUrl = import.meta.env.VITE_API_URL
-/** '' = mesma origem (desktop). sem env = API local */
+
 const API_URL =
   rawApiUrl === '' ? '' : rawApiUrl || 'http://127.0.0.1:8787'
 
@@ -260,6 +262,9 @@ export async function updateMonitor(
     pollingEnabled?: boolean
     intervalMinutes?: number
     descriptionFilters?: DescriptionFilters
+    selectedTagIds?: string[]
+    excludedTagIds?: string[]
+    language?: DescriptionLanguage
   },
 ): Promise<Monitor> {
   const res = await fetch(`${API_URL}/monitors/${encodeURIComponent(id)}`, {
@@ -308,7 +313,7 @@ export type DataBackup = {
     filters?: JobFilters
     theme?: 'light' | 'dark'
   }
-  /** @deprecated backups antigos — agora vai em store.filters */
+
   filters?: JobFilters
   theme?: 'light' | 'dark'
 }
@@ -335,6 +340,53 @@ export async function saveUiPrefs(prefs: Partial<UiPrefs>): Promise<UiPrefs> {
   const data = await parseJson<UiPrefs & { error?: string }>(res)
   if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
   return data
+}
+
+export async function fetchTags(): Promise<{ tags: AppTag[] }> {
+  const res = await fetch(`${API_URL}/tags`)
+  const data = await parseJson<{
+    tags?: AppTag[]
+    error?: string
+  }>(res)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  return {
+    tags: Array.isArray(data.tags) ? data.tags : [],
+  }
+}
+
+export async function createTag(
+  label: string,
+): Promise<{ tag: AppTag; tags: AppTag[] }> {
+  const res = await fetch(`${API_URL}/tags`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label }),
+  })
+  const data = await parseJson<{
+    tag?: AppTag
+    tags?: AppTag[]
+    error?: string
+  }>(res)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  if (!data.tag) throw new Error('err:invalid_response')
+  return {
+    tag: data.tag,
+    tags: Array.isArray(data.tags) ? data.tags : [data.tag],
+  }
+}
+
+export async function deleteTag(id: string): Promise<{ tags: AppTag[] }> {
+  const res = await fetch(`${API_URL}/tags/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+  const data = await parseJson<{
+    tags?: AppTag[]
+    error?: string
+  }>(res)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  return {
+    tags: Array.isArray(data.tags) ? data.tags : [],
+  }
 }
 
 export async function exportAppData(): Promise<DataBackup> {

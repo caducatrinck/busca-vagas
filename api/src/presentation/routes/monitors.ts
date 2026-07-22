@@ -65,6 +65,9 @@ export function registerMonitorRoutes(
       pollingEnabled?: boolean
       intervalMinutes?: number
       descriptionFilters?: DescriptionFilters
+      selectedTagIds?: string[]
+      excludedTagIds?: string[]
+      language?: '' | 'pt' | 'en'
     }
   }>('/monitors/:id', async (request, reply) => {
     const existing = await repo.getMonitor(request.params.id)
@@ -89,6 +92,9 @@ export function registerMonitorRoutes(
       pollingEnabled: body.pollingEnabled,
       intervalMinutes: body.intervalMinutes,
       descriptionFilters: body.descriptionFilters,
+      selectedTagIds: body.selectedTagIds,
+      excludedTagIds: body.excludedTagIds,
+      language: body.language,
     })
 
     if (turningOn) {

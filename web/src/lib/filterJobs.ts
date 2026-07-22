@@ -1,10 +1,16 @@
-import type { Job, JobFilters } from './types'
+import type { AppTag, Job, JobFilters } from './types'
 import {
   WORKPLACE_TYPE_LABELS,
   parseContractTags,
   resolveWorkplaceType,
   type WorkplaceType,
 } from '../shared/domain'
+import {
+  jobMatchesExcludedTags,
+  jobMatchesSelectedTags,
+  jobSearchHaystack,
+  textMatchesQueryTokens,
+} from '../shared/tags'
 import { detectLanguage } from './detectLanguage'
 
 export function normalizeForMatch(text: string): string {
@@ -29,7 +35,6 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
   return re.test(h)
 }
 
-/** Tokens que precisam de palavra inteira no filtro rápido da lista. */
 const QUICK_FILTER_WHOLE_WORD = new Set(['java', 'javascript'])
 
 const WORKPLACE_SEARCH_ALIASES: Record<WorkplaceType, string> = {
@@ -38,7 +43,6 @@ const WORKPLACE_SEARCH_ALIASES: Record<WorkplaceType, string> = {
   remote: 'remoto remote',
 }
 
-/** Texto da tag de modelo de trabalho para busca/filtro. */
 export function workplaceSearchText(
   job: Pick<Job, 'workplaceType' | 'description'>,
 ): string {
@@ -47,7 +51,6 @@ export function workplaceSearchText(
   return `${WORKPLACE_TYPE_LABELS[t]} ${WORKPLACE_SEARCH_ALIASES[t]}`
 }
 
-/** Título + tags (remoto/presencial/híbrido/CLT/PJ) para filtros de título. */
 export function titleSearchText(
   job: Pick<Job, 'title' | 'workplaceType' | 'contractTags' | 'description'>,
 ): string {
@@ -58,14 +61,16 @@ export function titleSearchText(
   return `${job.title ?? ''} ${workplaceSearchText(job)} ${contracts}`.trim()
 }
 
+export function fullTextSearchHaystack(
+  job: Pick<Job, 'title' | 'description' | 'workplaceType' | 'contractTags'>,
+): string {
+  return jobSearchHaystack(job)
+}
+
 function stripQuickFilterQuotes(token: string): string {
   return token.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
 }
 
-/**
- * Filtro rápido da lista de vagas: substring normal, exceto java/javascript
- * (palavra inteira, para "Java" não casar "Javascript" e vice-versa).
- */
 export function matchesQuickFilter(text: string, query: string): boolean {
   const tokens = query
     .trim()
@@ -83,6 +88,10 @@ export function matchesQuickFilter(text: string, query: string): boolean {
     }
     return haystack.includes(token)
   })
+}
+
+export function matchesTextFilter(job: Job, query: string): boolean {
+  return textMatchesQueryTokens(fullTextSearchHaystack(job), query)
 }
 
 function queryTokens(query: string): string[] {
@@ -115,13 +124,21 @@ export function filterJobs(
   filters: JobFilters,
   options: {
     useDescriptionFilters?: boolean
-
     requireQueryInTitle?: string
+    catalogTags?: AppTag[]
   } = {},
 ): Job[] {
   const useDescription = options.useDescriptionFilters ?? true
   const wanted = filters.language
   const requireQuery = options.requireQueryInTitle?.trim() ?? ''
+  const catalog = options.catalogTags ?? []
+  const selectedIds = filters.selectedTagIds ?? []
+  const excludedIds = filters.excludedTagIds ?? []
+  const selectedTags = catalog.filter((tag) => selectedIds.includes(tag.id))
+  const excludedTags = catalog.filter((tag) => excludedIds.includes(tag.id))
+
+  if (selectedIds.length > 0 && selectedTags.length === 0) return []
+  if (excludedIds.length > 0 && catalog.length === 0) return []
 
   return jobs.filter((job) => {
     const titleHaystack = titleSearchText(job)
@@ -138,6 +155,9 @@ export function filterJobs(
       if (containsAny(description, filters.excludeDescription)) return false
       if (!containsRequired(description, filters.includeDescription)) return false
     }
+
+    if (jobMatchesExcludedTags(job, excludedTags)) return false
+    if (!jobMatchesSelectedTags(job, selectedTags)) return false
 
     if (wanted === 'pt' || wanted === 'en') {
       const sample =

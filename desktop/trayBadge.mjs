@@ -1,6 +1,5 @@
 import { nativeImage } from 'electron'
 
-/** @type {Record<string, number[][]>} */
 const DIGITS = {
   '0': [
     [1, 1, 1],
@@ -81,11 +80,6 @@ const DIGITS = {
   ],
 }
 
-/**
- * @param {import('electron').NativeImage} base
- * @param {number} count
- * @returns {import('electron').NativeImage}
- */
 export function withTrayBadge(base, count) {
   const size = 32
   const img = base.isEmpty()

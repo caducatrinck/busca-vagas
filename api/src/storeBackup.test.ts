@@ -15,7 +15,7 @@ import {
 
 describe('storeBackup', () => {
   it('formata o carimbo no estilo DIA-3-MES-5-HORA15-43', () => {
-    const d = new Date(2026, 4, 3, 15, 43, 7) // mês 4 = maio
+    const d = new Date(2026, 4, 3, 15, 43, 7)
     assert.equal(formatBackupStamp(d), 'DIA-3-MES-5-HORA15-43')
   })
 
@@ -36,7 +36,7 @@ describe('storeBackup', () => {
           JSON.stringify({ jobs: { [`j${i}`]: { id: `j${i}` } }, monitors: [{ id: 'm' }] }),
           'utf8',
         )
-        // força nomes distintos
+
         const dest = path.join(
           backupDir,
           `DIA-1-MES-1-HORA0-${String(i).padStart(2, '0')}.json`,

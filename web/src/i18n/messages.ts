@@ -105,8 +105,37 @@ const pt = {
   'list.loading': 'Carregando…',
   'list.filterTitle': 'Filtrar título…',
   'list.filterDesc': 'Filtrar descrição…',
+  'list.filterText': 'Buscar no título ou descrição…',
+  'list.filterTextAria': 'Buscar no título e na descrição',
+  'tags.label': 'Tags',
+  'tags.includeLabel': 'Incluir tags',
+  'tags.excludeLabel': 'Excluir tags',
+  'tags.hint': 'Sem seleção = todas as vagas.',
+  'tags.monitorHint': 'Filtro e auto-descarte na busca (OR).',
+  'tags.includeHint':
+    'Mostra só vagas com ao menos uma destas tags (OR). Vazio = todas.',
+  'tags.excludeHint':
+    'Esconde / descarta vagas que tiverem qualquer uma destas tags (OR).',
+  'tags.filterHint': 'Filtrar por tags (OR). Sem seleção = todas.',
+  'tags.searchPlaceholder': 'Buscar ou criar tag…',
+  'tags.searchIncludePlaceholder': 'Incluir tag',
+  'tags.searchExcludePlaceholder': 'Excluir tag',
+  'tags.noneSelected': 'Nenhuma tag selecionada',
+  'tags.remove': 'Remover tag do filtro',
+  'tags.delete': 'Excluir tag',
+  'tags.deleteAria': 'Excluir tag {label}',
+  'tags.builtin': 'padrão',
+  'tags.create': 'Criar “{label}”',
+  'tags.createFailed': 'Não foi possível criar a tag',
+  'tags.noResults': 'Nenhuma tag encontrada',
+  'err.tag_empty': 'Informe um nome para a tag',
+  'err.tag_too_long': 'Tag muito longa',
+  'err.tag_not_found': 'Tag não encontrada',
+  'err.tag_create': 'Falha ao criar tag',
+  'err.tag_delete': 'Falha ao remover tag',
   'list.language': 'Idioma',
   'list.discardAll': 'Descartar todas',
+  'list.discard': 'Descartar',
   'list.discarding': 'Descartando…',
   'list.noFilter': 'Nenhuma vaga neste filtro',
   'list.adjustFilters': 'Ajuste o título/descrição ou limpe os filtros acima.',
@@ -204,7 +233,6 @@ const pt = {
   'update.retry': 'Tentar de novo',
   'update.dismiss': 'Fechar',
 
-
   'settings.guideTitle': 'Como pegar os cookies',
   'settings.guideStep1': 'Abra o LinkedIn no navegador e faça login na sua conta.',
   'settings.guideStep2': 'Pressione F12 (ou clique com o botão direito → Inspecionar) para abrir as DevTools.',
@@ -286,11 +314,13 @@ const pt = {
   'list.emptyHintDefault': 'Nada para mostrar aqui ainda.',
   'list.titleDefault': 'Vagas',
   'list.of': '{a} de {b}',
-  'list.sortNewestAria': 'Ordenar: mais recentes primeiro',
-  'list.sortOldestAria': 'Ordenar: mais antigas primeiro',
+  'list.sortNewestAria': 'Ordenar por data: mais recentes primeiro',
+  'list.sortOldestAria': 'Ordenar por data: mais antigas primeiro',
   'list.sortNewestTitle': 'Mais recentes primeiro',
   'list.sortOldestTitle': 'Mais antigas primeiro',
+  'list.sortDate': 'Data',
   'list.discardAllCount': 'Descartar todas ({n})',
+  'list.discardCount': 'Descartar ({n})',
   'list.discardConfirmTitle': 'Descartar todas?',
   'list.discardConfirmBody': 'Marcar {n} vaga(s) como descartada(s)? Elas saem do Monitor e vão para a aba Descartadas.',
   'list.discardConfirmYes': 'Sim, descartar',
@@ -313,11 +343,9 @@ const pt = {
   'rate.dayLeft': ' · {n} restantes hoje (teto opcional)',
   'rate.dayUsed': ' · {n} hoje',
 
-
   'filter.placeholder': 'Digite e Enter',
   'filter.addAria': 'Adicionar em {label}',
   'nav.unread': '{n} notificações não lidas',
-
 
   'err.load': 'Erro ao carregar',
   'err.loadMonitors': 'Erro ao carregar monitores',
@@ -353,7 +381,6 @@ const pt = {
   'progress.starting': 'Iniciando busca…',
 
   'progress.newCount': '{n} nova(s) vaga(s)',
-
 
   'err.generic': 'Algo deu errado. Tente de novo.',
   'err.missingLiAt': 'Configure o cookie li_at em Configurações antes de buscar vagas.',
@@ -543,8 +570,37 @@ const en: Record<MessageKey, string> = {
   'list.loading': 'Loading…',
   'list.filterTitle': 'Filter title…',
   'list.filterDesc': 'Filter description…',
+  'list.filterText': 'Search title or description…',
+  'list.filterTextAria': 'Search title and description',
+  'tags.label': 'Tags',
+  'tags.includeLabel': 'Include tags',
+  'tags.excludeLabel': 'Exclude tags',
+  'tags.hint': 'None selected = all jobs.',
+  'tags.monitorHint': 'Filter and auto-discard on search (OR).',
+  'tags.includeHint':
+    'Show only jobs with at least one of these tags (OR). Empty = all.',
+  'tags.excludeHint':
+    'Hide / discard jobs that have any of these tags (OR).',
+  'tags.filterHint': 'Filter by tags (OR). None selected = all.',
+  'tags.searchPlaceholder': 'Search or create tag…',
+  'tags.searchIncludePlaceholder': 'Include tag',
+  'tags.searchExcludePlaceholder': 'Exclude tag',
+  'tags.noneSelected': 'No tags selected',
+  'tags.remove': 'Remove tag from filter',
+  'tags.delete': 'Delete tag',
+  'tags.deleteAria': 'Delete tag {label}',
+  'tags.builtin': 'default',
+  'tags.create': 'Create “{label}”',
+  'tags.createFailed': 'Could not create tag',
+  'tags.noResults': 'No tags found',
+  'err.tag_empty': 'Enter a tag name',
+  'err.tag_too_long': 'Tag is too long',
+  'err.tag_not_found': 'Tag not found',
+  'err.tag_create': 'Failed to create tag',
+  'err.tag_delete': 'Failed to delete tag',
   'list.language': 'Language',
   'list.discardAll': 'Discard all',
+  'list.discard': 'Discard',
   'list.discarding': 'Discarding…',
   'list.noFilter': 'No jobs in this filter',
   'list.adjustFilters': 'Adjust title/description or clear filters above.',
@@ -642,7 +698,6 @@ const en: Record<MessageKey, string> = {
   'update.retry': 'Try again',
   'update.dismiss': 'Dismiss',
 
-
   'settings.guideTitle': 'How to get the cookies',
   'settings.guideStep1': 'Open LinkedIn in the browser and sign in to your account.',
   'settings.guideStep2': 'Press F12 (or right-click → Inspect) to open DevTools.',
@@ -724,11 +779,13 @@ const en: Record<MessageKey, string> = {
   'list.emptyHintDefault': 'Nothing to show here yet.',
   'list.titleDefault': 'Jobs',
   'list.of': '{a} of {b}',
-  'list.sortNewestAria': 'Sort: newest first',
-  'list.sortOldestAria': 'Sort: oldest first',
+  'list.sortNewestAria': 'Sort by date: newest first',
+  'list.sortOldestAria': 'Sort by date: oldest first',
   'list.sortNewestTitle': 'Newest first',
   'list.sortOldestTitle': 'Oldest first',
+  'list.sortDate': 'Date',
   'list.discardAllCount': 'Discard all ({n})',
+  'list.discardCount': 'Discard ({n})',
   'list.discardConfirmTitle': 'Discard all?',
   'list.discardConfirmBody': 'Mark {n} job(s) as discarded? They leave Monitor and go to the Discarded tab.',
   'list.discardConfirmYes': 'Yes, discard',
@@ -751,11 +808,9 @@ const en: Record<MessageKey, string> = {
   'rate.dayLeft': ' · {n} left today (optional cap)',
   'rate.dayUsed': ' · {n} today',
 
-
   'filter.placeholder': 'Type and press Enter',
   'filter.addAria': 'Add to {label}',
   'nav.unread': '{n} unread notifications',
-
 
   'err.load': 'Failed to load',
   'err.loadMonitors': 'Failed to load monitors',
@@ -791,7 +846,6 @@ const en: Record<MessageKey, string> = {
   'progress.starting': 'Starting search…',
 
   'progress.newCount': '{n} new job(s)',
-
 
   'err.generic': 'Something went wrong. Try again.',
   'err.missingLiAt': 'Set the li_at cookie in Settings before searching.',

@@ -50,8 +50,8 @@ A tag deve bater com `desktop/package.json` — o CI falha se divergirem.
 Para features em teste (ex.: login LinkedIn in-app):
 
 1. Trabalhe na branch `latest`
-2. Versão com sufixo, ex.: `1.0.5-test.1` em `desktop/package.json`
-3. Tag igual: `v1.0.5-test.1`
+2. Versão com sufixo, ex.: `1.0.6-test.1` em `desktop/package.json`
+3. Tag igual: `v1.0.6-test.1`
 4. O workflow publica como **prerelease** (tags com `-test` ou `-beta`)
 
 O updater estável (`/releases/latest`) **não** oferece prereleases — usuários do build estável não atualizam sozinhos para o teste.
@@ -59,9 +59,9 @@ O updater estável (`/releases/latest`) **não** oferece prereleases — usuári
 ```bash
 git checkout latest
 # …mudanças…
-# bump desktop/package.json → 1.0.5-test.N
-git tag v1.0.5-test.N
-git push origin latest v1.0.5-test.N
+# bump desktop/package.json → 1.0.6-test.N
+git tag v1.0.6-test.N
+git push origin latest v1.0.6-test.N
 ```
 
 ## Desenvolvimento (esta máquina)

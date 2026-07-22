@@ -21,9 +21,6 @@ const EMPTY_POPUP_PROBE = `(() => {
   return text.length < 8 && interactive === 0
 })()`
 
-/**
- * @param {string | undefined} value
- */
 function stripCookieQuotes(value) {
   let next = String(value ?? '').trim()
   for (let i = 0; i < 4; i++) {
@@ -40,9 +37,6 @@ function stripCookieQuotes(value) {
   return next
 }
 
-/**
- * @param {string} url
- */
 function isAuthRelatedUrl(url) {
   try {
     return AUTH_HOST_RE.test(new URL(url).hostname)
@@ -51,16 +45,10 @@ function isAuthRelatedUrl(url) {
   }
 }
 
-/**
- * @param {string} url
- */
 function isLoginUrl(url) {
   return /\/login/i.test(url) || /uas\/login/i.test(url)
 }
 
-/**
- * @param {string} url
- */
 function isPostAuthBlankUrl(url) {
   const raw = String(url ?? '').trim()
   if (!raw || raw === 'about:blank') return true
@@ -71,9 +59,6 @@ function isPostAuthBlankUrl(url) {
   }
 }
 
-/**
- * @param {string | undefined} domain
- */
 function isLinkedInCookieDomain(domain) {
   const host = String(domain ?? '')
     .replace(/^\./, '')
@@ -81,14 +66,10 @@ function isLinkedInCookieDomain(domain) {
   return host === 'linkedin.com' || host.endsWith('.linkedin.com')
 }
 
-/**
- * @param {import('electron').Session} ses
- * @param {{ requireJsession?: boolean }} [opts]
- */
 async function readLinkedInCookies(ses, opts = {}) {
   const requireJsession = opts.requireJsession !== false
   const cookies = await ses.cookies.get({})
-  /** @type {Map<string, string>} */
+
   const byName = new Map()
   for (const c of cookies) {
     if (!isLinkedInCookieDomain(c.domain)) continue
@@ -104,9 +85,6 @@ async function readLinkedInCookies(ses, opts = {}) {
   return { linkedinLiAt: liAt, linkedinJsessionId: jsession || '' }
 }
 
-/**
- * @param {() => BrowserWindow | null} getMainWindow
- */
 function focusMainWindow(getMainWindow) {
   const main = getMainWindow?.()
   if (!main || main.isDestroyed()) return
@@ -116,10 +94,6 @@ function focusMainWindow(getMainWindow) {
   main.focus()
 }
 
-/**
- * @param {BrowserWindow} w
- * @param {import('electron').Session} ses
- */
 function windowUsesLoginSession(w, ses) {
   if (w.isDestroyed()) return false
   try {
@@ -132,9 +106,6 @@ function windowUsesLoginSession(w, ses) {
   }
 }
 
-/**
- * @param {import('electron').Session} ses
- */
 function loginWebPreferences(ses) {
   return {
     session: ses,
@@ -145,9 +116,6 @@ function loginWebPreferences(ses) {
   }
 }
 
-/**
- * @param {() => BrowserWindow | null} getMainWindow
- */
 export function registerLinkedInLogin(getMainWindow) {
   ipcMain.removeHandler('linkedin:login')
   ipcMain.removeHandler('linkedin:logout')
@@ -167,20 +135,17 @@ async function clearLinkedInLoginSession() {
   }
 }
 
-/**
- * @param {() => BrowserWindow | null} getMainWindow
- */
 function openLinkedInLogin(getMainWindow) {
   return new Promise((resolve) => {
     const ses = session.fromPartition(PARTITION)
-    /** @type {Set<BrowserWindow>} */
+
     const windows = new Set()
-    /** @type {Map<number, ReturnType<typeof setTimeout>>} */
+
     const blankTimers = new Map()
-    /** @type {ReturnType<typeof setTimeout>[]} */
+
     const looseTimers = []
 
-    /** @type {BrowserWindow | null} */
+
     let win = new BrowserWindow({
       width: 560,
       height: 780,
@@ -195,11 +160,11 @@ function openLinkedInLogin(getMainWindow) {
     let settled = false
     let pendingLoginRefresh = false
     let liAtSeenAt = 0
-    /** @type {ReturnType<typeof setInterval> | null} */
+
     let pollTimer = null
-    /** @type {ReturnType<typeof setTimeout> | null} */
+
     let timeoutTimer = null
-    /** @type {ReturnType<typeof setTimeout> | null} */
+
     let postPopupTimer = null
 
     const schedule = (fn, ms) => {
@@ -222,7 +187,7 @@ function openLinkedInLogin(getMainWindow) {
       try {
         ses.cookies.removeListener('changed', onCookieChanged)
       } catch {
-        /* ignore */
+
       }
     }
 
@@ -231,7 +196,7 @@ function openLinkedInLogin(getMainWindow) {
       try {
         w.removeAllListeners('closed')
       } catch {
-        /* ignore */
+
       }
       try {
         w.destroy()
@@ -239,7 +204,7 @@ function openLinkedInLogin(getMainWindow) {
         try {
           w.close()
         } catch {
-          /* ignore */
+
         }
       }
     }
@@ -255,16 +220,7 @@ function openLinkedInLogin(getMainWindow) {
       win = null
     }
 
-    /**
-     * @param {{
-     *   ok: boolean
-     *   cancelled?: boolean
-     *   timedOut?: boolean
-     *   linkedinLiAt?: string
-     *   linkedinJsessionId?: string
-     *   error?: string
-     * }} result
-     */
+
     const finish = (result) => {
       if (settled) return
       settled = true
@@ -304,7 +260,7 @@ function openLinkedInLogin(getMainWindow) {
       }
     }
 
-    /** Popup de e-mail/OAuth fecha e /login fica stale — F5 aplica a session. */
+
     const afterPopupClosed = () => {
       if (settled) return
       void tryCapture()
@@ -324,12 +280,7 @@ function openLinkedInLogin(getMainWindow) {
       postPopupTimer = setTimeout(tick, 400)
     }
 
-    /**
-     * @param {import('electron').Event} _event
-     * @param {Electron.Cookie} cookie
-     * @param {string} _cause
-     * @param {boolean} removed
-     */
+
     const onCookieChanged = (_event, cookie, _cause, removed) => {
       if (removed || settled) return
       const name = String(cookie?.name || '').toLowerCase()
@@ -337,10 +288,7 @@ function openLinkedInLogin(getMainWindow) {
     }
     ses.cookies.on('changed', onCookieChanged)
 
-    /**
-     * @param {BrowserWindow} host
-     * @param {string} url
-     */
+
     const scheduleBlankClose = (host, url) => {
       if (settled || host.isDestroyed() || host === win) return
       if (!isPostAuthBlankUrl(url)) return
@@ -362,10 +310,7 @@ function openLinkedInLogin(getMainWindow) {
       )
     }
 
-    /**
-     * `allow` + mesma session preserva window.opener (necessário no login e-mail).
-     * @param {BrowserWindow} host
-     */
+
     const wireWindow = (host) => {
       host.webContents.setWindowOpenHandler(({ url }) => {
         if (!isAuthRelatedUrl(url)) return { action: 'deny' }
@@ -389,7 +334,7 @@ function openLinkedInLogin(getMainWindow) {
         })
       })
 
-      /** @param {string} url */
+
       const onUrl = (url) => {
         void tryCapture()
         scheduleBlankClose(host, url)
@@ -407,7 +352,7 @@ function openLinkedInLogin(getMainWindow) {
           url = host.webContents.getURL()
           onUrl(url)
         } catch {
-          /* ignore */
+
         }
 
         if (host === win && pendingLoginRefresh) {

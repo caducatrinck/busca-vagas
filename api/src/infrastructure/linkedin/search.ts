@@ -92,7 +92,7 @@ async function fetchJobDetail(
   workplaceType?: Job['workplaceType']
   workplaceResolved: boolean
 }> {
-  // Tags Híbrido/Presencial/Remoto só vêm no Voyager autenticado (HTML guest não traz).
+
   if (!isVoyagerAuthBlocked()) {
     try {
       const payload = await linkedInVoyagerFetch(
@@ -176,7 +176,7 @@ export async function enrichDescriptions(
   const needingFetch = withCached
     .filter((job) => {
       const needDesc = fetchDescriptions && !job.description?.trim()
-      // null antigo sem Voyager deve ser reconsultado
+
       const needWorkplace =
         !job.workplaceType && job.workplaceResolved !== true
       return needDesc || needWorkplace
@@ -266,7 +266,7 @@ export async function enrichDescriptions(
     })
     await onJobsBatch?.(results)
     if (i + detailConcurrency < needingFetch.length) {
-      // 1–2s entre lotes: Voyager 403/429 sobe muito com rajada.
+
       await randomDelay(1000, 2000)
       throwIfAborted(signal, working)
     }
@@ -319,7 +319,7 @@ export async function searchLinkedInJobs(
   let listingPagesWithJobs = 0
   let emptyReason: string | undefined
   let duplicatePageStreak = 0
-  // Guest sem cookie às vezes repete páginas; tolera um pouco mais antes de parar.
+
   const MAX_DUPLICATE_PAGES = 6
 
   progress.emit({
@@ -343,7 +343,7 @@ export async function searchLinkedInJobs(
         if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
           throw new SearchCancelledError(jobs)
         }
-        // 502/503/rede no meio da listagem: mantém o que já veio.
+
         const msg = err instanceof Error ? err.message : String(err)
         if (
           jobs.length > 0 &&

@@ -1,7 +1,7 @@
 .monitor-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.55rem;
   align-items: center;
 }
 
@@ -44,24 +44,24 @@
 }
 
 .monitor-tabs__item--pooling .monitor-tabs__btn {
-  border-color: color-mix(in srgb, #f0c24b 32%, var(--line));
-  box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 10%, transparent);
-  animation: monitor-tab-pooling-pulse 2s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent);
+  animation: monitor-tab-pooling-pulse 1.6s ease-in-out infinite;
 }
 
 .monitor-tabs__item--pooling.monitor-tabs__item--active .monitor-tabs__btn {
-  box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 16%, transparent);
-  animation: monitor-tab-pooling-pulse-active 2s ease-in-out infinite;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #fff 36%, transparent);
+  animation: monitor-tab-pooling-pulse-active 1.6s ease-in-out infinite;
 }
 
 .monitor-tabs__item--running .monitor-tabs__btn {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
-  animation: monitor-tab-pulse 1.25s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--ok) 65%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, transparent);
+  animation: monitor-tab-pulse 1.05s ease-in-out infinite;
 }
 
 .monitor-tabs__item--running.monitor-tabs__item--active .monitor-tabs__btn {
-  animation: monitor-tab-pulse-active 1.25s ease-in-out infinite;
+  animation: monitor-tab-pulse-active 1.05s ease-in-out infinite;
 }
 
 .monitor-tabs__label {
@@ -119,47 +119,47 @@
 @keyframes monitor-tab-pooling-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 8%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 16%, transparent);
-    filter: brightness(1.02);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+    filter: brightness(1.03);
   }
 }
 
 @keyframes monitor-tab-pooling-pulse-active {
   0%,
   100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 14%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 32%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, #f0c24b 22%, transparent);
-    filter: brightness(1.03);
+    box-shadow: 0 0 0 2px color-mix(in srgb, #fff 52%, transparent);
+    filter: brightness(1.04);
   }
 }
 
 @keyframes monitor-tab-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 36%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
-    filter: brightness(1.03);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 62%, transparent);
+    filter: brightness(1.04);
   }
 }
 
 @keyframes monitor-tab-pulse-active {
   0%,
   100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 45%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, #fff 28%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ok) 72%, transparent);
     filter: brightness(1.05);
   }
 }

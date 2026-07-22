@@ -52,7 +52,6 @@ function listLogFiles(): { name: string; path: string; size: number; mtimeMs: nu
     .filter((f): f is NonNullable<typeof f> => f != null)
 }
 
-/** Apaga os .log mais antigos até o total caber em 300MB. */
 export function pruneLogFiles(maxTotalBytes = MAX_TOTAL_BYTES): void {
   const files = listLogFiles().sort((a, b) => a.mtimeMs - b.mtimeMs)
   let total = files.reduce((sum, f) => sum + f.size, 0)
@@ -63,11 +62,11 @@ export function pruneLogFiles(maxTotalBytes = MAX_TOTAL_BYTES): void {
       unlinkSync(file.path)
       total -= file.size
     } catch {
-      /* arquivo pode ter sumido */
+
     }
   }
 
-  // se ainda estoura só com app.log, trunca rotacionando
+
   if (total > maxTotalBytes) {
     const active = files.find((f) => f.name === ACTIVE_NAME)
     if (active && active.size > 0) {
@@ -75,7 +74,7 @@ export function pruneLogFiles(maxTotalBytes = MAX_TOTAL_BYTES): void {
         rotateActiveFile()
         pruneLogFiles(maxTotalBytes)
       } catch {
-        /* ignore */
+
       }
     }
   }
@@ -102,7 +101,7 @@ function maybeRotateAndPrune(): void {
       pruneLogFiles()
     }
   } catch {
-    /* logging nunca deve derrubar a API */
+
   }
 }
 
@@ -137,7 +136,7 @@ function writeLine(level: LogLevel, message: string, meta?: LogMeta): void {
       appendFileSync(activePath(), line, 'utf8')
     })
     .catch(() => {
-      /* ignore I/O errors */
+
     })
 }
 
@@ -154,7 +153,7 @@ export const log = {
   error(message: string, meta?: LogMeta) {
     writeLine('error', message, meta)
   },
-  /** Aguarda flush da fila (testes). */
+
   async flush() {
     await writeQueue
   },

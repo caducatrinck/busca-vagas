@@ -1,7 +1,4 @@
-/**
- * Módulo de UI compartilhada (não é pacote npm).
- * Componentes burros + tokens — features importam daqui.
- */
+
 export { cx } from './cx'
 export { Button } from './Button/Button'
 export type { ButtonVariant, ButtonSize } from './Button/Button'

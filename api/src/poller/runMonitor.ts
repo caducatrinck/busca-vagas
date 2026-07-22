@@ -7,15 +7,43 @@ import {
   getMonitor,
   getStore,
   isAppConfigured,
+  resolveTagsByIds,
   updateMonitor,
   upsertSearchResults,
   withNewFlag,
 } from '../store.js'
-import type { SearchRunStats } from '../types.js'
+import type { Job, SearchRunStats } from '../types.js'
 import { SearchCancelledError } from '../types.js'
 import { resolvePoolingPostedSeconds as resolvePoolingWindow } from '../domain/poolingWindow.js'
+import {
+  jobMatchesExcludedTags,
+  jobMatchesSelectedTags,
+  jobTitleHaystack,
+  textMatchesQueryTokens,
+  type AppTag,
+} from '../shared/tags.js'
 import { aborts, running } from './runtime.js'
 import type { MonitorRunCallbacks, MonitorRunMode, MonitorRunResult } from './types.js'
+
+function buildShouldDiscard(
+  query: string,
+  selectedTags: AppTag[],
+  excludedTags: AppTag[],
+) {
+  return (job: Job): boolean => {
+    if (!textMatchesQueryTokens(jobTitleHaystack(job), query)) return true
+    const hasDetail =
+      Boolean(job.description?.trim()) ||
+      job.workplaceType != null ||
+      Boolean(job.contractTags?.length)
+    if (!hasDetail) {
+      return false
+    }
+    if (jobMatchesExcludedTags(job, excludedTags)) return true
+    if (selectedTags.length === 0) return false
+    return !jobMatchesSelectedTags(job, selectedTags)
+  }
+}
 
 export async function runMonitor(
   id: string,
@@ -78,7 +106,6 @@ export async function runMonitor(
 
       const retryAfterMs = Math.max(1_000, rawRetry + 500)
 
-      // cooldown local: não grava lastError (já tem mensagem com contador na UI)
       if (source !== 'cooldown') {
         if (mode === 'manual') {
           callbacks.onProgress?.({
@@ -100,30 +127,48 @@ export async function runMonitor(
       return { newCount: 0, error: message, retryAfterMs }
     }
 
+    const selectedTags = await resolveTagsByIds(monitor.selectedTagIds ?? [])
+    const excludedTags = await resolveTagsByIds(monitor.excludedTagIds ?? [])
+    const shouldDiscard = buildShouldDiscard(
+      monitor.search.query ?? '',
+      selectedTags,
+      excludedTags,
+    )
+    const upsertOpts = { shouldDiscard }
+
     const countNewAgainstBaseline = (jobs: { id: string }[]) =>
       jobs.reduce((n, j) => n + (baselineKnown.has(j.id) ? 0 : 1), 0)
 
     const emitJobs = async (batch: Parameters<typeof upsertSearchResults>[0]) => {
       if (batch.length === 0) return
-      const { jobs, newJobs } = await upsertSearchResults(batch, id)
+      const { jobs, newJobs } = await upsertSearchResults(batch, id, upsertOpts)
       const flagged = withNewFlag(
-        jobs,
-        newJobs.map((j) => j.id),
+        jobs.filter((j) => j.status !== 'discarded'),
+        newJobs.filter((j) => j.status !== 'discarded').map((j) => j.id),
       )
       callbacks.onJobs?.(flagged)
     }
 
     const onListingComplete = async (listed: Parameters<typeof upsertSearchResults>[0]) => {
-      const { jobs } = await upsertSearchResults(listed, id)
-      const newCount = countNewAgainstBaseline(listed)
+      const { jobs } = await upsertSearchResults(listed, id, upsertOpts)
+      const kept = jobs.filter((j) => j.status !== 'discarded')
+      const newCount = countNewAgainstBaseline(
+        listed.filter((j) => {
+          const saved = jobs.find((s) => s.id === j.id)
+          return saved && saved.status !== 'discarded'
+        }),
+      )
 
       await updateMonitor(id, {
         newCountLastRun: newCount,
         lastError: null,
       })
       const flagged = withNewFlag(
-        jobs,
-        listed.filter((j) => !baselineKnown.has(j.id)).map((j) => j.id),
+        kept,
+        listed
+          .filter((j) => !baselineKnown.has(j.id))
+          .filter((j) => jobs.find((s) => s.id === j.id)?.status !== 'discarded')
+          .map((j) => j.id),
       )
       callbacks.onJobs?.(flagged)
       callbacks.onProgress?.({
@@ -144,8 +189,6 @@ export async function runMonitor(
 
     try {
       const hints = await getJobSearchHints()
-      // Janela estreita do pooling só no tick automático.
-      // Busca manual (Buscar agora) usa o "Publicadas em" do formulário.
       const postedWithinSeconds =
         mode === 'pooling'
           ? resolvePoolingWindow(
@@ -164,6 +207,8 @@ export async function runMonitor(
         postedWithinSeconds: postedWithinSeconds ?? null,
         fetchDescriptions: true,
         discardedKnown: hints.discardedIds.size,
+        selectedTags: selectedTags.map((t) => t.label),
+        excludedTags: excludedTags.map((t) => t.label),
       })
 
       const found = await searchLinkedInJobs(
@@ -201,10 +246,11 @@ export async function runMonitor(
         etaSeconds: 1,
       })
 
-      await upsertSearchResults(found, id)
-      const newCount = countNewAgainstBaseline(found)
+      const { jobs: saved } = await upsertSearchResults(found, id, upsertOpts)
+      const accepted = saved.filter((j) => j.status !== 'discarded')
+      const newCount = accepted.filter((j) => !baselineKnown.has(j.id)).length
       const stats: SearchRunStats = {
-        jobCount: found.length,
+        jobCount: accepted.length,
         newCount,
         durationMs: Date.now() - startedAt,
         finishedAt: new Date().toISOString(),
@@ -215,7 +261,8 @@ export async function runMonitor(
         monitorId: id,
         mode,
         query: monitor.search.query,
-        jobCount: found.length,
+        jobCount: accepted.length,
+        discardedByFilter: saved.length - accepted.length,
         newCount,
         durationMs: stats.durationMs,
         ...searchTelemetry,
@@ -249,17 +296,26 @@ export async function runMonitor(
       return { newCount }
     } catch (err) {
       if (err instanceof SearchCancelledError) {
+        let acceptedCount = 0
+        let newCount = 0
         if (err.jobs.length > 0) {
           try {
             searchRateLimiter.recordSearch()
           } catch {
 
           }
-          await upsertSearchResults(err.jobs, id)
+          const { jobs: saved } = await upsertSearchResults(
+            err.jobs,
+            id,
+            upsertOpts,
+          )
+          const accepted = saved.filter((j) => j.status !== 'discarded')
+          acceptedCount = accepted.length
+          newCount = accepted.filter((j) => !baselineKnown.has(j.id)).length
         }
         const stats: SearchRunStats = {
-          jobCount: err.jobs.length,
-          newCount: err.jobs.filter((j) => !baselineKnown.has(j.id)).length,
+          jobCount: acceptedCount,
+          newCount,
           durationMs: Date.now() - startedAt,
           finishedAt: new Date().toISOString(),
           cancelled: true,
@@ -288,7 +344,7 @@ export async function runMonitor(
           etaSeconds: 0,
           cancelled: true,
         })
-        return { newCount: stats.newCount, cancelled: true }
+        return { newCount, cancelled: true }
       }
 
       const message =

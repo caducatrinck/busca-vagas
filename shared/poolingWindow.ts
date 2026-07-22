@@ -1,4 +1,4 @@
-/** janela do pooling em segundos */
+
 export function resolvePoolingPostedSeconds(
   intervalMinutes: number,
   lastRunAt: string | null,
@@ -14,7 +14,6 @@ export function resolvePoolingPostedSeconds(
   return Math.min(Math.max(windowSec, 10 * 60), 24 * 60 * 60)
 }
 
-/** mesma coisa em minutos (UI) */
 export function poolingWindowMinutes(
   intervalMinutes: number,
   lastRunAt: string | null,

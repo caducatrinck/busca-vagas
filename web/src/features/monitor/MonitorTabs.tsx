@@ -5,7 +5,8 @@ import { tabCountdownLabel } from './formatCountdown'
 type Props = {
   monitors: Monitor[]
   activeId: string | null
-  searching: boolean
+
+  searchingMonitorId?: string | null
   busy: boolean
   now: number
   onSelect: (id: string) => void
@@ -16,7 +17,7 @@ type Props = {
 export function MonitorTabs({
   monitors,
   activeId,
-  searching,
+  searchingMonitorId = null,
   busy,
   now,
   onSelect,
@@ -29,7 +30,7 @@ export function MonitorTabs({
     <div className="monitor-tabs">
       {monitors.map((monitor) => {
         const running =
-          monitor.ticking || (searching && monitor.id === activeId)
+          monitor.ticking || monitor.id === searchingMonitorId
         const eta =
           monitor.pollingEnabled || running
             ? tabCountdownLabel(monitor.nextRunAt, now, running, locale)

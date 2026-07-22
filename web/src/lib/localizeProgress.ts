@@ -63,7 +63,6 @@ export function localizeProgressMessage(
   return localizeVisibleError(raw, t)
 }
 
-/** Título do card de progresso — UI é dona da apresentação (API manda fase/contagens). */
 export function localizeProgressTitle(progress: SearchProgress, t: TFn): string {
   const { phase, listing, descriptions } = progress
 

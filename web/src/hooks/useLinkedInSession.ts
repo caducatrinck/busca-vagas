@@ -8,9 +8,9 @@ import {
 const POLL_MS = 60_000
 
 type RefreshOptions = {
-  /** Reprobe Voyager (POST). Sem force = só lê status em cache (GET). */
+
   force?: boolean
-  /** Zera circuit breaker — só no “Verificar de novo” / após salvar cookies. */
+
   clearGuards?: boolean
 }
 
@@ -43,7 +43,7 @@ export function useLinkedInSession(enabled: boolean) {
       setSession(null)
       return
     }
-    // Só lê cache — não martela Voyager no mount (isso “derrubava” a sessão).
+
     void refresh({ force: false })
     const id = window.setInterval(() => {
       void refresh({ force: false })

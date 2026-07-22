@@ -13,15 +13,8 @@ export const USER_AGENT =
 
 export const FETCH_TIMEOUT_MS = 25_000
 
-/**
- * Após redirect/401 no Voyager, pausa Voyager (não martela li_at).
- * Cooldown curto: 302/anti-bot é comum e não deve “derrubar” o LinkedIn por 15 min.
- */
 let voyagerAuthBlockedUntil = 0
-/**
- * Se guest+cookie devolve redirect várias vezes, pausa cookie na listagem
- * por um tempo (sem follow — evita loop e não mata a busca).
- */
+
 let guestCookieBlockedUntil = 0
 let guestCookieRedirectStreak = 0
 
@@ -56,7 +49,6 @@ function noteGuestCookieOk(): void {
   guestCookieBlockedUntil = 0
 }
 
-/** Limpa guards (cookies novos / recheck explícito). */
 export function clearLinkedInFetchGuards(): void {
   voyagerAuthBlockedUntil = 0
   guestCookieBlockedUntil = 0
@@ -77,7 +69,6 @@ export async function buildCookieHeader(): Promise<string | undefined> {
   return parts.length > 0 ? parts.join('; ') : undefined
 }
 
-/** CSRF do Voyager = valor do JSESSIONID (com ou sem prefixo ajax:). */
 export async function buildCsrfToken(): Promise<string | undefined> {
   const settings = await getAppSettings()
   const raw = normalizeCookieValue(settings.linkedinJsessionId)
@@ -162,7 +153,6 @@ export function parseRetryAfterMs(res: Response): number | undefined {
   return undefined
 }
 
-/** Retry-After do LinkedIn ou default (nunca 0 — senão a UI mostra “Pausando ~0s”). */
 export function resolveLinkedInThrottleMs(
   res: Response,
   fallbackMs: number,
@@ -210,8 +200,8 @@ export function throwLinkedInHttpError(
   } else if (res.status === 401 || res.status === 403) {
     message = 'err:session_expired'
     if (markSession) {
-      // Não marca banner de sessão: Voyager 401/403 ≠ cookie morto (anti-bot).
-      // Só pausa Voyager para não martelar li_at.
+
+
       log.warn('linkedin.voyager.auth_pause', { status: res.status })
       blockVoyagerAuth(VOYAGER_AUTH_BLOCK_MS)
     }
@@ -238,7 +228,7 @@ async function fetchGuestHtml(
       ? AbortSignal.timeout(FETCH_TIMEOUT_MS)
       : undefined
   const combined = mergeAbortSignals(signal, timeout)
-  // Com cookie: manual (sem follow) — evita loop. Sem cookie: follow ok.
+
   return fetch(url, {
     signal: combined,
     redirect: cookie ? 'manual' : 'follow',
@@ -255,9 +245,6 @@ function isTransientLinkedInStatus(status: number): boolean {
   return status === 429 || status === 502 || status === 503
 }
 
-/**
- * Listagem guest: tenta cookie sem follow; se redirect/401/403 → mesma página sem cookie.
- */
 export async function linkedInFetch(
   path: string,
   signal?: AbortSignal,
@@ -376,11 +363,6 @@ export async function linkedInFetch(
   throw new Error(formatNetworkError(lastErr))
 }
 
-/**
- * Voyager autenticado. Nunca segue redirect (login/logout com cookie desloga o browser).
- * Na falha soft (302), pausa Voyager por pouco tempo e o enrich cai no guest.
- * `probe: true` = check de sessão: não arma circuit breaker nem marca expired.
- */
 export async function linkedInVoyagerFetch(
   path: string,
   signal?: AbortSignal,
@@ -437,7 +419,7 @@ export async function linkedInVoyagerFetch(
           location: res.headers.get('location'),
           probe,
         })
-        // Redirect ≠ cookie inválido. Probe nunca arma o breaker.
+
         if (!probe) blockVoyagerAuth(VOYAGER_SOFT_BLOCK_MS)
         const err = new Error('err:voyager_redirect')
         ;(err as Error & { linkedInStatus?: number }).linkedInStatus = res.status

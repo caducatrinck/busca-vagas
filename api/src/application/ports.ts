@@ -23,6 +23,9 @@ export type JobRepository = {
   upsertSearchResults(
     jobs: Job[],
     monitorId?: string,
+    options?: {
+      shouldDiscard?: (job: Job) => boolean
+    },
   ): Promise<{ jobs: StoredJob[]; newJobs: StoredJob[] }>
   withNewFlag(jobs: StoredJob[], newIds: string[]): Array<StoredJob & { isNew?: boolean }>
   getJobSearchHints(): Promise<{
@@ -30,6 +33,9 @@ export type JobRepository = {
     knownDescriptions: Map<string, string>
     knownWorkplaceTypes: Map<string, Job['workplaceType']>
   }>
+  listTags(): Promise<import('../shared/tags.js').AppTag[]>
+  createTag(label: string): Promise<import('../shared/tags.js').AppTag>
+  deleteTag(id: string): Promise<boolean>
 }
 
 export type MonitorRepository = {

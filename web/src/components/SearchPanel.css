@@ -50,7 +50,6 @@
   gap: var(--space-4);
 }
 
-/* labels legados (Settings / forms sem Field) */
 .search-panel__form > label:not(.ui-field):not(.search-panel__check) {
   display: flex;
   flex-direction: column;
@@ -120,10 +119,27 @@
 .search-panel__description {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
   margin-top: auto;
   padding-top: var(--space-2);
+  padding-bottom: 0.35rem;
   border-top: 1px solid var(--line);
+  overflow: visible;
+}
+
+.search-panel__tags-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow: visible;
+}
+
+.search-panel__tags-row > .tag-multi {
+  min-width: 0;
+  width: 100%;
+  overflow: visible;
 }
 
 @media (max-width: 920px) {

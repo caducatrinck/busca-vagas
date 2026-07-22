@@ -29,7 +29,7 @@ export function mergeJobs(prev: Job[], incoming: Job[]): Job[] {
 
 export function runKey(monitor: Monitor): string | null {
   if (!monitor.lastRunAt) return null
-  // Só lastRunAt: newCount muda no meio do run e não deve gerar chave nova.
+
   return `${monitor.id}:${monitor.lastRunAt}`
 }
 

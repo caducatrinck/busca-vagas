@@ -11,6 +11,8 @@
   animation: card-in 420ms ease both;
   min-width: 0;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
 }
 
 .job-card:hover {
@@ -60,9 +62,15 @@
   list-style: none;
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 0.4rem;
   margin: 0.15rem 0 0;
   padding: 0;
+  max-height: 4.6rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-width: 0;
 }
 
 .job-card__tags li {
@@ -74,6 +82,16 @@
   border: 1px solid color-mix(in srgb, var(--ink-soft) 45%, var(--line));
   color: var(--ink-soft);
   background: transparent;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-card__tags-more {
+  border-style: dashed !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
 }
 
 .job-card__excerpt {

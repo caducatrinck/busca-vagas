@@ -1,6 +1,7 @@
 import type { Monitor } from './types.js'
-import { createMonitor, normalizeDescriptionFilters } from './defaults.js'
+import { createMonitor, normalizeTagIds } from './defaults.js'
 import { ensureStore, persist } from './persistence.js'
+import { mergeBuiltinTags } from '../shared/tags.js'
 
 export async function listMonitors(): Promise<Monitor[]> {
   const store = await ensureStore()
@@ -16,13 +17,17 @@ export async function createMonitorRecord(
   input?: Partial<Monitor>,
 ): Promise<Monitor> {
   const store = await ensureStore()
-  const monitor = createMonitor({
-    ...input,
-    name:
-      input?.name ||
-      input?.search?.query?.trim()?.slice(0, 28) ||
-      `Monitor ${store.monitors.length + 1}`,
-  })
+  const catalog = mergeBuiltinTags(store.tags)
+  const monitor = createMonitor(
+    {
+      ...input,
+      name:
+        input?.name ||
+        input?.search?.query?.trim()?.slice(0, 28) ||
+        `Monitor ${store.monitors.length + 1}`,
+    },
+    catalog,
+  )
   store.monitors.push(monitor)
   await persist(store)
   return monitor
@@ -30,25 +35,52 @@ export async function createMonitorRecord(
 
 export async function updateMonitor(
   id: string,
-  patch: Partial<Monitor>,
+  patch: Partial<Monitor> & {
+    descriptionFilters?: Monitor['descriptionFilters']
+  },
 ): Promise<Monitor | null> {
   const store = await ensureStore()
   const index = store.monitors.findIndex((m) => m.id === id)
   if (index < 0) return null
 
+  const catalog = mergeBuiltinTags(store.tags)
   const current = store.monitors[index]
-  const next = createMonitor({
-    ...current,
-    ...patch,
-    id: current.id,
-    search: {
-      ...current.search,
-      ...patch.search,
+
+  const language =
+    patch.language === 'pt' || patch.language === 'en' || patch.language === ''
+      ? patch.language
+      : patch.descriptionFilters?.language !== undefined
+        ? patch.descriptionFilters.language === 'pt' ||
+          patch.descriptionFilters.language === 'en'
+          ? patch.descriptionFilters.language
+          : ''
+        : current.language
+
+  const selectedTagIds =
+    patch.selectedTagIds !== undefined
+      ? normalizeTagIds(patch.selectedTagIds, catalog)
+      : current.selectedTagIds
+
+  const excludedTagIds =
+    patch.excludedTagIds !== undefined
+      ? normalizeTagIds(patch.excludedTagIds, catalog)
+      : current.excludedTagIds
+
+  const next = createMonitor(
+    {
+      ...current,
+      ...patch,
+      id: current.id,
+      search: {
+        ...current.search,
+        ...patch.search,
+      },
+      language,
+      selectedTagIds,
+      excludedTagIds,
     },
-    descriptionFilters: normalizeDescriptionFilters(
-      patch.descriptionFilters ?? current.descriptionFilters,
-    ),
-  })
+    catalog,
+  )
   store.monitors[index] = next
   await persist(store)
   return next

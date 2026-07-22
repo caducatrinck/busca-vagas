@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, startTransition } from 'react'
 import { DataWarningBanner } from './components/DataWarningBanner'
 import { LinkedInSessionBanner } from './components/LinkedInSessionBanner'
 import { UpdateBanner } from './components/UpdateBanner'
@@ -8,6 +8,7 @@ import { PollingPanel } from './features/monitor'
 import { SettingsPanel } from './components/SettingsPanel'
 import { Tabs } from './components/Tabs'
 import { useAppSettings } from './hooks/useAppSettings'
+import { useAppTags } from './hooks/useAppTags'
 import { useDesktopUpdater } from './hooks/useDesktopUpdater'
 import { useLinkedInSession } from './hooks/useLinkedInSession'
 import { useMonitorPolling } from './hooks/useMonitorPolling'
@@ -69,10 +70,15 @@ function monitorListEmptyHint(
 
 function App() {
   const { t } = useI18n()
-  const { filters, replaceFilters, setLanguage } = usePersistedFilters()
+  const { filters, replaceFilters, setLanguage, setSelectedTagIds, setExcludedTagIds } =
+    usePersistedFilters()
   const { theme, toggleTheme, setTheme } = useTheme()
+  const appTags = useAppTags()
 
-  const monitors = useMonitors({ filters })
+  const monitors = useMonitors({
+    filters,
+    catalogTags: appTags.tags,
+  })
   const notifications = useNotifications()
 
   const appSettings = useAppSettings({
@@ -156,7 +162,9 @@ function App() {
     if (value === 'viewed' && notifications.unreadTotal > 0) {
       notifications.handleMarkAllNotificationsRead()
     }
-    monitors.setJobsSubTab(value)
+    startTransition(() => {
+      monitors.setJobsSubTab(value)
+    })
   }
 
   async function handlePausePooling() {
@@ -241,6 +249,7 @@ function App() {
           monitors={monitors.monitors}
           unreadTotal={notifications.unreadTotal}
           setupRequired={appSettings.setupRequired}
+          searchingMonitorId={searchRun.searchingMonitorId}
           theme={theme}
           onToggleTheme={toggleTheme}
           onChange={handleTabChange}
@@ -264,18 +273,22 @@ function App() {
             activeId={monitors.activeMonitorId}
             draft={monitors.monitorDraft}
             filters={monitors.activeMonitorFilters}
+            catalogTags={appTags.tags}
             loading={monitors.loading}
             searching={Boolean(searchRun.displaySearchProgress)}
+            searchingMonitorId={searchRun.searchingMonitorId}
             onSelect={handleSelectMonitor}
             onAdd={monitors.handleAddMonitor}
             onClose={monitors.handleCloseMonitor}
             onDraftChange={monitors.handleMonitorDraftChange}
-            onLanguageChange={monitors.handleMonitorDescriptionLanguage}
+            onLanguageChange={monitors.handleMonitorLanguage}
+            onTagsChange={monitors.handleMonitorTagsChange}
+            onExcludedTagsChange={monitors.handleMonitorExcludedTagsChange}
+            onCreateTag={appTags.createTag}
+            onDeleteTag={appTags.deleteTag}
             onPausePooling={handlePausePooling}
             onIntervalChange={monitors.handleIntervalChange}
             onRunNow={searchRun.handleRunMonitorNow}
-            onAddWord={monitors.handleMonitorDescriptionAddWord}
-            onRemoveWord={monitors.handleMonitorDescriptionRemoveWord}
             rateLimit={polling.rateLimit}
           />
         ) : null}
@@ -300,6 +313,7 @@ function App() {
             jobs={monitors.jobsFiltered}
             totalCount={monitors.jobsBucket.length}
             filters={filters}
+            catalogTags={appTags.tags}
             loading={monitors.loading}
             error={monitors.error}
             showDescriptionFilters={false}
@@ -311,6 +325,10 @@ function App() {
             onStatusChange={handleStatusChange}
             onDiscardAll={handleDiscardAll}
             onLanguageChange={setLanguage}
+            onTagsChange={setSelectedTagIds}
+            onExcludedTagsChange={setExcludedTagIds}
+            onCreateTag={appTags.createTag}
+            onDeleteTag={appTags.deleteTag}
           />
         ) : null}
 
@@ -319,11 +337,12 @@ function App() {
             jobs={monitors.monitorFiltered}
             totalCount={monitors.monitorJobs.length}
             filters={monitors.activeMonitorFilters}
+            catalogTags={appTags.tags}
             loading={monitors.loading}
             error={monitors.error}
             searchProgress={searchRun.displaySearchProgress}
             fetchDescriptions
-            showDescriptionFilters
+            showDescriptionFilters={false}
             title={
               monitors.activeMonitor
                 ? t('monitor.title', {

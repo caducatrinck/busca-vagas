@@ -6,6 +6,8 @@ export const emptyFilters = {
   excludeDescription: [],
   includeDescription: [],
   language: '' as const,
+  selectedTagIds: [] as string[],
+  excludedTagIds: [] as string[],
 }
 
 export const demoSettings = {
@@ -47,11 +49,9 @@ export function demoStore(opts?: {
     lastRunMode: pollingEnabled ? 'pooling' : null,
     knownIdsAtStart: [],
     lastRunStats: null,
-    descriptionFilters: {
-      excludeDescription: [],
-      includeDescription: [],
-      language: '',
-    },
+    language: '',
+    selectedTagIds: [],
+    excludedTagIds: [],
   }
 
   const jobs = withJobs
@@ -106,6 +106,13 @@ export function demoStore(opts?: {
       filters: emptyFilters,
       theme: 'light',
       locale: 'pt',
+      tags: [
+        { id: 'hybrid', label: 'Híbrido', kind: 'workplace', builtin: true },
+        { id: 'onsite', label: 'Presencial', kind: 'workplace', builtin: true },
+        { id: 'remote', label: 'Remoto', kind: 'workplace', builtin: true },
+        { id: 'CLT', label: 'CLT', kind: 'contract', builtin: true },
+        { id: 'PJ', label: 'PJ', kind: 'contract', builtin: true },
+      ],
     },
   }
 }

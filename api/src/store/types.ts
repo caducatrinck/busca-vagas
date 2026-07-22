@@ -1,4 +1,5 @@
 import type { Job, SearchParams, SearchRunStats } from '../types.js'
+import type { AppTag } from '../shared/tags.js'
 
 export type JobStatus = 'viewed' | 'applied' | 'discarded'
 
@@ -18,22 +19,21 @@ export type Monitor = {
   pollingEnabled: boolean
   intervalMinutes: number
   lastRunAt: string | null
-
   nextRunAt: string | null
   lastError: string | null
   newCountLastRun: number
-  /** Origem da última rodada — só pooling dispara notificação no cliente. */
   lastRunMode: 'manual' | 'pooling' | null
   knownIdsAtStart: string[]
   lastRunStats: SearchRunStats | null
-  /** Filtros de descrição/idioma desta aba (não globais). */
-  descriptionFilters: DescriptionFilters
+  language: '' | 'pt' | 'en'
+  selectedTagIds: string[]
+  excludedTagIds: string[]
+  descriptionFilters?: DescriptionFilters
 }
 
 export type StoredRateLimit = {
   events: number[]
   lastSearchAt: number | null
-  /** Bloqueio até este timestamp (ms), definido por erros reais do LinkedIn. */
   blockedUntil: number | null
   blockReason: string | null
   lastLinkedInStatus: number | null
@@ -47,11 +47,9 @@ export type AppSettings = {
   maxSearchesPerHour: number
   maxSearchesPerDay: number
   jobDetailConcurrency: number
-  /** bump pra atualizar defaults velhos de rate limit */
   rateLimitDefaultsRev: number
 }
 
-/** rev 2 → 30s, 30/hora, 500/dia */
 export const RATE_LIMIT_DEFAULTS_REV = 2
 
 export type JobFilters = {
@@ -60,6 +58,8 @@ export type JobFilters = {
   excludeDescription: string[]
   includeDescription: string[]
   language: '' | 'pt' | 'en'
+  selectedTagIds: string[]
+  excludedTagIds: string[]
 }
 
 export type DescriptionFilters = {
@@ -86,6 +86,7 @@ export type StoreData = {
   filters: JobFilters
   theme: ThemeMode
   locale: AppLocale
+  tags: AppTag[]
 }
 
 export type PublicAppSettings = {

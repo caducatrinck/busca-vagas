@@ -1,5 +1,4 @@
-// Facade: mantém a API pública antiga de store.ts, mas a implementação
-// agora vive em ./store/*. Não adicione lógica nova aqui, edite os módulos.
+
 
 export type {
   AppSettings,
@@ -46,6 +45,13 @@ export {
   listMonitors,
   updateMonitor,
 } from './store/monitors.js'
+
+export {
+  createTag,
+  deleteTag,
+  listTags,
+  resolveTagsByIds,
+} from './store/tags.js'
 
 export {
   exportStoreData,

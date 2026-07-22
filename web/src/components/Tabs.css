@@ -165,11 +165,19 @@
 }
 
 .app-nav__tab--pooling {
-  animation: app-nav-pooling-pulse 1.8s ease-in-out infinite;
+  animation: app-nav-pooling-pulse 1.5s ease-in-out infinite;
 }
 
 .app-nav__tab--running {
-  animation: app-nav-running-pulse 1.05s ease-in-out infinite;
+  animation: app-nav-running-pulse 1s ease-in-out infinite;
+}
+
+.app-nav__tab--active.app-nav__tab--pooling:not(.app-nav__tab--running) {
+  animation: app-nav-pooling-pulse-active 1.5s ease-in-out infinite;
+}
+
+.app-nav__tab--active.app-nav__tab--running {
+  animation: app-nav-running-pulse-active 1s ease-in-out infinite;
 }
 
 .app-nav__label {
@@ -234,51 +242,112 @@
 }
 
 .app-nav__live {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #f0c24b;
-  box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 22%, transparent);
+  background: var(--accent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
   flex-shrink: 0;
-  animation: app-nav-live-pulse 1.6s ease-in-out infinite;
+  animation: app-nav-live-pulse 1.4s ease-in-out infinite;
 }
 
 .app-nav__live--running {
+  background: var(--ok);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ok) 40%, transparent),
+    0 0 8px color-mix(in srgb, var(--ok) 45%, transparent);
+  animation: app-nav-live-running-pulse 0.9s ease-in-out infinite;
+}
+
+.app-nav__tab--active .app-nav__live {
   background: #fff;
-  animation: app-nav-live-running-pulse 1s ease-in-out infinite;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #fff 40%, transparent),
+    0 0 10px color-mix(in srgb, #fff 35%, transparent);
+}
+
+.app-nav__tab--active .app-nav__live--running {
+  background: #b8f5d4;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #b8f5d4 50%, transparent),
+    0 0 12px color-mix(in srgb, var(--ok) 55%, transparent);
 }
 
 @keyframes app-nav-pooling-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, #f0c24b 0%, transparent);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent),
+      0 0 10px color-mix(in srgb, var(--accent) 12%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, #f0c24b 10%, transparent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 42%, transparent),
+      0 0 20px color-mix(in srgb, var(--accent) 34%, transparent);
+  }
+}
+
+@keyframes app-nav-pooling-pulse-active {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, #fff 28%, transparent),
+      0 0 12px color-mix(in srgb, #fff 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, #fff 48%, transparent),
+      0 0 22px color-mix(in srgb, #fff 30%, transparent);
   }
 }
 
 @keyframes app-nav-running-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--ok) 22%, transparent),
+      0 0 12px color-mix(in srgb, var(--ok) 16%, transparent);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
-    filter: brightness(1.04);
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, var(--ok) 50%, transparent),
+      0 0 22px color-mix(in srgb, var(--ok) 40%, transparent);
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes app-nav-running-pulse-active {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--ok) 45%, transparent),
+      0 0 14px color-mix(in srgb, var(--ok) 30%, transparent);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, #b8f5d4 70%, transparent),
+      0 0 24px color-mix(in srgb, var(--ok) 50%, transparent);
+    filter: brightness(1.06);
   }
 }
 
 @keyframes app-nav-live-pulse {
   0%,
   100% {
-    transform: scale(0.98);
-    box-shadow: 0 0 0 1px color-mix(in srgb, #f0c24b 14%, transparent);
+    transform: scale(0.95);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent),
+      0 0 6px color-mix(in srgb, var(--accent) 30%, transparent);
   }
   50% {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 3px color-mix(in srgb, #f0c24b 20%, transparent);
+    transform: scale(1.2);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent),
+      0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
   }
 }
 
@@ -286,17 +355,23 @@
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 1px color-mix(in srgb, #fff 18%, transparent);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--ok) 35%, transparent),
+      0 0 6px color-mix(in srgb, var(--ok) 35%, transparent);
   }
   50% {
-    transform: scale(1.12);
-    box-shadow: 0 0 0 3px color-mix(in srgb, #fff 28%, transparent);
+    transform: scale(1.28);
+    box-shadow:
+      0 0 0 5px color-mix(in srgb, var(--ok) 55%, transparent),
+      0 0 14px color-mix(in srgb, var(--ok) 55%, transparent);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-nav__tab--pooling,
   .app-nav__tab--running,
+  .app-nav__tab--active.app-nav__tab--pooling:not(.app-nav__tab--running),
+  .app-nav__tab--active.app-nav__tab--running,
   .app-nav__live,
   .app-nav__live--running {
     animation: none;

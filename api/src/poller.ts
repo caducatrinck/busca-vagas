@@ -1,4 +1,4 @@
-// thin facade kept for backwards compat — real implementation lives under ./poller/
+
 import { resolvePoolingPostedSeconds as resolvePoolingWindow } from './domain/poolingWindow.js'
 
 export type { MonitorStatus, MonitorRunCallbacks, MonitorRunMode } from './poller/types.js'

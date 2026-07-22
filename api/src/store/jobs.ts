@@ -56,7 +56,6 @@ export async function listJobs(options?: {
   return jobs
 }
 
-/** Prefere ISO com horário a data só-dia; atualiza quando a nova coleta traz mais precisão. */
 function preferPostedAt(
   incoming?: string,
   existing?: string,
@@ -72,9 +71,15 @@ function preferPostedAt(
   return next
 }
 
+export type UpsertSearchOptions = {
+
+  shouldDiscard?: (job: Job) => boolean
+}
+
 export async function upsertSearchResults(
   jobs: Job[],
   monitorId?: string,
+  options: UpsertSearchOptions = {},
 ): Promise<{
   jobs: StoredJob[]
   newJobs: StoredJob[]
@@ -86,10 +91,15 @@ export async function upsertSearchResults(
 
   for (const job of jobs) {
     const existing = store.jobs[job.id]
+    const autoDiscard = Boolean(options.shouldDiscard?.(job))
+
     if (existing) {
       const monitorIds = new Set(existing.monitorIds)
       if (monitorId) monitorIds.add(monitorId)
-      const status = resolveStatus(existing)
+      let status = resolveStatus(existing)
+      if (autoDiscard && status !== 'applied') {
+        status = 'discarded'
+      }
       const merged: StoredJob = {
         ...existing,
         ...job,
@@ -111,9 +121,10 @@ export async function upsertSearchResults(
       store.jobs[job.id] = normalizeJob(merged)
       result.push(store.jobs[job.id])
     } else {
+      const status: JobStatus = autoDiscard ? 'discarded' : 'viewed'
       const created = normalizeJob({
         ...job,
-        status: 'viewed',
+        status,
         applied: false,
         firstSeenAt: now,
         lastSeenAt: now,
@@ -166,7 +177,6 @@ export async function deleteJobsByStatus(
   return removed
 }
 
-/** Apaga todas as vagas salvas (pendentes, aplicadas e descartadas). */
 export async function deleteAllJobs(): Promise<number> {
   const store = await ensureStore()
   const removed = Object.keys(store.jobs).length

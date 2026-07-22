@@ -1,7 +1,6 @@
 import { updateMonitor } from '../store.js'
 import type { MonitorRunResult } from './types.js'
 
-// shared in-memory state used by both scheduling and run logic
 export const timers = new Map<string, NodeJS.Timeout>()
 export const running = new Map<string, Promise<MonitorRunResult>>()
 export const aborts = new Map<string, AbortController>()

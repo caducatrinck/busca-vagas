@@ -12,6 +12,7 @@ type Props = {
   monitors: Monitor[]
   unreadTotal: number
   setupRequired?: boolean
+  searchingMonitorId?: string | null
   theme: ThemeMode
   onToggleTheme: () => void
   onChange: (tab: AppTab) => void
@@ -75,14 +76,20 @@ export function Tabs({
   monitors,
   unreadTotal,
   setupRequired = false,
+  searchingMonitorId = null,
   theme,
   onToggleTheme,
   onChange,
 }: Props) {
   const { t, locale, toggleLocale } = useI18n()
   const activeMonitors = monitors.filter((m) => m.pollingEnabled).length
-  const runningMonitors = monitors.filter((m) => m.ticking).length
+  const runningMonitors = monitors.filter(
+    (m) => m.ticking || m.id === searchingMonitorId,
+  ).length
   const pendingCount = statusCounts.viewed
+  const poolingLive = activeMonitors > 0 && !setupRequired
+  const searchingLive = runningMonitors > 0 && !setupRequired
+  const showLive = poolingLive || searchingLive
 
   const monitorMeta = setupRequired
     ? '—'
@@ -162,16 +169,16 @@ export function Tabs({
           aria-selected={tab === 'monitor'}
           aria-disabled={setupRequired}
           disabled={setupRequired}
-          className={`app-nav__tab${tab === 'monitor' ? ' app-nav__tab--active' : ''}${activeMonitors > 0 && !setupRequired ? ' app-nav__tab--pooling' : ''}${runningMonitors > 0 && !setupRequired ? ' app-nav__tab--running' : ''}`}
+          className={`app-nav__tab${tab === 'monitor' ? ' app-nav__tab--active' : ''}${poolingLive ? ' app-nav__tab--pooling' : ''}${searchingLive ? ' app-nav__tab--running' : ''}`}
           onClick={() => onChange('monitor')}
         >
           <span className="app-nav__label">
             {t('nav.monitor')}
-            {activeMonitors > 0 && !setupRequired ? (
+            {showLive ? (
               <span
-                className={`app-nav__live${runningMonitors > 0 ? ' app-nav__live--running' : ''}`}
+                className={`app-nav__live${searchingLive ? ' app-nav__live--running' : ''}`}
                 title={
-                  runningMonitors > 0
+                  searchingLive
                     ? t('nav.searchingNow')
                     : t('nav.poolingActive')
                 }

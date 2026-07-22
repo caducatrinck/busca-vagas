@@ -5,8 +5,10 @@ import type {
   SearchProgressPhase,
   SearchRunStats,
 } from '../shared/domain'
+import type { AppTag } from '../shared/tags'
 
 export type { PostedWithin, SearchProgress, SearchProgressPhase, SearchRunStats }
+export type { AppTag }
 export { SearchCancelledError } from '../shared/errors'
 
 export type AppTab = 'monitor' | 'jobs' | 'settings'
@@ -42,6 +44,8 @@ export type JobFilters = {
   excludeDescription: string[]
   includeDescription: string[]
   language: DescriptionLanguage
+  selectedTagIds: string[]
+  excludedTagIds: string[]
 }
 
 export type SearchForm = {
@@ -65,7 +69,11 @@ export type Monitor = {
   lastRunStats?: SearchRunStats | null
   ticking: boolean
   nextRunAt: string | null
-  descriptionFilters: DescriptionFilters
+  language: DescriptionLanguage
+  selectedTagIds: string[]
+  excludedTagIds: string[]
+
+  descriptionFilters?: DescriptionFilters
 }
 
 export const EMPTY_DESCRIPTION_FILTERS: DescriptionFilters = {
@@ -80,6 +88,8 @@ export const EMPTY_FILTERS: JobFilters = {
   excludeDescription: [],
   includeDescription: [],
   language: '',
+  selectedTagIds: [],
+  excludedTagIds: [],
 }
 
 export const EMPTY_SEARCH: SearchForm = {

@@ -15,19 +15,6 @@ export {
   stripVersionTag,
 } from './updaterLogic.mjs'
 
-/** @typedef {'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error' | 'dismissed'} UpdaterPhase */
-
-/** @type {{
- *   phase: UpdaterPhase,
- *   currentVersion: string,
- *   remoteVersion: string | null,
- *   assetName: string | null,
- *   downloadUrl: string | null,
- *   progress: number,
- *   downloadedPath: string | null,
- *   error: string | null,
- *   packaged: boolean,
- * }} */
 let state = {
   phase: 'idle',
   currentVersion: '0.0.0',
@@ -40,10 +27,8 @@ let state = {
   packaged: false,
 }
 
-/** @type {(() => import('electron').BrowserWindow | null) | null} */
 let getMainWindow = null
 
-/** @type {import('node:http').ClientRequest | null} */
 let activeRequest = null
 
 function emit() {
@@ -303,7 +288,6 @@ async function relaunchDownloaded() {
   return { ok: true }
 }
 
-/** @param {() => import('electron').BrowserWindow | null} getWindow */
 export function registerUpdater(getWindow) {
   getMainWindow = getWindow
   state.currentVersion = app.getVersion()
@@ -317,7 +301,6 @@ export function registerUpdater(getWindow) {
   ipcMain.handle('updater:relaunch', () => relaunchDownloaded())
 }
 
-/** @param {() => import('electron').BrowserWindow | null} getWindow */
 export function scheduleUpdateCheck(getWindow) {
   getMainWindow = getWindow
   if (!app.isPackaged) return

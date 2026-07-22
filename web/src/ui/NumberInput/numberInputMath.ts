@@ -1,4 +1,4 @@
-/** helpers puros do NumberInput — fáceis de testar sem React */
+
 export function clampNumber(n: number, min?: number, max?: number): number {
   let out = n
   if (min != null) out = Math.max(min, out)
