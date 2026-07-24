@@ -14,7 +14,7 @@ O LinkedIn não avisa com confiabilidade quando entra uma vaga nova na busca que
 2. **Bandeja** — fechar a janela não mata o app; ele continua na bandeja do sistema
 3. **Notificação** — quando aparece vaga nova, o SO pode avisar (mesmo com a janela fechada)
 
-O print abaixo é o resultado que importa no dia a dia:
+O print abaixo é o resultado que importa no dia a dia — **notificação de vaga nova** no canto da tela, com o monitor rodando:
 
 ![Notificação de vaga nova](./screenshots/06-notificacao.png)
 
@@ -36,6 +36,8 @@ Na primeira abertura o app pede para conectar o LinkedIn. Escolha uma opção (o
 1. **Entrar com LinkedIn** — botão azul no estilo LinkedIn; abre a janela de login no app (e-mail, Google, Microsoft, Apple…). Ao concluir, a sessão é salva sozinha
 2. **Configurar manualmente** — cola `li_at` e `JSESSIONID` do navegador
 
+**Tela inicial de conexão** — duas opções lado a lado: login no app ou configuração manual.
+
 ![Como conectar o LinkedIn](./screenshots/01-conectar-opcoes.png)
 
 ### Opção A — Entrar com LinkedIn
@@ -44,11 +46,17 @@ Clique em **Entrar com LinkedIn** e faça login na janela que abrir. Não há et
 
 ### Opção B — Manual
 
+**Caminho manual** — depois de clicar em “Configurar manualmente”, o app mostra o guia para pegar os cookies no navegador.
+
 ![Caminho manual](./screenshots/01b-opcao-manual.png)
 
 Siga o guia no app (F12 → Application → Cookies) e cole `li_at` e `JSESSIONID`.
 
+**Campos de cookie** — cole `li_at` e `JSESSIONID` e salve.
+
 ![Campos de cookie](./screenshots/01-configuracao.png)
+
+**Configuração salva** — confirmação de que a sessão está pronta para buscar.
 
 ![Salvo](./screenshots/02-configuracao-salva.png)
 
@@ -56,17 +64,23 @@ Siga o guia no app (F12 → Application → Cookies) e cole `li_at` e `JSESSIONI
 
 **Monitor** → **+** → preencha a busca (palavras, local, janela de publicação).
 
+**Novo monitor** — aba com a query (ex.: “Vue.js Senior”), localização e demais filtros da busca.
+
 ![Criar monitor](./screenshots/03-criar-monitor.png)
 
 ## 4. Pooling
 
 **Buscar agora** liga o pooling. **Pausar** desliga. Enquanto ativo, a aba mostra a contagem para a próxima rodada.
 
+**Pooling ligado** — a aba Monitor fica destacada e exibe o tempo até a próxima busca automática.
+
 ![Pooling ativo](./screenshots/04-pooling-ativo.png)
 
 ## 5. Vagas
 
 **Vagas** → Pendentes (depois aplicadas / descartadas). Filtre por título/descrição e descarte em lote se quiser.
+
+**Lista de pendentes** — vagas encontradas pelo pooling; dá para marcar aplicadas, descartar ou abrir no LinkedIn.
 
 ![Vagas](./screenshots/05-vagas-pendentes.png)
 
@@ -83,11 +97,15 @@ No painel do monitor use:
 
 Exemplo: incluir `Remoto` + `PJ` e excluir `Presencial`.
 
+**Tags no monitor** — menu “Incluir tag” aberto; tags marcadas (ex.: Remoto, PJ) entram no filtro e no auto-descarte do pooling.
+
 ![Tags no monitor](./screenshots/08-tags-monitor.png)
 
 ### Na aba Vagas
 
 Os mesmos campos filtram a lista (Pendentes / Aplicadas / Descartadas), sem mudar o pooling.
+
+**Tags na aba Vagas** — incluir/excluir no topo da lista; só aparecem as vagas que passam no filtro (ex.: Remoto, sem CLT).
 
 ![Tags na aba Vagas](./screenshots/09-tags-vagas.png)
 
@@ -102,7 +120,11 @@ Os mesmos campos filtram a lista (Pendentes / Aplicadas / Descartadas), sem muda
 
 Com pooling ativo o app pode notificar vagas novas. Fechar a janela mantém o app na bandeja — o pooling segue.
 
+**Notificação do sistema** — aviso quando entra vaga nova, mesmo com a janela do app fechada.
+
 ![Notificação](./screenshots/06-notificacao.png)
+
+**Bandeja** — o ícone do Busca Vagas fica na bandeja; fechar a janela não encerra o pooling.
 
 ![Bandeja](./screenshots/07-bandeja.png)
 

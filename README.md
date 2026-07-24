@@ -15,15 +15,25 @@ Outras versões: **[Releases](https://github.com/caducatrinck/busca-vagas/releas
 
 Tutorial com prints: **[docs/tutorial](./docs/tutorial/README.md)**
 
-Na primeira abertura você conecta o LinkedIn no app (**Entrar com LinkedIn**) ou cola os cookies manualmente:
+Prévia do app:
+
+**Conectar o LinkedIn** — na primeira abertura você escolhe entrar pelo LinkedIn no app ou colar os cookies manualmente.
 
 ![Como conectar o LinkedIn](./docs/tutorial/screenshots/01-conectar-opcoes.png)
 
+**Pooling ativo** — o monitor repete a busca no intervalo definido; a aba mostra a contagem para a próxima rodada.
+
 ![Pooling ativo](./docs/tutorial/screenshots/04-pooling-ativo.png)
+
+**Tags no monitor** — incluir/excluir (Remoto, PJ, CLT, etc. ou tags suas) para filtrar e auto-descartar no pooling.
 
 ![Tags no monitor](./docs/tutorial/screenshots/08-tags-monitor.png)
 
+**Filtro de tags nas Vagas** — os mesmos campos filtram Pendentes / Aplicadas / Descartadas sem mudar o pooling.
+
 ![Filtro de tags nas vagas](./docs/tutorial/screenshots/09-tags-vagas.png)
+
+**Notificação** — com pooling ligado, o sistema pode avisar quando entra vaga nova (mesmo com a janela fechada).
 
 ![Notificação](./docs/tutorial/screenshots/06-notificacao.png)
 
