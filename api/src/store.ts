@@ -30,6 +30,7 @@ export { getStore } from './store/persistence.js'
 export {
   deleteAllJobs,
   deleteJobsByStatus,
+  deleteJobsByIds,
   getJobSearchHints,
   listJobs,
   setJobApplied,

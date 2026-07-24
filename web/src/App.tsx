@@ -198,7 +198,14 @@ function App() {
     await monitors.handleDiscardAll(jobs)
   }
 
+  async function handleDeleteFiltered(
+    jobs: Parameters<typeof monitors.handleDeleteJobs>[0],
+  ) {
+    await monitors.handleDeleteJobs(jobs)
+  }
+
   const jobsCopy = JOBS_COPY_KEYS[monitors.jobsSubTab]
+  const onDiscardedTab = monitors.jobsSubTab === 'discarded'
 
   return (
     <div className="app-shell">
@@ -323,7 +330,10 @@ function App() {
             emptyTitle={t(jobsCopy.empty)}
             emptyHint={t(jobsCopy.hint)}
             onStatusChange={handleStatusChange}
-            onDiscardAll={handleDiscardAll}
+            onDiscardAll={onDiscardedTab ? undefined : handleDiscardAll}
+            onDeleteFiltered={
+              onDiscardedTab ? handleDeleteFiltered : undefined
+            }
             onLanguageChange={setLanguage}
             onTagsChange={setSelectedTagIds}
             onExcludedTagsChange={setExcludedTagIds}

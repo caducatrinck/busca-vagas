@@ -6,8 +6,8 @@ App **local** para monitorar vagas no LinkedIn (pooling, filtros, notificações
 
 ### Baixar
 
-- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.9/BuscaVagas-1.0.9-win-x64-portable.exe)** — `BuscaVagas-1.0.9-win-x64-portable.exe`
-- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.9/BuscaVagas-1.0.9-linux-x64.AppImage)** — `BuscaVagas-1.0.9-linux-x64.AppImage`  
+- **[Windows](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.10/BuscaVagas-1.0.10-win-x64-portable.exe)** — `BuscaVagas-1.0.10-win-x64-portable.exe`
+- **[Linux](https://github.com/caducatrinck/busca-vagas/releases/download/v1.0.10/BuscaVagas-1.0.10-linux-x64.AppImage)** — `BuscaVagas-1.0.10-linux-x64.AppImage`  
   (`chmod +x` no AppImage se o sistema pedir)
 - **macOS** — ainda **não** há `.dmg` nos Releases. No Mac você roda a partir do código (Git + Node), passo a passo: **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**
 
@@ -35,10 +35,17 @@ Na primeira abertura você conecta o LinkedIn no app (**Entrar com LinkedIn**) o
 
 ### Dados
 
-Ficam só na sua máquina:
-- Windows: `%AppData%/Busca Vagas/data/`
-- Linux: `~/.config/Busca Vagas/data/`
-- macOS (app empacotado): `~/Library/Application Support/Busca Vagas/data/`
+Ficam só na sua máquina, sob o home do app:
+
+```
+Busca Vagas/
+  data/    store e configurações
+  logs/    app.log + electron.log
+```
+
+- Windows: `%AppData%/Busca Vagas/`
+- Linux: `~/.config/Busca Vagas/`
+- macOS (app empacotado): `~/Library/Application Support/Busca Vagas/`
 - macOS (rodando pelo código): pasta `api/data/` no clone — ver **[INSTALACAO-MAC.md](./INSTALACAO-MAC.md)**
 
 Use **Exportar / Importar** no topo do app para backup.

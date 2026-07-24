@@ -215,6 +215,19 @@ export async function clearJobsByStatus(
   return data.removed ?? 0
 }
 
+export async function deleteJobsByIds(ids: string[]): Promise<number> {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
+  if (unique.length === 0) return 0
+  const res = await fetch(`${API_URL}/jobs`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: unique }),
+  })
+  const data = await parseJson<{ removed?: number; error?: string }>(res)
+  if (!res.ok) throw new Error(data.error || `err:http:${res.status}`)
+  return data.removed ?? 0
+}
+
 export async function deleteAllJobs(): Promise<number> {
   const res = await fetch(`${API_URL}/jobs/delete-all`, {
     method: 'POST',

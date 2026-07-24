@@ -62,8 +62,16 @@ export function registerJobRoutes(
   })
 
   app.delete<{
-    Body: { status: 'applied' | 'discarded' }
+    Body: { status?: 'applied' | 'discarded'; ids?: string[] }
   }>('/jobs', async (request, reply) => {
+    const ids = Array.isArray(request.body?.ids)
+      ? request.body.ids.map((id) => String(id ?? '').trim()).filter(Boolean)
+      : []
+    if (ids.length > 0) {
+      const removed = await repo.deleteJobsByIds(ids)
+      return { ok: true, removed }
+    }
+
     const status = request.body?.status
     if (status !== 'applied' && status !== 'discarded') {
       return reply

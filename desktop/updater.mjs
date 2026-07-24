@@ -6,6 +6,7 @@ import https from 'node:https'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { GITHUB_REPO, resolveAvailableUpdate } from './updaterLogic.mjs'
+import { logElectron } from './electronLog.mjs'
 
 export {
   GITHUB_REPO,
@@ -280,6 +281,7 @@ async function relaunchDownloaded() {
   if (process.platform === 'linux') {
     await fs.chmod(file, 0o755).catch(() => {})
   }
+  logElectron('INFO', 'updater.relaunch', { file })
   spawn(file, [], {
     detached: true,
     stdio: 'ignore',

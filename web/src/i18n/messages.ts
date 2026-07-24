@@ -137,6 +137,8 @@ const pt = {
   'list.discardAll': 'Descartar todas',
   'list.discard': 'Descartar',
   'list.discarding': 'Descartando…',
+  'list.delete': 'Excluir',
+  'list.deleting': 'Excluindo…',
   'list.noFilter': 'Nenhuma vaga neste filtro',
   'list.adjustFilters': 'Ajuste o título/descrição ou limpe os filtros acima.',
   'list.hiddenByFilters': '{n} vaga(s) ocultadas pelos filtros.',
@@ -324,6 +326,11 @@ const pt = {
   'list.discardConfirmTitle': 'Descartar todas?',
   'list.discardConfirmBody': 'Marcar {n} vaga(s) como descartada(s)? Elas saem do Monitor e vão para a aba Descartadas.',
   'list.discardConfirmYes': 'Sim, descartar',
+  'list.deleteCount': 'Excluir ({n})',
+  'list.deleteConfirmTitle': 'Excluir permanentemente?',
+  'list.deleteConfirmBody':
+    'Apagar {n} vaga(s) filtrada(s) de forma permanente? Não dá para desfazer.',
+  'list.deleteConfirmYes': 'Sim, excluir',
   'common.cancel': 'Cancelar',
 
   'settings.loadError': 'Erro ao carregar',
@@ -602,6 +609,8 @@ const en: Record<MessageKey, string> = {
   'list.discardAll': 'Discard all',
   'list.discard': 'Discard',
   'list.discarding': 'Discarding…',
+  'list.delete': 'Delete',
+  'list.deleting': 'Deleting…',
   'list.noFilter': 'No jobs in this filter',
   'list.adjustFilters': 'Adjust title/description or clear filters above.',
   'list.hiddenByFilters': '{n} job(s) hidden by filters.',
@@ -789,6 +798,11 @@ const en: Record<MessageKey, string> = {
   'list.discardConfirmTitle': 'Discard all?',
   'list.discardConfirmBody': 'Mark {n} job(s) as discarded? They leave Monitor and go to the Discarded tab.',
   'list.discardConfirmYes': 'Yes, discard',
+  'list.deleteCount': 'Delete ({n})',
+  'list.deleteConfirmTitle': 'Delete permanently?',
+  'list.deleteConfirmBody':
+    'Permanently delete {n} filtered job(s)? This cannot be undone.',
+  'list.deleteConfirmYes': 'Yes, delete',
   'common.cancel': 'Cancel',
 
   'settings.loadError': 'Failed to load',

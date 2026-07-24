@@ -40,6 +40,8 @@ type Props = {
   onCancelSearch?: () => void
   onStatusChange?: (job: Job, status: JobStatus) => void
   onDiscardAll?: (jobs: Job[]) => void | Promise<void>
+  /** Exclusão permanente das vagas visíveis (ex.: filtradas em Descartadas). */
+  onDeleteFiltered?: (jobs: Job[]) => void | Promise<void>
   onLanguageChange?: (value: DescriptionLanguage) => void
   onTagsChange?: (ids: string[]) => void
   onExcludedTagsChange?: (ids: string[]) => void
@@ -68,6 +70,7 @@ export function JobList({
   onCancelSearch,
   onStatusChange,
   onDiscardAll,
+  onDeleteFiltered,
   onLanguageChange,
   onTagsChange,
   onExcludedTagsChange,
@@ -83,6 +86,8 @@ export function JobList({
   const [newestFirst, setNewestFirst] = useState(true)
   const [discarding, setDiscarding] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [renderLimit, setRenderLimit] = useState(RENDER_PAGE)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -134,15 +139,19 @@ export function JobList({
   )
 
   const discardCount = discardable.length
+  const deleteCount = onDeleteFiltered ? visibleJobs.length : 0
 
   useEffect(() => {
-    if (!confirmDiscard) return
+    if (!confirmDiscard && !confirmDelete) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setConfirmDiscard(false)
+      if (e.key === 'Escape') {
+        setConfirmDiscard(false)
+        setConfirmDelete(false)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [confirmDiscard])
+  }, [confirmDiscard, confirmDelete])
 
   async function confirmDiscardAll() {
     if (!onDiscardAll || discardable.length === 0 || discarding) return
@@ -152,6 +161,17 @@ export function JobList({
       await onDiscardAll(discardable)
     } finally {
       setDiscarding(false)
+    }
+  }
+
+  async function confirmDeleteFiltered() {
+    if (!onDeleteFiltered || visibleJobs.length === 0 || deleting) return
+    setConfirmDelete(false)
+    setDeleting(true)
+    try {
+      await onDeleteFiltered(visibleJobs)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -269,6 +289,21 @@ export function JobList({
                       : discardCount > 0
                         ? t('list.discardCount', { n: discardCount })
                         : t('list.discard')}
+                  </Button>
+                ) : null}
+                {onDeleteFiltered ? (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="job-list__discard-all"
+                    disabled={deleteCount === 0 || deleting || searching}
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    {deleting
+                      ? t('list.deleting')
+                      : deleteCount > 0
+                        ? t('list.deleteCount', { n: deleteCount })
+                        : t('list.delete')}
                   </Button>
                 ) : null}
               </div>
@@ -399,6 +434,39 @@ export function JobList({
               </Button>
               <Button variant="danger" onClick={() => void confirmDiscardAll()}>
                 {t('list.discardConfirmYes')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmDelete ? (
+        <div
+          className="job-list__modal-backdrop"
+          role="presentation"
+          onClick={() => setConfirmDelete(false)}
+        >
+          <div
+            className="job-list__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-filtered-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="delete-filtered-title">{t('list.deleteConfirmTitle')}</h3>
+            <p>{t('list.deleteConfirmBody', { n: deleteCount })}</p>
+            <div className="job-list__modal-actions">
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmDelete(false)}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => void confirmDeleteFiltered()}
+              >
+                {t('list.deleteConfirmYes')}
               </Button>
             </div>
           </div>

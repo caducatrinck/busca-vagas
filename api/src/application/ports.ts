@@ -19,6 +19,7 @@ export type JobRepository = {
   setJobStatus(id: string, status: JobStatus): Promise<StoredJob | null>
   setJobApplied(id: string, applied: boolean): Promise<StoredJob | null>
   deleteJobsByStatus(status: JobStatus): Promise<number>
+  deleteJobsByIds(ids: string[]): Promise<number>
   deleteAllJobs(): Promise<number>
   upsertSearchResults(
     jobs: Job[],

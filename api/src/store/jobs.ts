@@ -177,6 +177,26 @@ export async function deleteJobsByStatus(
   return removed
 }
 
+export async function deleteJobsByIds(ids: string[]): Promise<number> {
+  const unique = [
+    ...new Set(
+      ids.map((id) => String(id ?? '').trim()).filter((id) => id.length > 0),
+    ),
+  ]
+  if (unique.length === 0) return 0
+
+  const store = await ensureStore()
+  let removed = 0
+  for (const id of unique) {
+    if (store.jobs[id]) {
+      delete store.jobs[id]
+      removed += 1
+    }
+  }
+  if (removed > 0) await persist(store)
+  return removed
+}
+
 export async function deleteAllJobs(): Promise<number> {
   const store = await ensureStore()
   const removed = Object.keys(store.jobs).length

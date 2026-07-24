@@ -6,6 +6,7 @@ export const storeRepository: StoreRepository = {
   setJobStatus: store.setJobStatus,
   setJobApplied: store.setJobApplied,
   deleteJobsByStatus: store.deleteJobsByStatus,
+  deleteJobsByIds: store.deleteJobsByIds,
   deleteAllJobs: store.deleteAllJobs,
   upsertSearchResults: store.upsertSearchResults,
   withNewFlag: store.withNewFlag,

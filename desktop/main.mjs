@@ -16,6 +16,19 @@ import { fileURLToPath } from 'node:url'
 import { withTrayBadge } from './trayBadge.mjs'
 import { registerUpdater, scheduleUpdateCheck } from './updater.mjs'
 import { registerLinkedInLogin } from './linkedinLogin.mjs'
+import {
+  ensureAppDirs,
+  migrateLegacyLogsLayout,
+  resolveDataDir,
+  resolveLogsDir,
+} from './appPaths.mjs'
+import {
+  installElectronCrashHooks,
+  logElectron,
+  logElectronStartup,
+} from './electronLog.mjs'
+
+installElectronCrashHooks()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -188,6 +201,7 @@ function createTray() {
       {
         label: d('Sair', 'Quit'),
         click: () => {
+          logElectron('INFO', 'tray.quit_clicked')
           isQuitting = true
           destroyTray()
           app.quit()
@@ -253,8 +267,9 @@ function startApi() {
     )
   }
 
-  const dataDir = path.join(app.getPath('userData'), 'data')
-  fs.mkdirSync(dataDir, { recursive: true })
+  const { dataDir, logsDir } = ensureAppDirs()
+  process.env.BUSCA_VAGAS_DATA_DIR = dataDir
+  process.env.BUSCA_VAGAS_LOGS_DIR = logsDir
 
   const env = {
     ...process.env,
@@ -262,6 +277,7 @@ function startApi() {
     API_HOST,
     API_PORT: String(API_PORT),
     BUSCA_VAGAS_DATA_DIR: dataDir,
+    BUSCA_VAGAS_LOGS_DIR: logsDir,
     BUSCA_VAGAS_STATIC_DIR: webDir,
     CORS_ORIGINS: `http://${API_HOST}:${API_PORT},http://localhost:${API_PORT}`,
   }
@@ -278,6 +294,11 @@ function startApi() {
     process.stderr.write(`[api] ${buf}`)
   })
   apiProcess.on('exit', (code, signal) => {
+    logElectron(
+      isQuitting ? 'INFO' : 'ERROR',
+      'api.exit',
+      { code, signal, isQuitting },
+    )
     console.error(`[api] saiu code=${code} signal=${signal}`)
     apiProcess = null
   })
@@ -378,9 +399,12 @@ ensureWindowsNotificationIdentity()
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
+  logElectron('WARN', 'second-instance.lock_denied — quitting')
   app.quit()
 } else {
+  logElectronStartup()
   app.on('second-instance', () => {
+    logElectron('INFO', 'second-instance.focus')
     if (splashWindow && !splashWindow.isDestroyed() && !mainUiReady) {
       splashWindow.focus()
       return
@@ -389,6 +413,15 @@ if (!gotLock) {
   })
 
   app.whenReady().then(async () => {
+    logElectron('INFO', 'app.whenReady')
+    const dirs = ensureAppDirs()
+    process.env.BUSCA_VAGAS_DATA_DIR = dirs.dataDir
+    process.env.BUSCA_VAGAS_LOGS_DIR = dirs.logsDir
+    const migrated = migrateLegacyLogsLayout()
+    if (migrated.migrated) {
+      logElectron('INFO', 'logs.migrated', migrated)
+    }
+    logElectron('INFO', 'app.paths', dirs)
     ensureWindowsNotificationIdentity()
     Menu.setApplicationMenu(null)
     registerUpdater(() => mainWindow)
@@ -400,11 +433,19 @@ if (!gotLock) {
       await createSplash()
       setSplashStatus(d('Subindo o servidor local…', 'Starting local server…'))
       startApi()
+      logElectron('INFO', 'api.spawned', {
+        entry: serverEntry(),
+        staticDir: staticDir(),
+        dataDir: resolveDataDir(),
+        logsDir: resolveLogsDir(),
+      })
       setSplashStatus(d('Aguardando API…', 'Waiting for API…'))
       await waitForHealth(`http://${API_HOST}:${API_PORT}/health`)
       setSplashStatus(d('Carregando interface…', 'Loading interface…'))
       await createWindow()
+      logElectron('INFO', 'ui.ready')
     } catch (err) {
+      logElectron('ERROR', 'startup.failed', err)
       console.error(err)
       setSplashStatus(d('Falha ao iniciar. Fechando…', 'Failed to start. Closing…'))
       await new Promise((r) => setTimeout(r, 1200))

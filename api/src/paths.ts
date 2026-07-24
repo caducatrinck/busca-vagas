@@ -23,5 +23,8 @@ export function resolveDataDir(): string {
 }
 
 export function resolveLogsDir(): string {
+  const fromEnv = process.env.BUSCA_VAGAS_LOGS_DIR?.trim()
+  if (fromEnv) return path.resolve(fromEnv)
+
   return path.join(resolveDataDir(), 'logs')
 }

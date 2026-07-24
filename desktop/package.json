@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Busca Vagas — app desktop (Electron)",
   "main": "main.mjs",
   "type": "module",
@@ -27,6 +27,8 @@
       "updater.mjs",
       "updaterLogic.mjs",
       "linkedinLogin.mjs",
+      "electronLog.mjs",
+      "appPaths.mjs",
       "preload.cjs",
       "trayBadge.mjs",
       "splash.html",
@@ -53,6 +55,9 @@
       ],
       "icon": "build/icon.png",
       "artifactName": "BuscaVagas-${version}-win-x64-portable.${ext}"
+    },
+    "portable": {
+      "unpackDirName": "BuscaVagas-portable"
     },
     "linux": {
       "target": [

@@ -4,6 +4,7 @@ import {
   clearJobsByStatus,
   createMonitor,
   deleteAllJobs,
+  deleteJobsByIds,
   fetchMonitors,
   fetchSavedJobs,
   removeMonitor,
@@ -218,6 +219,25 @@ export function useMonitors(params: {
     setError(null)
     for (const job of jobs) {
       await handleStatusChange(job, 'discarded')
+    }
+  }
+
+  async function handleDeleteJobs(jobs: Job[]) {
+    if (jobs.length === 0) return
+    setError(null)
+    try {
+      const ids = jobs.map((job) => job.id)
+      await deleteJobsByIds(ids)
+      const idSet = new Set(ids)
+      setSavedJobs((list) =>
+        (Array.isArray(list) ? list : []).filter((job) => !idSet.has(job.id)),
+      )
+      setMonitorJobs((list) =>
+        (Array.isArray(list) ? list : []).filter((job) => !idSet.has(job.id)),
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('err.clearJobs'))
+      throw err
     }
   }
 
@@ -450,6 +470,7 @@ export function useMonitors(params: {
     loadMonitors,
     handleStatusChange,
     handleDiscardAll,
+    handleDeleteJobs,
     handleAddMonitor,
     handleSelectMonitor,
     handleMonitorDraftChange,

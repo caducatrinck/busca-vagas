@@ -15,9 +15,16 @@ Este arquivo é para **manter / publicar** o desktop.
 
 Ao abrir de novo, o app consulta o Release mais recente. Se houver versão maior, pergunta se quer baixar (com barra de progresso).
 
-Dados ficam em:
-- Windows: `%AppData%/Busca Vagas/data/`
-- Linux: `~/.config/Busca Vagas/data/`
+Tudo persistente fica sob o home do app (irmão `data` + `logs`):
+
+```
+%AppData%/Busca Vagas/          (Windows)
+~/.config/Busca Vagas/          (Linux)
+  data/                         store.json
+  logs/                         app.log + electron.log
+```
+
+O portable Windows ainda precisa extrair o **runtime** Electron em pasta fixa no TEMP (`%TEMP%\BuscaVagas-portable`) — limitação do electron-builder; dados e logs **não** ficam aí.
 
 ## Padrões de versão e release
 

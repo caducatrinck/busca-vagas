@@ -13,7 +13,8 @@ function sameMinute(a: number, b: number): boolean {
 }
 
 export function resolveStaggeredSlot(id: string, desired: number): number {
-  let slot = desired
+
+  let slot = Math.max(desired, Date.now() + 1_000)
   let guard = 0
   while (guard < 240) {
     const clash = [...scheduledRunAt.entries()].some(
