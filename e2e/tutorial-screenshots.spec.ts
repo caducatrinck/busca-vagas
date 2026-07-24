@@ -146,6 +146,49 @@ test('07 bandeja', async ({ page }) => {
   await clearOsChrome(page)
 })
 
+test('08 tags no monitor (incluir / excluir)', async ({ page }) => {
+  await importStore(
+    demoStore({
+      pollingEnabled: false,
+      withJobs: false,
+      monitorTags: ['remote', 'PJ'],
+      monitorExcludedTags: ['onsite'],
+    }),
+  )
+  await page.goto('/')
+  await page.getByRole('tab', { name: /Monitor/i }).click()
+  await expect(page.getByPlaceholder('Incluir tag')).toBeVisible()
+  await expect(page.getByText('Remoto')).toBeVisible()
+  await expect(page.getByText('PJ')).toBeVisible()
+  await expect(page.getByText('Presencial')).toBeVisible()
+
+  await page.getByPlaceholder('Incluir tag').click()
+  await expect(page.locator('.tag-multi__menu')).toBeVisible()
+  await page.waitForTimeout(300)
+  await shot(page, '08-tags-monitor.png')
+})
+
+test('09 tags na aba Vagas (filtro)', async ({ page }) => {
+  await importStore(
+    demoStore({
+      pollingEnabled: true,
+      withJobs: true,
+      jobFilterTags: ['remote'],
+      jobFilterExcludedTags: ['CLT'],
+    }),
+  )
+  await page.goto('/')
+  await page.getByRole('tab', { name: /Vagas|Jobs/i }).click()
+  await expect(page.getByPlaceholder('Incluir tag')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Remoto', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'CLT', exact: true })).toBeVisible()
+
+  await page.getByPlaceholder('Incluir tag').click()
+  await expect(page.locator('.tag-multi__menu')).toBeVisible()
+  await page.waitForTimeout(300)
+  await shot(page, '09-tags-vagas.png')
+})
+
 test('sanity: cookie fake desbloqueia app', async () => {
   await resetFresh()
   await patchSettings({ linkedinLiAt: 'x' })

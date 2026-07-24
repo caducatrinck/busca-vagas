@@ -70,7 +70,35 @@ Follow the in-app guide (F12 → Application → Cookies) and paste `li_at` and 
 
 ![Jobs](./screenshots/05-vagas-pendentes.png)
 
-## 6. Notification and tray
+## 6. Tags (include / exclude)
+
+Tags filter the list and also **auto-discard** during pooling. Built-ins: Remote, Hybrid, On-site, CLT, PJ — and you can **create your own** (e.g. English).
+
+### On Monitor
+
+In the monitor panel:
+
+- **Include tag** — the job must match **at least one** (OR). None selected = keep all
+- **Exclude tag** — if it matches **any**, the job is discarded
+
+Example: include `Remote` + `PJ` and exclude `On-site`.
+
+![Tags on monitor](./screenshots/08-tags-monitor.png)
+
+### On the Jobs tab
+
+The same fields filter Pending / Applied / Discarded without changing pooling.
+
+![Tags on Jobs](./screenshots/09-tags-vagas.png)
+
+### Tips
+
+1. Click the field → pick a tag (or type and **Create “…”**)
+2. Multiple include tags = OR (one is enough)
+3. Exclude wins: a match hides the job / sends it to Discarded on pooling
+4. On Discarded, filter (e.g. English) and use **Delete (n)** to permanently remove the filtered set
+
+## 7. Notification and tray
 
 With pooling on, the app can notify new jobs. Closing the window keeps the app in the tray — pooling continues.
 

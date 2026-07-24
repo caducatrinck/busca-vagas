@@ -25,6 +25,11 @@ export function demoStore(opts?: {
   pollingEnabled?: boolean
   withJobs?: boolean
   liAt?: string
+  monitorTags?: string[]
+  monitorExcludedTags?: string[]
+  jobFilterTags?: string[]
+  jobFilterExcludedTags?: string[]
+  jobFilterLanguage?: '' | 'pt' | 'en'
 }) {
   const pollingEnabled = opts?.pollingEnabled ?? true
   const withJobs = opts?.withJobs ?? true
@@ -61,7 +66,8 @@ export function demoStore(opts?: {
           title: 'Front-end Senior',
           company: 'Acme Tech',
           location: 'Remoto — Brasil',
-          description: 'React, TypeScript, design system.',
+          description:
+            'React, TypeScript, design system. Contratação PJ. Trabalho 100% remoto.',
           url: 'https://www.linkedin.com/jobs/view/1',
           postedAt: 'há 2 horas',
           status: 'viewed',
@@ -69,13 +75,16 @@ export function demoStore(opts?: {
           firstSeenAt: now,
           lastSeenAt: now,
           monitorIds: ['mon-react'],
+          workplaceType: 'remote',
+          contractTags: ['PJ'],
         },
         'job-2': {
           id: 'job-2',
           title: 'React Engineer',
           company: 'Beta Labs',
           location: 'São Paulo',
-          description: 'Produto B2B, React e Node.',
+          description:
+            'Produto B2B, React e Node. CLT. Modelo híbrido (2 dias no escritório).',
           url: 'https://www.linkedin.com/jobs/view/2',
           postedAt: 'há 5 horas',
           status: 'viewed',
@@ -83,6 +92,25 @@ export function demoStore(opts?: {
           firstSeenAt: now,
           lastSeenAt: now,
           monitorIds: ['mon-react'],
+          workplaceType: 'hybrid',
+          contractTags: ['CLT'],
+        },
+        'job-3': {
+          id: 'job-3',
+          title: 'Full Stack Developer',
+          company: 'Gamma Soft',
+          location: 'Brasil',
+          description:
+            'We are looking for a Full Stack Developer. Remote. English required.',
+          url: 'https://www.linkedin.com/jobs/view/3',
+          postedAt: 'há 1 dia',
+          status: 'viewed',
+          applied: false,
+          firstSeenAt: now,
+          lastSeenAt: now,
+          monitorIds: ['mon-react'],
+          workplaceType: 'remote',
+          contractTags: ['PJ'],
         },
       }
     : {}
@@ -91,7 +119,13 @@ export function demoStore(opts?: {
     version: 1,
     store: {
       jobs,
-      monitors: [monitor],
+      monitors: [
+        {
+          ...monitor,
+          selectedTagIds: opts?.monitorTags ?? [],
+          excludedTagIds: opts?.monitorExcludedTags ?? [],
+        },
+      ],
       rateLimit: {
         events: [],
         lastSearchAt: null,
@@ -103,7 +137,12 @@ export function demoStore(opts?: {
         ...demoSettings,
         linkedinLiAt: opts?.liAt ?? demoSettings.linkedinLiAt,
       },
-      filters: emptyFilters,
+      filters: {
+        ...emptyFilters,
+        selectedTagIds: opts?.jobFilterTags ?? [],
+        excludedTagIds: opts?.jobFilterExcludedTags ?? [],
+        language: opts?.jobFilterLanguage ?? '',
+      },
       theme: 'light',
       locale: 'pt',
       tags: [
@@ -112,6 +151,12 @@ export function demoStore(opts?: {
         { id: 'remote', label: 'Remoto', kind: 'workplace', builtin: true },
         { id: 'CLT', label: 'CLT', kind: 'contract', builtin: true },
         { id: 'PJ', label: 'PJ', kind: 'contract', builtin: true },
+        {
+          id: 'tag-ingles',
+          label: 'Inglês',
+          kind: 'custom',
+          builtin: false,
+        },
       ],
     },
   }

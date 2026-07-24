@@ -70,7 +70,35 @@ Siga o guia no app (F12 → Application → Cookies) e cole `li_at` e `JSESSIONI
 
 ![Vagas](./screenshots/05-vagas-pendentes.png)
 
-## 6. Notificação e bandeja
+## 6. Tags (incluir / excluir)
+
+Tags filtram e também **descartam automaticamente** no pooling. Há tags prontas (Remoto, Híbrido, Presencial, CLT, PJ) e você pode **criar as suas** (ex.: Inglês).
+
+### No Monitor
+
+No painel do monitor use:
+
+- **Incluir tag** — a vaga precisa casar com **pelo menos uma** (OR). Sem seleção = aceita todas
+- **Excluir tag** — se casar com **qualquer** uma, a vaga é descartada
+
+Exemplo: incluir `Remoto` + `PJ` e excluir `Presencial`.
+
+![Tags no monitor](./screenshots/08-tags-monitor.png)
+
+### Na aba Vagas
+
+Os mesmos campos filtram a lista (Pendentes / Aplicadas / Descartadas), sem mudar o pooling.
+
+![Tags na aba Vagas](./screenshots/09-tags-vagas.png)
+
+### Dicas
+
+1. Clique no campo → escolha uma tag da lista (ou digite e **Criar “…”**)
+2. Várias tags de incluir = OR (basta uma)
+3. Tag de excluir tem prioridade: se bater, some da lista / vai para Descartadas no pooling
+4. Na aba Descartadas, filtre (ex.: inglês) e use **Excluir (n)** para apagar de vez as filtradas
+
+## 7. Notificação e bandeja
 
 Com pooling ativo o app pode notificar vagas novas. Fechar a janela mantém o app na bandeja — o pooling segue.
 
