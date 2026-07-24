@@ -1,0 +1,14 @@
+---
+description: Commits e PRs só com a conta do autor; sem atribuição Cursor
+alwaysApply: true
+---
+
+# Git attribution
+
+- Sempre commit/push como **Cadu Catrinck** (`caducatrinck@gmail.com` ou `83988637+caducatrinck@users.noreply.github.com`).
+- **Nunca** usar autor/committer `Cursor`, `cursoragent` ou `cursoragent@cursor.com`.
+- **Nunca** adicionar trailers ou texto de atribuição do Cursor em commits, PRs ou comentários de código:
+  - `Co-authored-by: Cursor <cursoragent@cursor.com>`
+  - `Made-with: Cursor` / `Made with Cursor`
+- Ao criar commits neste repo, usar só a identidade do `git config` local do projeto (ou a do usuário). Não sobrescrever `user.name` / `user.email` para Cursor.
+- Se a mensagem de commit vier com trailer do Cursor, remover antes de concluir o commit.

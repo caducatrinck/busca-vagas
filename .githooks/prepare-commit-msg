@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Espelho do commit-msg: limpa atribuição Cursor se o editor/IDE injetar cedo.
+set -euo pipefail
+
+msg_file="${1:?commit message file required}"
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+sed -E \
+  -e '/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*[Cc]ursor[[:space:]]*<cursoragent@cursor\.com>[[:space:]]*$/d' \
+  -e '/^[Mm]ade-[Ww]ith:[[:space:]]*[Cc]ursor[[:space:]]*$/d' \
+  -e '/^[Mm]ade [Ww]ith [Cc]ursor[[:space:]]*$/d' \
+  "$msg_file" > "$tmp"
+
+awk '
+  NF { pending = pending buf $0 ORS; buf = ""; next }
+  { buf = buf ORS }
+  END { printf "%s", pending }
+' "$tmp" > "$msg_file"

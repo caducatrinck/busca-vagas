@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Remove atribuição automática do Cursor Agent das mensagens de commit.
+set -euo pipefail
+
+msg_file="${1:?commit message file required}"
+
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+# Remove trailers/linhas de atribuição do Cursor (case-insensitive).
+sed -E \
+  -e '/^[Cc]o-[Aa]uthored-[Bb]y:[[:space:]]*[Cc]ursor[[:space:]]*<cursoragent@cursor\.com>[[:space:]]*$/d' \
+  -e '/^[Mm]ade-[Ww]ith:[[:space:]]*[Cc]ursor[[:space:]]*$/d' \
+  -e '/^[Mm]ade [Ww]ith [Cc]ursor[[:space:]]*$/d' \
+  "$msg_file" > "$tmp"
+
+# Evita bloco final só com linhas em branco extras.
+awk '
+  NF { pending = pending buf $0 ORS; buf = ""; next }
+  { buf = buf ORS }
+  END { printf "%s", pending }
+' "$tmp" > "$msg_file"
