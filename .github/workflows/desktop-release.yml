@@ -21,8 +21,26 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json', 'desktop/package.json') }}
+
       - name: Install
-        run: npm ci
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5; do
+            if npm ci; then
+              exit 0
+            fi
+            echo "npm ci falhou (tentativa $i/5). Aguardando e tentando de novo…"
+            sleep $((i * 20))
+          done
+          exit 1
 
       - name: Verify tag matches desktop version
         shell: bash
@@ -56,8 +74,26 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json', 'desktop/package.json') }}
+
       - name: Install
-        run: npm ci
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5; do
+            if npm ci; then
+              exit 0
+            fi
+            echo "npm ci falhou (tentativa $i/5). Aguardando e tentando de novo…"
+            sleep $((i * 20))
+          done
+          exit 1
 
       - name: Verify tag matches desktop version
         run: |
